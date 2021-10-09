@@ -1,0 +1,228 @@
+{
+  "author": "Mikko Hilpinen",
+  "package": "vf.arbiter.core",
+  "classes": {
+    "location": [
+      {
+        "name": "County",
+        "doc": "Represents a county within a country",
+        "props": [
+          {
+            "name": "name",
+            "doc": "County name, with that county's or country's primary language"
+          }
+        ]
+      },
+      {
+        "name": "PostalCode",
+        "doc": "Represents a postal code, which represents an area within a county",
+        "props": [
+          {
+            "name": "number",
+            "length": 5,
+            "doc": "The number portion of this postal code"
+          },
+          {
+            "ref": "county",
+            "doc": "Id of the county where this postal code is resides"
+          }
+        ]
+      },
+      {
+        "name": "StreetAddress",
+        "doc": "Represents a specific street address",
+        "props": [
+          {
+            "ref": "postal_code"
+          },
+          {
+            "name": "streetName",
+            "length": 64,
+            "doc": "Name of the street -portion of this address"
+          },
+          {
+            "name": "buildingNumber",
+            "length": 10,
+            "doc": "Number of the targeted building within the specified street"
+          },
+          {
+            "name": "stair",
+            "type": "Option[String]",
+            "length": 10,
+            "doc": "Number or letter of the targeted stair within that building, if applicable"
+          },
+          {
+            "name": "roomNumber",
+            "type": "Option[String]",
+            "length": 10,
+            "doc": "Number of the targeted room within that stair / building, if applicable"
+          }
+        ]
+      }
+    ],
+    "company": [
+      {
+        "name": "Company",
+        "doc": "Represents a registered company (or an individual person)",
+        "props": [
+          {
+            "name": "yCode",
+            "length": 10,
+            "doc": "Official registration code of this company (id in the country system)"
+          },
+          {
+            "name": "name",
+            "length": 64,
+            "doc": "Name of this company"
+          },
+          {
+            "name": "addressId",
+            "ref": "street_address",
+            "doc": "Street address of this company's headquarters or operation"
+          },
+          {
+            "name": "taxCode",
+            "length": 16,
+            "doc": "Tax-related identifier code for this company"
+          }
+        ]
+      },
+      {
+        "name": "OrganizationCompany",
+        "doc": "Connects organizations with their owned companies",
+        "props": [
+          {
+            "ref": "organization",
+            "doc": "Id of the owner organization"
+          },
+          {
+            "ref": "company",
+            "doc": "Id of the owned company"
+          }
+        ]
+      },
+      {
+        "name": "Bank",
+        "doc": "Represents a bank (used with bank addresses)",
+        "props": [
+          {
+            "name": "name",
+            "length": 64,
+            "doc": "(Short) name of this bank"
+          },
+          {
+            "name": "bic",
+            "length": 12,
+            "doc": "BIC-code of this bank"
+          }
+        ]
+      },
+      {
+        "name": "CompanyBankAddress",
+        "doc": "Used for listing which bank addresses belong to which company",
+        "props": [
+          {
+            "ref": "company",
+            "doc": "Id of the company which owns this bank account address"
+          },
+          {
+            "ref": "bank",
+            "doc": "Id of the bank where the company owns an account"
+          },
+          {
+            "name": "address",
+            "length": 32,
+            "doc": "The linked bank account address"
+          },
+          {
+            "type": "creation",
+            "doc": "Time when this information was registered"
+          },
+          {
+            "name": "isDefault",
+            "type": "boolean",
+            "doc": "Whether this is the preferred / primary bank address used by this company"
+          }
+        ]
+      }
+    ],
+    "invoice": [
+      {
+        "name": "ItemUnit",
+        "described": true,
+        "doc": "Represents a unit in which items can be counted"
+      },
+      {
+        "name": "Invoice",
+        "doc": "Represents a bill / an invoice sent by one company to another to request a monetary transfer / payment",
+        "props": [
+          {
+            "name": "senderCompanyId",
+            "ref": "company",
+            "doc": "Id of the company who sent this invoice (payment recipient)"
+          },
+          {
+            "name": "recipientCompanyId",
+            "ref": "company",
+            "doc": "Id of the recipient company of this invoice"
+          },
+          {
+            "name": "referenceCode",
+            "length": 16,
+            "doc": "A custom reference code used by the sender to identify this invoice"
+          },
+          {
+            "type": "creation"
+          },
+          {
+            "name": "paymentDurationDays",
+            "type": "days",
+            "doc": "Number of days during which this invoice can be paid before additional consequences"
+          },
+          {
+            "name": "productDeliveryDate",
+            "type": "Option[Date]",
+            "doc": "Date when the sold products were delivered, if applicable"
+          }
+        ]
+      },
+      {
+        "name": "InvoiceItem",
+        "doc": "Represents an individual sold item or service",
+        "props": [
+          {
+            "ref": "invoice",
+            "doc": "Id of the invoice on which this item appears"
+          },
+          {
+            "name": "description",
+            "length": 255,
+            "doc": "Name or description of this item"
+          },
+          {
+            "name": "amount",
+            "type": "double",
+            "default": 1.0,
+            "doc": "Amount of items sold within the specified unit"
+          },
+          {
+            "name": "unitId",
+            "ref": "item_unit",
+            "doc": "Unit in which these items are sold"
+          },
+          {
+            "name": "pricePerUnit",
+            "type": "double",
+            "doc": "Euro (€) price per each sold unit of this item, without taxes applied"
+          },
+          {
+            "name": "taxModifier",
+            "type": "double",
+            "default": 0.24,
+            "doc": "A modifier that is applied to this item's price to get the applied tax"
+          }
+        ]
+      }
+    ]
+  }
+}
