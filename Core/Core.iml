@@ -12,5 +12,9 @@
     <orderEntry type="module" module-name="Genesis" />
     <orderEntry type="module" module-name="Inception" />
     <orderEntry type="library" name="itext" level="project" />
+    <orderEntry type="library" name="mariadb-java-client-1" level="project" />
+    <orderEntry type="module" module-name="Citadel" />
+    <orderEntry type="module" module-name="Metropolis" />
+    <orderEntry type="module" module-name="Vault" />
   </component>
 </module>

@@ -82,6 +82,7 @@
           },
           {
             "name": "taxCode",
+            "type": "Option[String]",
             "length": 16,
             "doc": "Tax-related identifier code for this company"
           }
@@ -177,6 +178,7 @@
           {
             "name": "paymentDurationDays",
             "type": "days",
+            "default": "Days(30)",
             "doc": "Number of days during which this invoice can be paid before additional consequences"
           },
           {
