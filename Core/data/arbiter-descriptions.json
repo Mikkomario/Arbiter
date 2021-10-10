@@ -1,0 +1,28 @@
+[
+  {
+    "target": {
+      "table": "item_unit_description",
+      "column": "itemUnitId"
+    },
+    "names": {
+      "en": {
+        "1": "pieces",
+        "2": "hours"
+      },
+      "fi": {
+        "1": "kappaletta",
+        "2": "tuntia"
+      }
+    },
+    "abbreviations": {
+      "en": {
+        "1": "pcs",
+        "2": "h"
+      },
+      "fi": {
+        "1": "kpl",
+        "2": "h"
+      }
+    }
+  }
+]
