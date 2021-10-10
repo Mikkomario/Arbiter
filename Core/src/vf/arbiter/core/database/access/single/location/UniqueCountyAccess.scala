@@ -11,7 +11,7 @@ import vf.arbiter.core.database.model.location.CountyModel
 import vf.arbiter.core.model.stored.location.County
 
 /**
-  * A common trait for access points that return individual and distinct Countys.
+  * A common trait for access points that return individual and distinct Counties.
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */

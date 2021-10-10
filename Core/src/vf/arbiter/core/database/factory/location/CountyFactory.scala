@@ -18,6 +18,6 @@ object CountyFactory extends FromValidatedRowModelFactory[County]
 	override def table = CoreTables.county
 	
 	override def fromValidatedModel(valid: Model[Constant]) = 
-		County(valid("id").getInt, CountyData(valid("name").getInt))
+		County(valid("id").getInt, CountyData(valid("name").getString))
 }
 

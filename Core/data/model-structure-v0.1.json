@@ -5,10 +5,12 @@
     "location": [
       {
         "name": "County",
+        "name_plural": "Counties",
         "doc": "Represents a county within a country",
         "props": [
           {
             "name": "name",
+            "length": 64,
             "doc": "County name, with that county's or country's primary language"
           }
         ]
@@ -20,6 +22,7 @@
           {
             "name": "number",
             "length": 5,
+            "index": true,
             "doc": "The number portion of this postal code"
           },
           {
@@ -30,6 +33,7 @@
       },
       {
         "name": "StreetAddress",
+        "name_plural": "StreetAddresses",
         "doc": "Represents a specific street address",
         "props": [
           {
@@ -63,6 +67,7 @@
     "company": [
       {
         "name": "Company",
+        "name_plural": "Companies",
         "doc": "Represents a registered company (or an individual person)",
         "props": [
           {
@@ -73,6 +78,7 @@
           {
             "name": "name",
             "length": 64,
+            "index": true,
             "doc": "Name of this company"
           },
           {
@@ -90,6 +96,7 @@
       },
       {
         "name": "OrganizationCompany",
+        "name_plural": "OrganizationCompanies",
         "doc": "Connects organizations with their owned companies",
         "props": [
           {
@@ -120,6 +127,7 @@
       },
       {
         "name": "CompanyBankAddress",
+        "name_plural": "CompanyBankAddresses",
         "doc": "Used for listing which bank addresses belong to which company",
         "props": [
           {
@@ -132,6 +140,7 @@
           },
           {
             "name": "address",
+            "name_plural": "addresses",
             "length": 32,
             "doc": "The linked bank account address"
           },
@@ -141,6 +150,7 @@
           },
           {
             "name": "isDefault",
+            "name_plural": "defaults",
             "type": "boolean",
             "doc": "Whether this is the preferred / primary bank address used by this company"
           }
@@ -177,6 +187,7 @@
           },
           {
             "name": "paymentDurationDays",
+            "name_plural": "paymentDurationDays",
             "type": "days",
             "default": "Days(30)",
             "doc": "Number of days during which this invoice can be paid before additional consequences"
@@ -214,6 +225,7 @@
           },
           {
             "name": "pricePerUnit",
+            "name_plural": "perUnitPrices",
             "type": "double",
             "doc": "Euro (€) price per each sold unit of this item, without taxes applied"
           },

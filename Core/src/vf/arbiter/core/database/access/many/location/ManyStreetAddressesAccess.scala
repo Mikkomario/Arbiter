@@ -9,40 +9,40 @@ import vf.arbiter.core.database.model.location.StreetAddressModel
 import vf.arbiter.core.model.stored.location.StreetAddress
 
 /**
-  * A common trait for access points which target multiple StreetAddresss at a time
+  * A common trait for access points which target multiple StreetAddresses at a time
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */
-trait ManyStreetAddresssAccess extends ManyRowModelAccess[StreetAddress] with Indexed
+trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with Indexed
 {
 	// COMPUTED	--------------------
 	
 	/**
-	  * postalCodeIds of the accessible StreetAddresss
+	  * postalCodeIds of the accessible StreetAddresses
 	  */
 	def postalCodeIds(implicit connection: Connection) = 
 		pullColumn(model.postalCodeIdColumn).flatMap { value => value.int }
 	
 	/**
-	  * streetNames of the accessible StreetAddresss
+	  * streetNames of the accessible StreetAddresses
 	  */
 	def streetNames(implicit connection: Connection) = 
 		pullColumn(model.streetNameColumn).flatMap { value => value.string }
 	
 	/**
-	  * buildingNumbers of the accessible StreetAddresss
+	  * buildingNumbers of the accessible StreetAddresses
 	  */
 	def buildingNumbers(implicit connection: Connection) = 
 		pullColumn(model.buildingNumberColumn).flatMap { value => value.string }
 	
 	/**
-	  * stairs of the accessible StreetAddresss
+	  * stairs of the accessible StreetAddresses
 	  */
 	def stairs(implicit connection: Connection) = pullColumn(model.stairColumn)
 		.flatMap { value => value.string }
 	
 	/**
-	  * roomNumbers of the accessible StreetAddresss
+	  * roomNumbers of the accessible StreetAddresses
 	  */
 	def roomNumbers(implicit connection: Connection) = 
 		pullColumn(model.roomNumberColumn).flatMap { value => value.string }

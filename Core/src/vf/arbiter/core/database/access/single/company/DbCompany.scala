@@ -1,16 +1,19 @@
 package vf.arbiter.core.database.access.single.company
 
 import utopia.flow.generic.ValueConversions._
+import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.single.model.distinct.UniqueModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.UnconditionalView
+import vf.arbiter.core.database.access.many.company.{DbCompanies, DbOrganizationCompanies}
 import vf.arbiter.core.database.factory.company.CompanyFactory
-import vf.arbiter.core.database.model.company.CompanyModel
+import vf.arbiter.core.database.model.company.{CompanyModel, OrganizationCompanyModel}
+import vf.arbiter.core.model.partial.company.OrganizationCompanyData
 import vf.arbiter.core.model.stored.company.Company
 
 /**
-  * Used for accessing individual Companys
+  * Used for accessing individual Companies
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */
@@ -37,14 +40,46 @@ object DbCompany extends SingleRowModelAccess[Company] with UnconditionalView wi
 	  */
 	def apply(id: Int) = new DbSingleCompany(id)
 	
+	/**
+	 * Finds a company that contains the specified string in its name
+	 * @param companyNamePart A string searched from company name
+	 * @param connection Implicit DB Connection
+	 * @return A company containing that string in its name. If multiple results are found, the shortest company
+	 *         name is selected
+	 */
+	def matchingName(companyNamePart: String)(implicit connection: Connection) =
+		DbCompanies.matchingName(companyNamePart).minByOption { _.name.length }
+	
 	
 	// NESTED	--------------------
 	
 	class DbSingleCompany(val id: Int) extends UniqueCompanyAccess with UniqueModelAccess[Company]
 	{
+		// COMPUTED ------------------------
+		
+		/**
+		 * @param connection Implicit DB Connection
+		 * @return Organization ids linked with this company
+		 */
+		def linkedOrganizationIds(implicit connection: Connection) =
+			DbOrganizationCompanies.linkedToCompanyWithId(id).organizationIds
+		
+		
 		// IMPLEMENTED	--------------------
 		
 		override def condition = index <=> id
+		
+		
+		// OTHER    ------------------------
+		
+		/**
+		 * Connects this company to an organization - Doesn't check for existing connections
+		 * @param organizationId Id of the linked organization
+		 * @param connection DB Connection (implicit)
+		 * @return Link that was formed between these organizations
+		 */
+		def linkToOrganizationWithId(organizationId: Int)(implicit connection: Connection) =
+			OrganizationCompanyModel.insert(OrganizationCompanyData(organizationId, id))
 	}
 }
 

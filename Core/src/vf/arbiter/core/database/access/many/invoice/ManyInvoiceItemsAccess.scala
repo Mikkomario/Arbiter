@@ -42,9 +42,9 @@ trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexe
 		.flatMap { value => value.int }
 	
 	/**
-	  * pricePerUnits of the accessible InvoiceItems
+	  * perUnitPrices of the accessible InvoiceItems
 	  */
-	def pricePerUnits(implicit connection: Connection) = 
+	def perUnitPrices(implicit connection: Connection) = 
 		pullColumn(model.pricePerUnitColumn).flatMap { value => value.double }
 	
 	/**

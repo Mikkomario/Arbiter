@@ -110,7 +110,7 @@ object CompanyModel extends DataInserter[CompanyModel, Company, CompanyData]
 }
 
 /**
-  * Used for interacting with Companys in the database
+  * Used for interacting with Companies in the database
   * @param id Company database id
   * @param yCode Official registration code of this company (id in the country system)
   * @param name Name of this company

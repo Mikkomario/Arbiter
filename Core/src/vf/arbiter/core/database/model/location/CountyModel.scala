@@ -57,17 +57,17 @@ object CountyModel extends DataInserter[CountyModel, County, CountyData]
 	  * @param name County name, with that county's or country's primary language
 	  * @return A model containing only the specified name
 	  */
-	def withName(name: Int) = apply(name = Some(name))
+	def withName(name: String) = apply(name = Some(name))
 }
 
 /**
-  * Used for interacting with Countys in the database
+  * Used for interacting with Counties in the database
   * @param id County database id
   * @param name County name, with that county's or country's primary language
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */
-case class CountyModel(id: Option[Int] = None, name: Option[Int] = None) extends StorableWithFactory[County]
+case class CountyModel(id: Option[Int] = None, name: Option[String] = None) extends StorableWithFactory[County]
 {
 	// IMPLEMENTED	--------------------
 	
@@ -86,6 +86,6 @@ case class CountyModel(id: Option[Int] = None, name: Option[Int] = None) extends
 	  * @param name A new name
 	  * @return A new copy of this model with the specified name
 	  */
-	def withName(name: Int) = copy(name = Some(name))
+	def withName(name: String) = copy(name = Some(name))
 }
 

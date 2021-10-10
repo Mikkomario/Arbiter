@@ -18,17 +18,17 @@ object CoreTables
 	def bank = apply("bank")
 	
 	/**
-	  * Table that contains Companys (Represents a registered company (or an individual person))
+	  * Table that contains Companies (Represents a registered company (or an individual person))
 	  */
 	def company = apply("company")
 	
 	/**
-	  * Table that contains CompanyBankAddresss (Used for listing which bank addresses belong to which company)
+	  * Table that contains CompanyBankAddresses (Used for listing which bank addresses belong to which company)
 	  */
 	def companyBankAddress = apply("company_bank_address")
 	
 	/**
-	  * Table that contains Countys (Represents a county within a country)
+	  * Table that contains Counties (Represents a county within a country)
 	  */
 	def county = apply("county")
 	
@@ -53,7 +53,7 @@ object CoreTables
 	def itemUnitDescription = apply("item_unit_description")
 	
 	/**
-	  * Table that contains OrganizationCompanys (Connects organizations with their owned companies)
+	  * Table that contains OrganizationCompanies (Connects organizations with their owned companies)
 	  */
 	def organizationCompany = apply("organization_company")
 	
@@ -63,7 +63,7 @@ object CoreTables
 	def postalCode = apply("postal_code")
 	
 	/**
-	  * Table that contains StreetAddresss (Represents a specific street address)
+	  * Table that contains StreetAddresses (Represents a specific street address)
 	  */
 	def streetAddress = apply("street_address")
 	

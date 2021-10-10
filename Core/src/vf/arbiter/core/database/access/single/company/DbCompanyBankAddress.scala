@@ -10,7 +10,7 @@ import vf.arbiter.core.database.model.company.CompanyBankAddressModel
 import vf.arbiter.core.model.stored.company.CompanyBankAddress
 
 /**
-  * Used for accessing individual CompanyBankAddresss
+  * Used for accessing individual CompanyBankAddresses
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */

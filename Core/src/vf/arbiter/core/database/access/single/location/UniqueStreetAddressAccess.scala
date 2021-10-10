@@ -11,7 +11,7 @@ import vf.arbiter.core.database.model.location.StreetAddressModel
 import vf.arbiter.core.model.stored.location.StreetAddress
 
 /**
-  * A common trait for access points that return individual and distinct StreetAddresss.
+  * A common trait for access points that return individual and distinct StreetAddresses.
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */

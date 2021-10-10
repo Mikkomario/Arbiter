@@ -10,7 +10,7 @@ import vf.arbiter.core.database.model.company.OrganizationCompanyModel
 import vf.arbiter.core.model.stored.company.OrganizationCompany
 
 /**
-  * Used for accessing individual OrganizationCompanys
+  * Used for accessing individual OrganizationCompanies
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */

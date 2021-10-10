@@ -9,16 +9,16 @@ import vf.arbiter.core.database.model.location.CountyModel
 import vf.arbiter.core.model.stored.location.County
 
 /**
-  * A common trait for access points which target multiple Countys at a time
+  * A common trait for access points which target multiple Counties at a time
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */
-trait ManyCountysAccess extends ManyRowModelAccess[County] with Indexed
+trait ManyCountiesAccess extends ManyRowModelAccess[County] with Indexed
 {
 	// COMPUTED	--------------------
 	
 	/**
-	  * names of the accessible Countys
+	  * names of the accessible Counties
 	  */
 	def names(implicit connection: Connection) = pullColumn(model.nameColumn).flatMap { value => value.int }
 	

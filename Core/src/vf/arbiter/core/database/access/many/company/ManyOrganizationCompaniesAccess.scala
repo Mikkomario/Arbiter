@@ -9,22 +9,22 @@ import vf.arbiter.core.database.model.company.OrganizationCompanyModel
 import vf.arbiter.core.model.stored.company.OrganizationCompany
 
 /**
-  * A common trait for access points which target multiple OrganizationCompanys at a time
+  * A common trait for access points which target multiple OrganizationCompanies at a time
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */
-trait ManyOrganizationCompanysAccess extends ManyRowModelAccess[OrganizationCompany] with Indexed
+trait ManyOrganizationCompaniesAccess extends ManyRowModelAccess[OrganizationCompany] with Indexed
 {
 	// COMPUTED	--------------------
 	
 	/**
-	  * organizationIds of the accessible OrganizationCompanys
+	  * organizationIds of the accessible OrganizationCompanies
 	  */
 	def organizationIds(implicit connection: Connection) = 
 		pullColumn(model.organizationIdColumn).flatMap { value => value.int }
 	
 	/**
-	  * companyIds of the accessible OrganizationCompanys
+	  * companyIds of the accessible OrganizationCompanies
 	  */
 	def companyIds(implicit connection: Connection) = 
 		pullColumn(model.companyIdColumn).flatMap { value => value.int }

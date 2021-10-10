@@ -10,42 +10,42 @@ import vf.arbiter.core.database.model.company.CompanyBankAddressModel
 import vf.arbiter.core.model.stored.company.CompanyBankAddress
 
 /**
-  * A common trait for access points which target multiple CompanyBankAddresss at a time
+  * A common trait for access points which target multiple CompanyBankAddresses at a time
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */
-trait ManyCompanyBankAddresssAccess extends ManyRowModelAccess[CompanyBankAddress] with Indexed
+trait ManyCompanyBankAddressesAccess extends ManyRowModelAccess[CompanyBankAddress] with Indexed
 {
 	// COMPUTED	--------------------
 	
 	/**
-	  * companyIds of the accessible CompanyBankAddresss
+	  * companyIds of the accessible CompanyBankAddresses
 	  */
 	def companyIds(implicit connection: Connection) = 
 		pullColumn(model.companyIdColumn).flatMap { value => value.int }
 	
 	/**
-	  * bankIds of the accessible CompanyBankAddresss
+	  * bankIds of the accessible CompanyBankAddresses
 	  */
 	def bankIds(implicit connection: Connection) = pullColumn(model.bankIdColumn)
 		.flatMap { value => value.int }
 	
 	/**
-	  * addresss of the accessible CompanyBankAddresss
+	  * addresses of the accessible CompanyBankAddresses
 	  */
-	def addresss(implicit connection: Connection) = 
+	def addresses(implicit connection: Connection) = 
 		pullColumn(model.addressColumn).flatMap { value => value.string }
 	
 	/**
-	  * createds of the accessible CompanyBankAddresss
+	  * createds of the accessible CompanyBankAddresses
 	  */
 	def createds(implicit connection: Connection) = 
 		pullColumn(model.createdColumn).flatMap { value => value.instant }
 	
 	/**
-	  * isDefaults of the accessible CompanyBankAddresss
+	  * defaults of the accessible CompanyBankAddresses
 	  */
-	def isDefaults(implicit connection: Connection) = 
+	def defaults(implicit connection: Connection) = 
 		pullColumn(model.isDefaultColumn).flatMap { value => value.boolean }
 	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }

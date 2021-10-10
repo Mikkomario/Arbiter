@@ -127,7 +127,7 @@ object StreetAddressModel extends DataInserter[StreetAddressModel, StreetAddress
 }
 
 /**
-  * Used for interacting with StreetAddresss in the database
+  * Used for interacting with StreetAddresses in the database
   * @param id StreetAddress database id
   * @param postalCodeId Id of the postal_code linked with this StreetAddress
   * @param streetName Name of the street -portion of this address

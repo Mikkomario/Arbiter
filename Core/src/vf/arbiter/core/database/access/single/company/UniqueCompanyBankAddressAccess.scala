@@ -12,7 +12,7 @@ import vf.arbiter.core.database.model.company.CompanyBankAddressModel
 import vf.arbiter.core.model.stored.company.CompanyBankAddress
 
 /**
-  * A common trait for access points that return individual and distinct CompanyBankAddresss.
+  * A common trait for access points that return individual and distinct CompanyBankAddresses.
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */

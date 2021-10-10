@@ -11,7 +11,7 @@ import vf.arbiter.core.database.model.company.CompanyModel
 import vf.arbiter.core.model.stored.company.Company
 
 /**
-  * A common trait for access points that return individual and distinct Companys.
+  * A common trait for access points that return individual and distinct Companies.
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */

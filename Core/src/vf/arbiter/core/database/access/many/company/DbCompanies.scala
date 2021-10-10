@@ -3,9 +3,8 @@ package vf.arbiter.core.database.access.many.company
 import utopia.vault.nosql.view.UnconditionalView
 
 /**
-  * The root access point when targeting multiple Companys at a time
+  * The root access point when targeting multiple Companies at a time
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */
-object DbCompanys extends ManyCompanysAccess with UnconditionalView
-
+object DbCompanies extends ManyCompaniesAccess with UnconditionalView

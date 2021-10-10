@@ -79,7 +79,7 @@ object OrganizationCompanyModel
 }
 
 /**
-  * Used for interacting with OrganizationCompanys in the database
+  * Used for interacting with OrganizationCompanies in the database
   * @param id OrganizationCompany database id
   * @param organizationId Id of the owner organization
   * @param companyId Id of the owned company

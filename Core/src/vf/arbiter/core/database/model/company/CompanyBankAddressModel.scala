@@ -129,7 +129,7 @@ object CompanyBankAddressModel
 }
 
 /**
-  * Used for interacting with CompanyBankAddresss in the database
+  * Used for interacting with CompanyBankAddresses in the database
   * @param id CompanyBankAddress database id
   * @param companyId Id of the company which owns this bank account address
   * @param bankId Id of the bank where the company owns an account

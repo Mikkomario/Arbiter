@@ -10,7 +10,7 @@ import utopia.flow.generic.ValueConversions._
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */
-case class CountyData(name: Int) extends ModelConvertible
+case class CountyData(name: String) extends ModelConvertible
 {
 	// IMPLEMENTED	--------------------
 	

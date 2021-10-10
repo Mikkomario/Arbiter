@@ -44,9 +44,9 @@ trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed
 		pullColumn(model.createdColumn).flatMap { value => value.instant }
 	
 	/**
-	  * paymentDurationDayss of the accessible Invoices
+	  * paymentDurationDays of the accessible Invoices
 	  */
-	def paymentDurationDayss(implicit connection: Connection) = 
+	def paymentDurationDays(implicit connection: Connection) = 
 		pullColumn(model.paymentDurationDaysColumn).flatMap { value => value.int.map { Days(_) } }
 	
 	/**
