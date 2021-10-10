@@ -64,6 +64,13 @@ object DbCompany extends SingleRowModelAccess[Company] with UnconditionalView wi
 		def linkedOrganizationIds(implicit connection: Connection) =
 			DbOrganizationCompanies.linkedToCompanyWithId(id).organizationIds
 		
+		/**
+		 * @param connection Implicit DB Connection
+		 * @return Memberships of organizations linked with this company
+		 */
+		def memberships(implicit connection: Connection) =
+			DbOrganizationCompanies.linkedToCompanyWithId(id).memberships
+		
 		
 		// IMPLEMENTED	--------------------
 		

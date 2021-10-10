@@ -33,13 +33,19 @@ object CompanyActions
 		DbCompany.matchingName(companyName) match
 		{
 			case Some(company) =>
-				// TODO: There is a risk of joining a company again (ignored for now)
 				println(s"Found existing company: ${company.name} (${company.yCode})")
-				if (companyName == company.name ||
+				// Checks whether the user is already a member of that company
+				val memberships = company.access.memberships
+				if (memberships.exists { _.userId == ownerId })
+				{
+					println("You're already a member of this company")
+					Some(company)
+				}
+				else if (companyName == company.name ||
 					StdIn.ask("Do you want to join this company?", default = true))
 				{
 					// Finds the organizations linked with this company
-					val organizationIds = DbCompany(company.id).linkedOrganizationIds.toSet
+					val organizationIds = memberships.map { _.organizationId }.toSet
 					if (organizationIds.isEmpty)
 					{
 						val languageCode = StdIn.read(
@@ -133,6 +139,6 @@ object CompanyActions
 		// Inserts the user as an owner of that organization
 		DbOrganization(organizationId).memberships.insert(ownerId, Owner.id, ownerId)
 		// Registers a link between the company and the organization
-		DbCompany(company.id).linkToOrganizationWithId(organizationId)
+		company.access.linkToOrganizationWithId(organizationId)
 	}
 }
