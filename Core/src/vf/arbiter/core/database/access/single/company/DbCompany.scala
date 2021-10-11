@@ -41,6 +41,15 @@ object DbCompany extends SingleRowModelAccess[Company] with UnconditionalView wi
 	def apply(id: Int) = new DbSingleCompany(id)
 	
 	/**
+	 * Finds a company with the specified name (exact, but case-insensitive)
+	 * @param companyName A company name
+	 * @param connection Implicit DB Connection
+	 * @return Company with that name, if found
+	 */
+	def withName(companyName: String)(implicit connection: Connection) =
+		find(model.withName(companyName).toCondition)
+	
+	/**
 	 * Finds a company that contains the specified string in its name
 	 * @param companyNamePart A string searched from company name
 	 * @param connection Implicit DB Connection

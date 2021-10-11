@@ -13,8 +13,15 @@ import vf.arbiter.core.model.partial.company.CompanyData
   */
 case class Company(id: Int, data: CompanyData) extends StoredModelConvertible[CompanyData]
 {
+	// COMPUTED ----------------------
+	
 	/**
 	 * @return An access point to this company in the database
 	 */
 	def access = DbCompany(id)
+	
+	
+	// IMPLEMENTED  ------------------
+	
+	override def toString = data.nameAndYCode
 }

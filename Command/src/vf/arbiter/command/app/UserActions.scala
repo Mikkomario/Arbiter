@@ -37,8 +37,9 @@ object UserActions
 			case None =>
 				val user = UserModel.insert(UserSettingsData(userName))
 				// Creates a new company for that user (or joins an existing company)
-				val company = StdIn.readNonEmptyLine("What's the name of your company?")
-					.flatMap { CompanyActions.startOrJoin(user.id, _) }
+				println("What's the name of your company?")
+				println("Hint: If you wish to join an existing company, you can write part of that company's name")
+				val company = StdIn.readNonEmptyLine().flatMap { CompanyActions.startOrJoin(user.id, _) }
 				Some(user) -> company
 		}
 }

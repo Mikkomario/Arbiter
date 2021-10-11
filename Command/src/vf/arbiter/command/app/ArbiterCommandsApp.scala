@@ -1,15 +1,12 @@
 package vf.arbiter.command.app
 
-import utopia.citadel.database.access.many.user.DbManyUserSettings
-import utopia.citadel.database.model.user.UserModel
 import utopia.citadel.util.CitadelContext
 import utopia.flow.datastructure.mutable.PointerWithEvents
-import utopia.flow.util.CollectionExtensions._
+import utopia.flow.generic.ValueConversions._
 import vf.arbiter.core.util.Globals._
 import utopia.flow.generic.DataType
 import utopia.flow.util.console.{ArgumentSchema, Command}
 import utopia.flow.util.console.ConsoleExtensions._
-import utopia.metropolis.model.partial.user.UserSettingsData
 import utopia.metropolis.model.stored.user.User
 import vf.arbiter.core.model.stored.company.Company
 
@@ -30,6 +27,8 @@ object ArbiterCommandsApp extends App
 	def user_=(newUser: User) = userPointer.value = Some(newUser)
 	userPointer.addListener { _.newValue.foreach { u => println(s"Welcome, ${u.settings.name}") } }
 	
+	def loggedIn = user.nonEmpty
+	
 	val companyPointer = new PointerWithEvents[Option[Company]](None)
 	def company = companyPointer.value
 	def company_=(newCompany: Option[Company]) = companyPointer.value = newCompany
@@ -37,29 +36,35 @@ object ArbiterCommandsApp extends App
 	companyPointer.addListener { _.newValue.foreach { c => println(s"Using company ${c.name}") } }
 	userPointer.addAnyChangeListener { company = None }
 	
-	val registerUserCommand = Command("register", "newuser")(ArgumentSchema("name")) { args =>
-		val name = args("name").stringOr {
-			println("Please specify a user name")
+	val registerCommand = Command("register", "new")(
+		ArgumentSchema("target", defaultValue = "user"), ArgumentSchema("name")) { args =>
+		
+		val target = args("target").getString.toLowerCase
+		lazy val name = args("name").stringOr {
+			println(s"Please specify a $target name")
 			StdIn.readLineUntilNotEmpty()
 		}
-		// Checks whether name is reserved
 		connectionPool { implicit connection =>
-			DbManyUserSettings.withName(name).bestMatch(Vector(_.email.isEmpty)).headOption match
+			target match
 			{
-				// Case: User already exists => may login as that user
-				case Some(existingSettings) =>
-					println("User with that name already exists")
-					if (StdIn.ask("Do you want to resume as that user?"))
-						user = User(existingSettings.id, existingSettings)
-				// Case: User doesn't exist => creates one
-				case None =>
-					val u = UserModel.insert(UserSettingsData(name))
-					user = u
-					// Creates a new company for that user (or joins an existing company)
-					StdIn.readNonEmptyLine("What's the name of your company?")
-						.foreach { companyName =>
-							company = CompanyActions.startOrJoin(u.id, companyName)
-						}
+				case "user" =>
+					if (user.forall { u => StdIn.ask(s"You're already logged in as ${
+						u.settings.name}. Do you still want to register a new user?") })
+					{
+						val (newUser, newCompany) = UserActions.register(name)
+						newUser.foreach { user = _ }
+						company = newCompany
+					}
+				case "company" =>
+					user match
+					{
+						case Some(user) => CompanyActions.startOrSelectFromOwn(user.id, name).foreach { company = _ }
+						case None => println("You must be logged in to register a new company")
+					}
+				case "customer" =>
+					CompanyActions.findOrCreateOne(name)
+						.foreach { c => println(s"${c.nameAndYCode} is now registered and can be used as a customer") }
+				case other => println(s"Unrecognized target $other. Available options are: user | company | customer")
 			}
 		}
 	}

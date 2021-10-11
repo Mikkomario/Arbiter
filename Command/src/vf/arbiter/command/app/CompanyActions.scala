@@ -34,7 +34,31 @@ object CompanyActions
 	{
 		val options = DbCompanies.matchingName(nameSearch)
 		options.find { _.name ~== nameSearch }
-			.orElse { selectFrom(options.map { c => c -> s"${c.name} (${c.yCode})" }.sortBy { _._2 }) }
+			.orElse { selectFrom(options.map { c => c -> c.nameAndYCode }.sortBy { _._2 }) }
+	}
+	
+	/**
+	 * Finds or creates a company - the company will not be registered as owned company
+	 * @param nameSearch Company name or part of an existing company name
+	 * @param connection Implicit DB Connection
+	 * @return Found or created company
+	 */
+	def findOrCreateOne(nameSearch: String)(implicit connection: Connection) =
+	{
+		// Finds existing companies matching that name
+		val existingOptions = DbCompanies.matchingName(nameSearch)
+		// Checks for an exact name match
+		existingOptions.find { _.name ~== nameSearch }
+			// If exact match was not found, but others were, allows to select from those
+			.orElse { if (existingOptions.isEmpty) None else
+				selectFrom(existingOptions.map { c => c -> c.nameAndYCode }) }
+			// If not selected, allows to create a new company
+			.orElse {
+				if (StdIn.ask(s"Do you want to create '$nameSearch' as a new company (not owned)?"))
+					Some(newCompany(nameSearch))
+				else
+					None
+			}
 	}
 	
 	/**
@@ -60,6 +84,26 @@ object CompanyActions
 		}
 	
 	/**
+	 * Allows the user to register a new company for themselves or to select from one of their own
+	 * @param ownerId Id of the owner / user
+	 * @param companyName Name of the new company (call-by-name)
+	 * @param connection Implicit DB Connection
+	 * @return Selected, registered or joined company
+	 */
+	def startOrSelectFromOwn(ownerId: Int, companyName: => String)(implicit connection: Connection) =
+	{
+		// Checks whether the user already has a company / companies
+		val existingOptions = DbCompanies.linkedWithUserWithId(ownerId)
+		// If so, asks whether the user still wants to create one, in which case moves to company creation / joining
+		if (existingOptions.isEmpty || StdIn.ask(s"You already have ${
+			existingOptions.size} companies. Are you sure you want to create a new one?"))
+			CompanyActions.startOrJoin(ownerId, companyName)
+		// Allows the user to select from existing companies
+		else
+			selectFrom(existingOptions.map { c => c -> c.name }, "use")
+	}
+	
+	/**
 	 * Starts a new company or joins an existing company
 	 * @param ownerId Id of the user / company owner
 	 * @param companyName Name of the new / existing company (or part of a name)
@@ -70,19 +114,19 @@ object CompanyActions
 	{
 		val companyOptions = DbCompanies.matchingName(companyName)
 		if (companyOptions.isEmpty)
-			Some(newCompany(ownerId, companyName))
+			Some(newOwnCompany(ownerId, companyName))
 		else
 			companyOptions.find { _.name ~== companyName } match
 			{
 				case Some(exactMatch) => join(ownerId, exactMatch)
 				case None =>
-					selectFrom(companyOptions.map { c => c -> s"${c.name} (${c.yCode})" }.sortBy { _._2 },
+					selectFrom(companyOptions.map { c => c -> c.nameAndYCode }.sortBy { _._2 },
 						"join") match
 					{
 						case Some(selected) => join(ownerId, selected)
 						case None =>
 							if (StdIn.ask(s"Do you want to insert a new company '$companyName' instead?"))
-								Some(newCompany(ownerId, companyName))
+								Some(newOwnCompany(ownerId, companyName))
 							else
 								None
 					}
@@ -211,10 +255,20 @@ object CompanyActions
 		}
 	}
 	
-	private def newCompany(ownerId: Int, companyName: String)(implicit connection: Connection) =
+	private def newOwnCompany(ownerId: Int, companyName: String)(implicit connection: Connection) =
 	{
 		val languageCode = StdIn.read("What language the company name is in? (default = en)")
 			.stringOr("en")
+		// Inserts company information
+		val company = newCompany(companyName)
+		// Inserts organization information
+		linkCompanyToNewOrganization(ownerId, company, languageCode)
+		
+		company
+	}
+	
+	private def newCompany(companyName: String)(implicit connection: Connection) =
+	{
 		val yCode = StdIn.readLineUntilNotEmpty("What's the identifier (Y-Tunnus) of your company?")
 		val countyName = StdIn.readLineUntilNotEmpty("County?").capitalize
 		val postalCodeInput = StdIn.readLineUntilNotEmpty("Postal code?")
@@ -230,11 +284,7 @@ object CompanyActions
 		val address = DbStreetAddress.getOrInsert(
 			StreetAddressData(postalCode.id, streetName, houseNumber, stair, roomNumber))
 		// Inserts company information
-		val company = CompanyModel.insert(CompanyData(yCode, companyName, address.id, taxCode))
-		// Inserts organization information
-		linkCompanyToNewOrganization(ownerId, company, languageCode)
-		
-		company
+		CompanyModel.insert(CompanyData(yCode, companyName, address.id, taxCode))
 	}
 	
 	private def linkCompanyToNewOrganization(ownerId: Int, company: Company, languageCode: String)

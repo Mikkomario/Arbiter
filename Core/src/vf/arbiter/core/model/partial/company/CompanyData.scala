@@ -16,9 +16,17 @@ import utopia.flow.generic.ValueConversions._
 case class CompanyData(yCode: String, name: String, addressId: Int, taxCode: Option[String] = None) 
 	extends ModelConvertible
 {
+	// COMPUTED ------------------------
+	
+	/**
+	 * @return This company's name and y-code back to back
+	 */
+	def nameAndYCode = s"$name $yCode"
+	
+	
 	// IMPLEMENTED	--------------------
 	
-	override def toModel = 
+	override def toModel =
 		Model(Vector("y_code" -> yCode, "name" -> name, "address_id" -> addressId, "tax_code" -> taxCode))
 }
 
