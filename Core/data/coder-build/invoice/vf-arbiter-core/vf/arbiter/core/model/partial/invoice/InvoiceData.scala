@@ -19,7 +19,7 @@ import utopia.flow.time.{Days, Now}
   * @since 2021-10-11
   */
 case class InvoiceData(senderCompanyId: Int, recipientCompanyId: Int, referenceCode: String, 
-	paymentDurationDays: Days = Days(30), productDeliveryDate: Option[LocalDate] = None, creatorId: Option[Int] = None,
+	paymentDurationDays: Days = Days(30), productDeliveryDate: Option[LocalDate] = None, creatorId: Int, 
 	created: Instant = Now) 
 	extends ModelConvertible
 {

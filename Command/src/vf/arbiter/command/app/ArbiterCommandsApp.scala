@@ -1,11 +1,13 @@
 package vf.arbiter.command.app
 
+import utopia.bunnymunch.jawn.JsonBunny
 import utopia.citadel.util.CitadelContext
 import utopia.flow.datastructure.mutable.PointerWithEvents
 import utopia.flow.generic.ValueConversions._
 import vf.arbiter.core.util.Globals._
 import utopia.flow.generic.DataType
-import utopia.flow.util.console.{ArgumentSchema, Command}
+import utopia.flow.parse.JsonParser
+import utopia.flow.util.console.{ArgumentSchema, Command, Console}
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.metropolis.model.stored.user.User
 import vf.arbiter.core.model.stored.company.Company
@@ -20,6 +22,7 @@ import scala.io.StdIn
 object ArbiterCommandsApp extends App
 {
 	DataType.setup()
+	implicit val jsonParser: JsonParser = JsonBunny
 	CitadelContext.setup(executionContext, connectionPool, "arbiter_db")
 	
 	val userPointer = new PointerWithEvents[Option[User]](None)
@@ -36,8 +39,22 @@ object ArbiterCommandsApp extends App
 	companyPointer.addListener { _.newValue.foreach { c => println(s"Using company ${c.name}") } }
 	userPointer.addAnyChangeListener { company = None }
 	
-	val registerCommand = Command("register", "new")(
-		ArgumentSchema("target", defaultValue = "user"), ArgumentSchema("name")) { args =>
+	val loginCommand = Command("login", help = "Logs you in as a specific user, enabling other actions")(
+		ArgumentSchema("username", "name", help = "Your username")) { args =>
+		// If no argument was provided, asks the user
+		args("name").string.orElse { StdIn.readNonEmptyLine("Who do you want to log in as?") }
+			// Logs in
+			.flatMap { name => connectionPool { implicit c => UserActions.loginAs(name) } }
+			// Updates logged user and company afterwards
+			.foreach { case (newUser, newCompany) =>
+				user = newUser
+				company = newCompany
+			}
+	}
+	val registerCommand = Command("register", "new", "Registers a new user, company or customer")(
+		ArgumentSchema("target", defaultValue = "user",
+			help = "Type of entity being created (user | company | customer)"),
+		ArgumentSchema("name", help = "Name of the entity that's being created")) { args =>
 		
 		val target = args("target").getString.toLowerCase
 		lazy val name = args("name").stringOr {
@@ -68,4 +85,26 @@ object ArbiterCommandsApp extends App
 			}
 		}
 	}
+	
+	def createInvoiceCommand(userId: Int, companyId: Int) =
+		Command.withoutArguments("invoice", "send", "Creates a new invoice") {
+			connectionPool { implicit connection => InvoiceActions.create(userId, companyId) }
+			// TODO: Print the invoice afterwards
+		}
+	
+	// Updates the available commands when the user logs in / selects a company
+	val commandsPointer = userPointer.lazyMergeWith(companyPointer) { (user, company) =>
+		val statefulCommands = user match
+		{
+			case Some(user) => company.map { company => createInvoiceCommand(user.id, company.id) }
+			case None => Some(loginCommand)
+		}
+		Vector(registerCommand) ++ statefulCommands
+	}
+	
+	// Starts the console
+	println("Welcome to Arbiter")
+	println("Instructions: use 'help' or 'man' commands to get more information. Use exit to quit.")
+	Console(commandsPointer, "Please enter the next command", closeCommandName = "exit").run()
+	println("Bye!")
 }

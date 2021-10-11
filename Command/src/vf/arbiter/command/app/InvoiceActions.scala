@@ -1,20 +1,22 @@
 package vf.arbiter.command.app
 
 import utopia.citadel.database.access.id.single.DbLanguageId
-import utopia.flow.datastructure.mutable.{Pointer, PointerWithEvents}
+import utopia.flow.datastructure.mutable.PointerWithEvents
 import utopia.flow.time.Days
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.vault.database.Connection
 import vf.arbiter.core.database.access.many.description.{DbCompanyProductDescriptions, DbItemUnitDescriptions}
+import vf.arbiter.core.database.access.single.company.DbCompany
 import vf.arbiter.core.database.access.single.description.DbCompanyProductDescription
-import vf.arbiter.core.database.model.invoice.{CompanyProductModel, InvoiceModel}
+import vf.arbiter.core.database.model.invoice.{CompanyProductModel, InvoiceItemModel, InvoiceModel}
 import vf.arbiter.core.model.enumeration.ArbiterDescriptionRoleId
 import vf.arbiter.core.model.partial.invoice.{CompanyProductData, InvoiceData, InvoiceItemData}
-import vf.arbiter.core.model.stored.company.Company
 import vf.arbiter.core.model.stored.invoice.CompanyProduct
+import vf.arbiter.core.util.ReferenceCode
 
 import scala.io.StdIn
+import scala.util.Random
 
 /**
  * Contains interactive invoice-related actions
@@ -41,13 +43,20 @@ object InvoiceActions
 			- Amount
 			- Price per unit
 	 */
-	def create(userId: Int, company: Company)(implicit connection: Connection) =
+	/**
+	 * Creates a new invoice by interacting with the user
+	 * @param userId Id of the user who creates this invoice
+	 * @param companyId Id of the company that sends this invoice
+	 * @param connection Implicit DB Connection
+	 * @return Created invoice and its items. None if no invoice was created (process was cancelled by the user)
+	 */
+	def create(userId: Int, companyId: Int)(implicit connection: Connection) =
 	{
 		// Selects the target company
 		println("Which company this invoice is for?")
 		println("Hint: If searching for an existing company, write a part of that company's name")
 		StdIn.readNonEmptyLine().flatMap { CompanyActions.findOrCreateOne(_) }
-			.map { targetCompany =>
+			.flatMap { targetCompany =>
 				// Asks for basic information
 				val duration = Days(StdIn.read(
 					"How many days does the company have time to pay this bill? (default = 30)")
@@ -62,7 +71,7 @@ object InvoiceActions
 					.map { dl => dl.targetId -> dl.description.text }.toMap
 				val availableUnitIds = unitNames.keySet.toVector.sorted
 				
-				var existingProducts = company.access.products.pull
+				var existingProducts = DbCompany(companyId).products.pull
 				var productNames = DbCompanyProductDescriptions(existingProducts.map { _.id }.toSet)
 					.forRoleWithId(nameRoleId).pull
 					.map { dl => dl.targetId -> dl.description.text }.toMap
@@ -110,7 +119,7 @@ object InvoiceActions
 											.double.map { _ / 100.0 }.getOrElse(24.0)
 										
 										// Inserts the product and it's name to the database
-										val product = CompanyProductModel.insert(CompanyProductData(company.id, unitId,
+										val product = CompanyProductModel.insert(CompanyProductData(companyId, unitId,
 											defaultPrice, taxModifier))
 										DbCompanyProductDescription.model.insert(product.id, DescriptionData(nameRoleId,
 											DbLanguageId.forIsoCode(languageCode).getOrInsert(), name, Some(userId)))
@@ -156,9 +165,16 @@ object InvoiceActions
 				if (invoiceItemData.nonEmpty ||
 					StdIn.ask("You didn't register any invoice items. Do you still want to save this invoice?"))
 				{
-					// TODO: Continue
-					// val invoice = InvoiceModel.insert(InvoiceData())
+					val invoice = InvoiceModel.insert(InvoiceData(companyId, targetCompany.id,
+						ReferenceCode(userId, companyId, targetCompany.id, Random.nextInt(1000)), duration,
+						deliveryDate, Some(userId)))
+					val invoiceItems = InvoiceItemModel.insert(invoiceItemData
+						.map { case (productId, description, amount, pricePerUnit) =>
+							InvoiceItemData(invoice.id, productId, description, amount, pricePerUnit) })
+					Some(invoice -> invoiceItems)
 				}
+				else
+					None
 			}
 	}
 }

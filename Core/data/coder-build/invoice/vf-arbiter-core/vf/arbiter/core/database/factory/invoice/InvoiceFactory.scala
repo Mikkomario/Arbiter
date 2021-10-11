@@ -25,6 +25,6 @@ object InvoiceFactory extends FromValidatedRowModelFactory[Invoice] with FromRow
 		Invoice(valid("id").getInt, InvoiceData(valid("senderCompanyId").getInt, 
 			valid("recipientCompanyId").getInt, valid("referenceCode").getString, 
 			Days(valid("paymentDurationDays").getInt), valid("productDeliveryDate").localDate, 
-			valid("creatorId").int, valid("created").getInstant))
+			valid("creatorId").getInt, valid("created").getInstant))
 }
 

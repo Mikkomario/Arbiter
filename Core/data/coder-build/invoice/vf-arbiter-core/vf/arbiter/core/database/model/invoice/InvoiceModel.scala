@@ -104,7 +104,8 @@ object InvoiceModel extends DataInserter[InvoiceModel, Invoice, InvoiceData]
 	
 	override def apply(data: InvoiceData) = 
 		apply(None, Some(data.senderCompanyId), Some(data.recipientCompanyId), Some(data.referenceCode), 
-			Some(data.paymentDurationDays), data.productDeliveryDate, data.creatorId, Some(data.created))
+			Some(data.paymentDurationDays), data.productDeliveryDate, Some(data.creatorId), 
+			Some(data.created))
 	
 	override def complete(id: Value, data: InvoiceData) = Invoice(id.getInt, data)
 	
