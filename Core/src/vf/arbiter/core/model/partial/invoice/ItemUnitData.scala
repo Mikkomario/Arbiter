@@ -8,6 +8,7 @@ import utopia.flow.generic.ModelConvertible
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */
+@deprecated("Please refer to item unit ids instead", "v0.1")
 case class ItemUnitData() extends ModelConvertible
 {
 	// IMPLEMENTED	--------------------

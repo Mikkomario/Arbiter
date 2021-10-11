@@ -10,5 +10,6 @@ import vf.arbiter.core.model.partial.invoice.ItemUnitData
   * @author Mikko Hilpinen
   * @since 2021-10-10
   */
+@deprecated("Please refer to item unit ids instead", "v0.1")
 case class ItemUnit(id: Int, data: ItemUnitData) extends StoredModelConvertible[ItemUnitData]
 

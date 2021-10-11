@@ -8,6 +8,7 @@ import vf.arbiter.core.model.stored.invoice.ItemUnit
   * Combines ItemUnit with the linked descriptions
   * @since 2021-10-10
   */
+@deprecated("Please refer to item unit ids and descriptions instead", "v0.1")
 case class DescribedItemUnit(wrapped: ItemUnit, descriptions: Set[DescriptionLink]) 
 	extends DescribedWrapper[ItemUnit] with SimplyDescribed
 {

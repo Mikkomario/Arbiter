@@ -186,6 +186,11 @@
             "type": "creation"
           },
           {
+            "name": "creatorId",
+            "ref": "user",
+            "doc": "Id of the user who created this invoice"
+          },
+          {
             "name": "paymentDurationDays",
             "name_plural": "paymentDurationDays",
             "type": "days",

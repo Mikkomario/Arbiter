@@ -2,6 +2,7 @@ package vf.arbiter.core.database.model.invoice
 
 import utopia.flow.datastructure.immutable.Value
 import utopia.flow.generic.ValueConversions._
+import utopia.vault.database.Connection
 import utopia.vault.model.immutable.StorableWithFactory
 import utopia.vault.nosql.storable.DataInserter
 import vf.arbiter.core.database.factory.invoice.ItemUnitFactory
@@ -33,6 +34,13 @@ object ItemUnitModel extends DataInserter[ItemUnitModel, ItemUnit, ItemUnitData]
 	
 	
 	// OTHER	--------------------
+	
+	/**
+	 * Inserts a new item unit to the database
+	 * @param connection Implicit DB Connection
+	 * @return Id of the inserted unit
+	 */
+	def insert()(implicit connection: Connection) = apply().insert().getInt
 	
 	/**
 	  * @param id A ItemUnit id

@@ -269,7 +269,7 @@ object CompanyActions
 	
 	private def newCompany(companyName: String)(implicit connection: Connection) =
 	{
-		val yCode = StdIn.readLineUntilNotEmpty("What's the identifier (Y-Tunnus) of your company?")
+		val yCode = StdIn.readLineUntilNotEmpty("What's the identifier (Y-Tunnus) of the company?")
 		val countyName = StdIn.readLineUntilNotEmpty("County?").capitalize
 		val postalCodeInput = StdIn.readLineUntilNotEmpty("Postal code?")
 		val streetName = StdIn.readLineUntilNotEmpty("Street name?").capitalize

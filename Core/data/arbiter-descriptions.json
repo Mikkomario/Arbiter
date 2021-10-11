@@ -7,21 +7,33 @@
     "names": {
       "en": {
         "1": "pieces",
-        "2": "hours"
+        "2": "hours",
+        "3": "days",
+        "4": "months",
+        "5": "years"
       },
       "fi": {
         "1": "kappaletta",
-        "2": "tuntia"
+        "2": "tuntia",
+        "3": "päivää",
+        "4": "kuukautta",
+        "5": "vuotta"
       }
     },
     "abbreviations": {
       "en": {
         "1": "pcs",
-        "2": "h"
+        "2": "h",
+        "3": "d",
+        "4": "mo",
+        "5": "y"
       },
       "fi": {
         "1": "kpl",
-        "2": "h"
+        "2": "h",
+        "3": "pv",
+        "4": "kk",
+        "5": "v"
       }
     }
   }

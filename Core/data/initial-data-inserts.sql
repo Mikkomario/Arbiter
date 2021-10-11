@@ -12,4 +12,7 @@ INSERT INTO description_role (id, json_key_singular, json_key_plural) VALUES
 -- Inserts item units
 -- Piece (1)
 -- Hour (2)
-INSERT INTO item_unit (id) VALUES (1, 2);
+-- Day (3)
+-- Month (4)
+-- Year (5)
+INSERT INTO item_unit (id) VALUES (1, 2, 3, 4, 5);
