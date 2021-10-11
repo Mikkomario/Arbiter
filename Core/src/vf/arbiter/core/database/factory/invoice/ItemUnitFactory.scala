@@ -9,7 +9,7 @@ import vf.arbiter.core.model.stored.invoice.ItemUnit
 /**
   * Used for reading ItemUnit data from the DB
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-11
   */
 object ItemUnitFactory extends FromValidatedRowModelFactory[ItemUnit]
 {

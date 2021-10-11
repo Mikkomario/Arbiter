@@ -28,6 +28,16 @@ object CoreTables
 	def companyBankAddress = apply("company_bank_address")
 	
 	/**
+	 * Table that contains CompanyProducts (Represents a type of product sold by an individual company)
+	 */
+	def companyProduct = apply("company_product")
+	
+	/**
+	 * Table that contains CompanyProductDescriptions (Links CompanyProducts with their descriptions)
+	 */
+	def companyProductDescription = apply("company_product_description")
+	
+	/**
 	  * Table that contains Counties (Represents a county within a country)
 	  */
 	def county = apply("county")

@@ -6,18 +6,18 @@
     },
     "names": {
       "en": {
-        "1": "pieces",
-        "2": "hours",
-        "3": "days",
-        "4": "months",
-        "5": "years"
+        "1": "piece",
+        "2": "hour",
+        "3": "day",
+        "4": "month",
+        "5": "year"
       },
       "fi": {
-        "1": "kappaletta",
-        "2": "tuntia",
-        "3": "päivää",
-        "4": "kuukautta",
-        "5": "vuotta"
+        "1": "kappale",
+        "2": "tunti",
+        "3": "päivä",
+        "4": "kuukausi",
+        "5": "vuosi"
       }
     },
     "abbreviations": {

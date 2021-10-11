@@ -164,6 +164,42 @@
         "doc": "Represents a unit in which items can be counted"
       },
       {
+        "name": "CompanyProduct",
+        "description_link": "product_id",
+        "doc": "Represents a type of product sold by an individual company",
+        "props": [
+          {
+            "ref": "company",
+            "doc": "Id of the company that owns this product type"
+          },
+          {
+            "name": "unitId",
+            "ref": "item_unit",
+            "doc": "Id representing the units in which this product or service is sold"
+          },
+          {
+            "name": "defaultUnitPrice",
+            "type": "Option[Double]",
+            "doc": "Default € price per single unit of this product"
+          },
+          {
+            "name": "taxModifier",
+            "type": "double",
+            "default": 0.24,
+            "doc": "A modifier that is applied to this product's price to get the applied tax"
+          },
+          {
+            "type": "creation",
+            "doc": "Time when this product was registered"
+          },
+          {
+            "name": "discontinuedAfter",
+            "type": "deprecation",
+            "doc": "Time when this product was discontinued (no longer sold)"
+          }
+        ]
+      },
+      {
         "name": "Invoice",
         "doc": "Represents a bill / an invoice sent by one company to another to request a monetary transfer / payment",
         "props": [
@@ -213,9 +249,14 @@
             "doc": "Id of the invoice on which this item appears"
           },
           {
+            "name": "productId",
+            "ref": "company_product",
+            "doc": "Id of the type of product this item represents / is"
+          },
+          {
             "name": "description",
             "length": 255,
-            "doc": "Name or description of this item"
+            "doc": "Name or description of this item (in the same language the invoice is)"
           },
           {
             "name": "amount",
@@ -224,21 +265,10 @@
             "doc": "Amount of items sold within the specified unit"
           },
           {
-            "name": "unitId",
-            "ref": "item_unit",
-            "doc": "Unit in which these items are sold"
-          },
-          {
             "name": "pricePerUnit",
             "name_plural": "perUnitPrices",
             "type": "double",
             "doc": "Euro (€) price per each sold unit of this item, without taxes applied"
-          },
-          {
-            "name": "taxModifier",
-            "type": "double",
-            "default": 0.24,
-            "doc": "A modifier that is applied to this item's price to get the applied tax"
           }
         ]
       }

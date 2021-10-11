@@ -12,7 +12,7 @@ import vf.arbiter.core.model.stored.invoice.ItemUnit
 /**
   * A common trait for access points that return individual and distinct ItemUnits.
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-11
   */
 trait UniqueItemUnitAccess 
 	extends SingleRowModelAccess[ItemUnit] with DistinctModelAccess[ItemUnit, Option[ItemUnit], Value] 

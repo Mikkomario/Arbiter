@@ -7,6 +7,8 @@ object CoreDescriptionLinkFactory
 {
 	// ATTRIBUTES	--------------------
 	
+	val companyProduct = DescriptionLinkFactory(CoreDescriptionLinkModel.companyProduct)
+	
 	val itemUnit = DescriptionLinkFactory(CoreDescriptionLinkModel.itemUnit)
 }
 

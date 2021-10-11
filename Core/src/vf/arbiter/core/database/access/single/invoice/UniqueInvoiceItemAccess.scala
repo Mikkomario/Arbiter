@@ -27,7 +27,12 @@ trait UniqueInvoiceItemAccess
 	def invoiceId(implicit connection: Connection) = pullColumn(model.invoiceIdColumn).int
 	
 	/**
-	  * Name or description of this item. None if no instance (or value) was found.
+	  * Id of the type of product this item represents / is. None if no instance (or value) was found.
+	  */
+	def productId(implicit connection: Connection) = pullColumn(model.productIdColumn).int
+	
+	/**
+	  * Name or description of this item (in the same language the invoice is). None if no instance (or value) was found.
 	  */
 	def description(implicit connection: Connection) = pullColumn(model.descriptionColumn).string
 	
@@ -37,20 +42,10 @@ trait UniqueInvoiceItemAccess
 	def amount(implicit connection: Connection) = pullColumn(model.amountColumn).double
 	
 	/**
-	  * Unit in which these items are sold. None if no instance (or value) was found.
-	  */
-	def unitId(implicit connection: Connection) = pullColumn(model.unitIdColumn).int
-	
-	/**
 	  * Euro (€) price per each sold unit of this item, 
 		without taxes applied. None if no instance (or value) was found.
 	  */
 	def pricePerUnit(implicit connection: Connection) = pullColumn(model.pricePerUnitColumn).double
-	
-	/**
-	  * A modifier that is applied to this item's price to get the applied tax. None if no instance (or value) was found.
-	  */
-	def taxModifier(implicit connection: Connection) = pullColumn(model.taxModifierColumn).double
 	
 	def id(implicit connection: Connection) = pullColumn(index).int
 	
@@ -100,18 +95,11 @@ trait UniqueInvoiceItemAccess
 		putColumn(model.pricePerUnitColumn, newPricePerUnit)
 	
 	/**
-	  * Updates the taxModifier of the targeted InvoiceItem instance(s)
-	  * @param newTaxModifier A new taxModifier to assign
+	  * Updates the productId of the targeted InvoiceItem instance(s)
+	  * @param newProductId A new productId to assign
 	  * @return Whether any InvoiceItem instance was affected
 	  */
-	def taxModifier_=(newTaxModifier: Double)(implicit connection: Connection) = 
-		putColumn(model.taxModifierColumn, newTaxModifier)
-	
-	/**
-	  * Updates the unitId of the targeted InvoiceItem instance(s)
-	  * @param newUnitId A new unitId to assign
-	  * @return Whether any InvoiceItem instance was affected
-	  */
-	def unitId_=(newUnitId: Int)(implicit connection: Connection) = putColumn(model.unitIdColumn, newUnitId)
+	def productId_=(newProductId: Int)(implicit connection: Connection) = 
+		putColumn(model.productIdColumn, newProductId)
 }
 

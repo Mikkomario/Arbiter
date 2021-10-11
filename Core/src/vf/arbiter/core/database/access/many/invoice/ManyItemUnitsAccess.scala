@@ -10,7 +10,7 @@ import vf.arbiter.core.model.stored.invoice.ItemUnit
 /**
   * A common trait for access points which target multiple ItemUnits at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-11
   */
 trait ManyItemUnitsAccess extends ManyRowModelAccess[ItemUnit] with Indexed
 {

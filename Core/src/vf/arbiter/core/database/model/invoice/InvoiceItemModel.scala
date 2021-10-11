@@ -23,6 +23,11 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
 	val invoiceIdAttName = "invoiceId"
 	
 	/**
+	  * Name of the property that contains InvoiceItem productId
+	  */
+	val productIdAttName = "productId"
+	
+	/**
 	  * Name of the property that contains InvoiceItem description
 	  */
 	val descriptionAttName = "description"
@@ -33,19 +38,9 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
 	val amountAttName = "amount"
 	
 	/**
-	  * Name of the property that contains InvoiceItem unitId
-	  */
-	val unitIdAttName = "unitId"
-	
-	/**
 	  * Name of the property that contains InvoiceItem pricePerUnit
 	  */
 	val pricePerUnitAttName = "pricePerUnit"
-	
-	/**
-	  * Name of the property that contains InvoiceItem taxModifier
-	  */
-	val taxModifierAttName = "taxModifier"
 	
 	
 	// COMPUTED	--------------------
@@ -54,6 +49,11 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
 	  * Column that contains InvoiceItem invoiceId
 	  */
 	def invoiceIdColumn = table(invoiceIdAttName)
+	
+	/**
+	  * Column that contains InvoiceItem productId
+	  */
+	def productIdColumn = table(productIdAttName)
 	
 	/**
 	  * Column that contains InvoiceItem description
@@ -66,19 +66,9 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
 	def amountColumn = table(amountAttName)
 	
 	/**
-	  * Column that contains InvoiceItem unitId
-	  */
-	def unitIdColumn = table(unitIdAttName)
-	
-	/**
 	  * Column that contains InvoiceItem pricePerUnit
 	  */
 	def pricePerUnitColumn = table(pricePerUnitAttName)
-	
-	/**
-	  * Column that contains InvoiceItem taxModifier
-	  */
-	def taxModifierColumn = table(taxModifierAttName)
 	
 	/**
 	  * The factory object used by this model type
@@ -91,8 +81,8 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
 	override def table = factory.table
 	
 	override def apply(data: InvoiceItemData) = 
-		apply(None, Some(data.invoiceId), Some(data.description), Some(data.amount), Some(data.unitId), 
-			Some(data.pricePerUnit), Some(data.taxModifier))
+		apply(None, Some(data.invoiceId), Some(data.productId), Some(data.description), Some(data.amount), 
+			Some(data.pricePerUnit))
 	
 	override def complete(id: Value, data: InvoiceItemData) = InvoiceItem(id.getInt, data)
 	
@@ -106,7 +96,7 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
 	def withAmount(amount: Double) = apply(amount = Some(amount))
 	
 	/**
-	  * @param description Name or description of this item
+	  * @param description Name or description of this item (in the same language the invoice is)
 	  * @return A model containing only the specified description
 	  */
 	def withDescription(description: String) = apply(description = Some(description))
@@ -130,33 +120,26 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
 	def withPricePerUnit(pricePerUnit: Double) = apply(pricePerUnit = Some(pricePerUnit))
 	
 	/**
-	  * @param taxModifier A modifier that is applied to this item's price to get the applied tax
-	  * @return A model containing only the specified taxModifier
+	  * @param productId Id of the type of product this item represents / is
+	  * @return A model containing only the specified productId
 	  */
-	def withTaxModifier(taxModifier: Double) = apply(taxModifier = Some(taxModifier))
-	
-	/**
-	  * @param unitId Unit in which these items are sold
-	  * @return A model containing only the specified unitId
-	  */
-	def withUnitId(unitId: Int) = apply(unitId = Some(unitId))
+	def withProductId(productId: Int) = apply(productId = Some(productId))
 }
 
 /**
   * Used for interacting with InvoiceItems in the database
   * @param id InvoiceItem database id
   * @param invoiceId Id of the invoice on which this item appears
-  * @param description Name or description of this item
+  * @param productId Id of the type of product this item represents / is
+  * @param description Name or description of this item (in the same language the invoice is)
   * @param amount Amount of items sold within the specified unit
-  * @param unitId Unit in which these items are sold
   * @param pricePerUnit Euro (€) price per each sold unit of this item, without taxes applied
-  * @param taxModifier A modifier that is applied to this item's price to get the applied tax
   * @author Mikko Hilpinen
   * @since 2021-10-11
   */
 case class InvoiceItemModel(id: Option[Int] = None, invoiceId: Option[Int] = None, 
-	description: Option[String] = None, amount: Option[Double] = None, unitId: Option[Int] = None, 
-	pricePerUnit: Option[Double] = None, taxModifier: Option[Double] = None) 
+	productId: Option[Int] = None, description: Option[String] = None, amount: Option[Double] = None, 
+	pricePerUnit: Option[Double] = None) 
 	extends StorableWithFactory[InvoiceItem]
 {
 	// IMPLEMENTED	--------------------
@@ -166,9 +149,8 @@ case class InvoiceItemModel(id: Option[Int] = None, invoiceId: Option[Int] = Non
 	override def valueProperties = 
 	{
 		import InvoiceItemModel._
-		Vector("id" -> id, invoiceIdAttName -> invoiceId, descriptionAttName -> description, 
-			amountAttName -> amount, unitIdAttName -> unitId, pricePerUnitAttName -> pricePerUnit, 
-			taxModifierAttName -> taxModifier)
+		Vector("id" -> id, invoiceIdAttName -> invoiceId, productIdAttName -> productId, 
+			descriptionAttName -> description, amountAttName -> amount, pricePerUnitAttName -> pricePerUnit)
 	}
 	
 	
@@ -199,15 +181,9 @@ case class InvoiceItemModel(id: Option[Int] = None, invoiceId: Option[Int] = Non
 	def withPricePerUnit(pricePerUnit: Double) = copy(pricePerUnit = Some(pricePerUnit))
 	
 	/**
-	  * @param taxModifier A new taxModifier
-	  * @return A new copy of this model with the specified taxModifier
+	  * @param productId A new productId
+	  * @return A new copy of this model with the specified productId
 	  */
-	def withTaxModifier(taxModifier: Double) = copy(taxModifier = Some(taxModifier))
-	
-	/**
-	  * @param unitId A new unitId
-	  * @return A new copy of this model with the specified unitId
-	  */
-	def withUnitId(unitId: Int) = copy(unitId = Some(unitId))
+	def withProductId(productId: Int) = copy(productId = Some(productId))
 }
 

@@ -18,8 +18,7 @@ object InvoiceItemFactory extends FromValidatedRowModelFactory[InvoiceItem]
 	override def table = CoreTables.invoiceItem
 	
 	override def fromValidatedModel(valid: Model[Constant]) = 
-		InvoiceItem(valid("id").getInt, InvoiceItemData(valid("invoiceId").getInt, 
-			valid("description").getString, valid("amount").getDouble, valid("unitId").getInt, 
-			valid("pricePerUnit").getDouble, valid("taxModifier").getDouble))
+		InvoiceItem(valid("id").getInt, InvoiceItemData(valid("invoiceId").getInt, valid("productId").getInt, 
+			valid("description").getString, valid("amount").getDouble, valid("pricePerUnit").getDouble))
 }
 

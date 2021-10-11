@@ -4,7 +4,6 @@ import utopia.citadel.database.access.id.single.DbLanguageId
 import utopia.citadel.database.access.many.description.DbDescriptions
 import utopia.citadel.database.access.single.organization.DbOrganization
 import utopia.citadel.model.enumeration.StandardUserRole.Owner
-import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.StringExtensions._
 import utopia.vault.database.Connection
@@ -34,7 +33,8 @@ object CompanyActions
 	{
 		val options = DbCompanies.matchingName(nameSearch)
 		options.find { _.name ~== nameSearch }
-			.orElse { selectFrom(options.map { c => c -> c.nameAndYCode }.sortBy { _._2 }) }
+			.orElse { ActionUtils.selectFrom(
+				options.map { c => c -> c.nameAndYCode }.sortBy { _._2 }, "companies") }
 	}
 	
 	/**
@@ -51,7 +51,7 @@ object CompanyActions
 		existingOptions.find { _.name ~== nameSearch }
 			// If exact match was not found, but others were, allows to select from those
 			.orElse { if (existingOptions.isEmpty) None else
-				selectFrom(existingOptions.map { c => c -> c.nameAndYCode }) }
+				ActionUtils.selectFrom(existingOptions.map { c => c -> c.nameAndYCode }, "companies") }
 			// If not selected, allows to create a new company
 			.orElse {
 				if (StdIn.ask(s"Do you want to create '$nameSearch' as a new company (not owned)?"))
@@ -68,7 +68,7 @@ object CompanyActions
 	 * @return Selected company. None if no company was selected.
 	 */
 	def selectOneFromOwn(userId: Int)(implicit connection: Connection) =
-		selectFrom(DbCompanies.linkedWithUserWithId(userId).map { c => c -> c.name })
+		ActionUtils.selectFrom(DbCompanies.linkedWithUserWithId(userId).map { c => c -> c.name }, "companies")
 	
 	/**
 	 * Offers the user a chance to join a company based on a search
@@ -100,7 +100,7 @@ object CompanyActions
 			CompanyActions.startOrJoin(ownerId, companyName)
 		// Allows the user to select from existing companies
 		else
-			selectFrom(existingOptions.map { c => c -> c.name }, "use")
+			ActionUtils.selectFrom(existingOptions.map { c => c -> c.name }, "companies", "use")
 	}
 	
 	/**
@@ -120,7 +120,7 @@ object CompanyActions
 			{
 				case Some(exactMatch) => join(ownerId, exactMatch)
 				case None =>
-					selectFrom(companyOptions.map { c => c -> c.nameAndYCode }.sortBy { _._2 },
+					ActionUtils.selectFrom(companyOptions.map { c => c -> c.nameAndYCode }.sortBy { _._2 }, "companies",
 						"join") match
 					{
 						case Some(selected) => join(ownerId, selected)
@@ -167,10 +167,10 @@ object CompanyActions
 						val organizationDescriptions =
 							DbDescriptions.ofOrganizationsWithIds(organizationIds).pull
 						// Selects one of them
-						selectFrom(organizationIds.toVector
+						ActionUtils.selectFrom(organizationIds.toVector
 							.map { orgId => orgId -> organizationDescriptions.filter { _.targetId == orgId }
 								.map { _.description }.sortBy { _.roleId }.map { _.text }.mkString(" / ") }
-							.filter { _._2.nonEmpty }, "link")
+							.filter { _._2.nonEmpty }, "organizations", "link")
 					}
 				}
 				// Adds the user to that organization
@@ -178,79 +178,6 @@ object CompanyActions
 					DbOrganization(organizationId).memberships.insert(userId, Owner.id, userId)
 					company
 				}
-			}
-		}
-	}
-	
-	// Expects exact match to be tested at this point
-	private def selectFrom[A](options: Seq[(A, String)], selectionVerb: String = "select"): Option[A] =
-	{
-		if (options.isEmpty)
-		{
-			println("No matches found")
-			None
-		}
-		else
-		{
-			val bestNameMatches = options.map { _._2 }.sortBy { _.length }.take(3)
-			println(s"Found ${options.size} matches: ${bestNameMatches.mkString(", ")}${
-				if (options.size > bestNameMatches.size) "..." else ""}")
-			if (StdIn.ask(s"Do you want to $selectionVerb one of those companies?"))
-				Some(_selectFrom(options))
-			else
-				None
-		}
-	}
-	// Options must be of size 1 or more
-	private def _selectFrom[A](options: Seq[(A, String)]): A =
-	{
-		def _narrow(filter: String): A =
-		{
-			val narrowed = options.filter { _._2.toLowerCase.contains(filter) }
-			if (narrowed.isEmpty)
-			{
-				println("No results could be found with that filter, please try again")
-				_selectFrom(options)
-			}
-			else
-				narrowed.find { _._2 ~== filter }.map { _._1 }.getOrElse { _selectFrom(narrowed) }
-		}
-		
-		if (options.size == 1)
-		{
-			val (result, resultName) = options.head
-			println(s"Found $resultName")
-			result
-		}
-		else if (options.size > 10)
-		{
-			println(s"Found ${options.size} options")
-			val filter = StdIn.readLineUntilNotEmpty(
-				"Please narrow the selection by specifying an additional filter").toLowerCase
-			_narrow(filter)
-		}
-		else
-		{
-			println(s"Found ${options.size} options")
-			options.indices.foreach { index => println(s"${index + 1}: ${options(index)._2}") }
-			println("Please select the correct index or narrow the selection by typing text")
-			StdIn.readIterator.filter { _.isDefined }.findMap { input =>
-				input.int match
-				{
-					case Some(index) =>
-						if (index > 0 && index <= options.size)
-							Some(Right(index))
-						else
-						{
-							println("That index is out of range, please select a new one")
-							None
-						}
-					case None => Some(Left(input.getString))
-				}
-			}.get match
-			{
-				case Right(index) => options(index - 1)._1
-				case Left(filter) => _narrow(filter)
 			}
 		}
 	}

@@ -24,6 +24,12 @@ trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexe
 		pullColumn(model.invoiceIdColumn).flatMap { value => value.int }
 	
 	/**
+	  * productIds of the accessible InvoiceItems
+	  */
+	def productIds(implicit connection: Connection) = 
+		pullColumn(model.productIdColumn).flatMap { value => value.int }
+	
+	/**
 	  * descriptions of the accessible InvoiceItems
 	  */
 	def descriptions(implicit connection: Connection) = 
@@ -36,22 +42,10 @@ trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexe
 		pullColumn(model.amountColumn).flatMap { value => value.double }
 	
 	/**
-	  * unitIds of the accessible InvoiceItems
-	  */
-	def unitIds(implicit connection: Connection) = pullColumn(model.unitIdColumn)
-		.flatMap { value => value.int }
-	
-	/**
 	  * perUnitPrices of the accessible InvoiceItems
 	  */
 	def perUnitPrices(implicit connection: Connection) = 
 		pullColumn(model.pricePerUnitColumn).flatMap { value => value.double }
-	
-	/**
-	  * taxModifiers of the accessible InvoiceItems
-	  */
-	def taxModifiers(implicit connection: Connection) = 
-		pullColumn(model.taxModifierColumn).flatMap { value => value.double }
 	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
 	
@@ -103,18 +97,11 @@ trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexe
 		putColumn(model.pricePerUnitColumn, newPricePerUnit)
 	
 	/**
-	  * Updates the taxModifier of the targeted InvoiceItem instance(s)
-	  * @param newTaxModifier A new taxModifier to assign
+	  * Updates the productId of the targeted InvoiceItem instance(s)
+	  * @param newProductId A new productId to assign
 	  * @return Whether any InvoiceItem instance was affected
 	  */
-	def taxModifier_=(newTaxModifier: Double)(implicit connection: Connection) = 
-		putColumn(model.taxModifierColumn, newTaxModifier)
-	
-	/**
-	  * Updates the unitId of the targeted InvoiceItem instance(s)
-	  * @param newUnitId A new unitId to assign
-	  * @return Whether any InvoiceItem instance was affected
-	  */
-	def unitId_=(newUnitId: Int)(implicit connection: Connection) = putColumn(model.unitIdColumn, newUnitId)
+	def productId_=(newProductId: Int)(implicit connection: Connection) = 
+		putColumn(model.productIdColumn, newProductId)
 }
 

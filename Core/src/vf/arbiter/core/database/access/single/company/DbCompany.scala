@@ -7,6 +7,7 @@ import utopia.vault.nosql.access.single.model.distinct.UniqueModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.UnconditionalView
 import vf.arbiter.core.database.access.many.company.{DbCompanies, DbOrganizationCompanies}
+import vf.arbiter.core.database.access.many.invoice.DbCompanyProducts
 import vf.arbiter.core.database.factory.company.CompanyFactory
 import vf.arbiter.core.database.model.company.{CompanyModel, OrganizationCompanyModel}
 import vf.arbiter.core.model.partial.company.OrganizationCompanyData
@@ -65,6 +66,11 @@ object DbCompany extends SingleRowModelAccess[Company] with UnconditionalView wi
 	class DbSingleCompany(val id: Int) extends UniqueCompanyAccess with UniqueModelAccess[Company]
 	{
 		// COMPUTED ------------------------
+		
+		/**
+		 * @return An access point to this company's products
+		 */
+		def products = DbCompanyProducts.ofCompanyWithId(id)
 		
 		/**
 		 * @param connection Implicit DB Connection
