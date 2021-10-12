@@ -1,10 +1,18 @@
 package vf.arbiter.command.app
 
+import utopia.citadel.database.access.many.description.DbDescriptions
+import utopia.citadel.database.access.many.language.DbLanguageFamiliarities
 import utopia.citadel.database.access.many.user.DbManyUserSettings
-import utopia.citadel.database.model.user.UserModel
+import utopia.citadel.database.access.single.description.DbDescription
+import utopia.citadel.database.access.single.language.DbLanguage
+import utopia.citadel.database.model.description.DescriptionLinkModel
+import utopia.citadel.database.model.user.{UserLanguageModel, UserModel}
+import utopia.citadel.model.enumeration.StandardDescriptionRoleId
+import utopia.flow.parse.Regex
 import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
-import utopia.metropolis.model.partial.user.UserSettingsData
+import utopia.metropolis.model.partial.description.DescriptionData
+import utopia.metropolis.model.partial.user.{UserLanguageData, UserSettingsData}
 import utopia.metropolis.model.stored.user.User
 import utopia.vault.database.Connection
 
@@ -17,6 +25,10 @@ import scala.io.StdIn
  */
 object UserActions
 {
+	private val notLetterRegex = !Regex.alpha
+	
+	private def nameId = StandardDescriptionRoleId.name
+	
 	/**
 	 * Registers a new user, if possible
 	 * @param userName Name of the new user
@@ -57,9 +69,50 @@ object UserActions
 	
 	private def _register(userName: String)(implicit connection: Connection) =
 	{
+		// Registers the user
 		val user = UserModel.insert(UserSettingsData(userName))
+		
+		// Registers language proficiencies for the user
+		println("What languages do you know?")
+		println("Instruction: Use 2-letter ISO-codes like 'en'. Insert all codes on the same line.")
+		val languageCodes = notLetterRegex.split(StdIn.readLineUntilNotEmpty())
+			.toVector.filter { _.nonEmpty }.map { _.toLowerCase }
+		val languages = languageCodes.map { code => DbLanguage.forIsoCode(code).getOrInsert() }
+		val languageNames = languages.map { language =>
+			language.id -> DbDescription.ofLanguageWithId(language.id)(language.id, nameId).getOrElse {
+				// If the language didn't have a name yet, asks and inserts one
+				val name = StdIn.readLineUntilNotEmpty(
+					s"What's the name of '${language.isoCode}' in '${language.isoCode}'")
+				DescriptionLinkModel.language.insert(language.id,
+					DescriptionData(nameId, language.id, name, Some(user.id)))
+				name
+			}
+		}.toMap
+		// TODO: This part could use some refactoring for sure
+		val languageOrder = languages.map { _.id }
+		val availableProficiencies = DbLanguageFamiliarities.all
+		val proficiencyNames = DbDescriptions
+			.ofLanguageFamiliaritiesWithIds(availableProficiencies.map { _.id }.toSet)
+			.forRoleInLanguages(nameId, languageOrder)
+			.view.mapValues { _.description.text }.toMap
+		val proficiencyOptions =
+		{
+			if (proficiencyNames.isEmpty)
+				availableProficiencies.sortBy { -_.orderIndex }.map { p => p -> p.orderIndex.toString }
+			else
+				availableProficiencies.flatMap { p => proficiencyNames.get(p.id).map { p -> _ } }
+		}
+		val newProficiencyData = languages.map { language =>
+			println(s"How proficient are you in ${languageNames(language.id)} (${language.isoCode})?")
+			val proficiency = ActionUtils.forceSelectFrom(proficiencyOptions)
+			language -> proficiency
+		}
+		UserLanguageModel.insert(newProficiencyData
+			.map { case (language, proficiency) => UserLanguageData(user.id, language.id, proficiency.id) })
+		val mostProficientLanguage = newProficiencyData.maxBy { _._2 }._1
+		
 		// Creates a new company for that user (or joins an existing company)
-		println("What's the name of your company?")
+		println(s"What's the name of your company? (in ${languageNames(mostProficientLanguage.id)})")
 		println("Hint: If you wish to join an existing company, you can write part of that company's name")
 		val company = StdIn.readNonEmptyLine().flatMap { CompanyActions.startOrJoin(user.id, _) }
 		user -> company
