@@ -1,12 +1,15 @@
 package vf.arbiter.core.database.access.single.invoice
 
 import utopia.flow.generic.ValueConversions._
+import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.single.model.distinct.UniqueModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.NonDeprecatedView
+import vf.arbiter.core.database.access.many.description.DbCompanyProductDescriptions
 import vf.arbiter.core.database.factory.invoice.CompanyProductFactory
 import vf.arbiter.core.database.model.invoice.CompanyProductModel
+import vf.arbiter.core.model.combined.invoice.DescribedCompanyProduct
 import vf.arbiter.core.model.stored.invoice.CompanyProduct
 
 /**
@@ -44,6 +47,24 @@ object DbCompanyProduct
 	class DbSingleCompanyProduct(val id: Int) 
 		extends UniqueCompanyProductAccess with UniqueModelAccess[CompanyProduct]
 	{
+		// COMPUTED ------------------------
+		
+		// TODO: Add to Vault-Coder (these can form a trait, probably)
+		def descriptions = DbCompanyProductDescriptions(id)
+		// TODO: Add to Vault-Coder (under distinct single trait)
+		def described(implicit connection: Connection) = pull.map { product =>
+			DescribedCompanyProduct(product, descriptions.toSet)
+		}
+		
+		
+		// OTHER    ------------------------
+		
+		// TODO: This kind of methods should be added to Vault-Coder, but only after DescriptionRole
+		//  trait support is added back
+		def descriptionsOfRole(roleId: Int)(implicit connection: Connection) =
+			descriptions.forRoleWithId(roleId)
+		
+		
 		// IMPLEMENTED	--------------------
 		
 		override def condition = index <=> id

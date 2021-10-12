@@ -4,9 +4,21 @@ import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
+import utopia.vault.nosql.view.SubView
+import utopia.vault.sql.Condition
+import vf.arbiter.core.database.access.many.company.ManyCompaniesAccess.CompaniesSubView
 import vf.arbiter.core.database.factory.company.CompanyFactory
 import vf.arbiter.core.database.model.company.CompanyModel
 import vf.arbiter.core.model.stored.company.Company
+
+object ManyCompaniesAccess
+{
+	// NESTED   -----------------------------------
+	
+	private class CompaniesSubView(override val parent: ManyRowModelAccess[Company],
+	                               override val filterCondition: Condition)
+		extends ManyCompaniesAccess with SubView
+}
 
 /**
   * A common trait for access points which target multiple Companies at a time
@@ -51,6 +63,9 @@ trait ManyCompaniesAccess extends ManyRowModelAccess[Company] with Indexed
 	override def factory = CompanyFactory
 	
 	override protected def defaultOrdering = None
+	
+	override def filter(additionalCondition: Condition): ManyCompaniesAccess =
+		new CompaniesSubView(this, additionalCondition)
 	
 	
 	// OTHER	--------------------
