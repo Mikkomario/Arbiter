@@ -1,20 +1,34 @@
 package vf.arbiter.core.database.access.many.invoice
 
+import utopia.citadel.database.access.many.description.ManyDescribedAccess
+
 import java.time.Instant
 import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
-import utopia.vault.nosql.template.Indexed
+import utopia.vault.nosql.view.SubView
+import utopia.vault.sql.Condition
+import vf.arbiter.core.database.access.many.description.DbCompanyProductDescriptions
+import vf.arbiter.core.database.access.many.invoice.ManyCompanyProductsAccess.CompanyProductsSubView
 import vf.arbiter.core.database.factory.invoice.CompanyProductFactory
 import vf.arbiter.core.database.model.invoice.CompanyProductModel
+import vf.arbiter.core.model.combined.invoice.DescribedCompanyProduct
 import vf.arbiter.core.model.stored.invoice.CompanyProduct
+
+object ManyCompanyProductsAccess
+{
+	private class CompanyProductsSubView(override val parent: ManyCompanyProductsAccess,
+	                                     override val filterCondition: Condition)
+		extends ManyCompanyProductsAccess with SubView
+}
 
 /**
   * A common trait for access points which target multiple CompanyProducts at a time
   * @author Mikko Hilpinen
   * @since 2021-10-11
   */
-trait ManyCompanyProductsAccess extends ManyRowModelAccess[CompanyProduct] with Indexed
+trait ManyCompanyProductsAccess extends ManyRowModelAccess[CompanyProduct]
+	with ManyDescribedAccess[CompanyProduct, DescribedCompanyProduct]
 {
 	// COMPUTED	--------------------
 	
@@ -59,12 +73,21 @@ trait ManyCompanyProductsAccess extends ManyRowModelAccess[CompanyProduct] with 
 	
 	// IMPLEMENTED	--------------------
 	
+	override protected def manyDescriptionsAccess = DbCompanyProductDescriptions
+	
+	override protected def describedFactory = DescribedCompanyProduct
+	
+	override protected def idOf(item: CompanyProduct) = item.id
+	
 	override def factory = CompanyProductFactory
 	
 	override protected def defaultOrdering = Some(factory.defaultOrdering)
 	
 	
 	// OTHER	--------------------
+	
+	override def filter(condition: Condition): ManyCompanyProductsAccess =
+		new CompanyProductsSubView(this, condition)
 	
 	/**
 	  * Updates the companyId of the targeted CompanyProduct instance(s)

@@ -8,6 +8,6 @@ object DbItemUnitDescriptions extends DescriptionLinksAccess
 	/**
 	  * Factory used when reading ItemUnit description links
 	  */
-	def linkFactory = CoreDescriptionLinkFactory.itemUnit
+	override def factory = CoreDescriptionLinkFactory.itemUnit
 }
 

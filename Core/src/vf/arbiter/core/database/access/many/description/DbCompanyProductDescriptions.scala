@@ -8,6 +8,6 @@ object DbCompanyProductDescriptions extends DescriptionLinksAccess
 	/**
 	  * Factory used when reading CompanyProduct description links
 	  */
-	def linkFactory = CoreDescriptionLinkFactory.companyProduct
+	override def factory = CoreDescriptionLinkFactory.companyProduct
 }
 

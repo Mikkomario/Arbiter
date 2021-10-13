@@ -43,7 +43,6 @@ object DbCompanyProduct
 	
 	// NESTED	--------------------
 	
-	// TODO: Add these features to Vault-Coder also
 	class DbSingleCompanyProduct(override val id: Int)
 		extends UniqueCompanyProductAccess with SingleIdDescribedAccess[CompanyProduct, DescribedCompanyProduct]
 	{
