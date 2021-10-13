@@ -11,7 +11,18 @@
           {
             "name": "name",
             "length": 64,
+            "index": true,
             "doc": "County name, with that county's or country's primary language"
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who registered this county"
+          },
+          {
+            "type": "creation",
+            "index": false
           }
         ]
       },
@@ -28,6 +39,15 @@
           {
             "ref": "county",
             "doc": "Id of the county where this postal code is resides"
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]"
+          },
+          {
+            "type": "creation",
+            "index": false
           }
         ]
       },
@@ -35,6 +55,7 @@
         "name": "StreetAddress",
         "name_plural": "StreetAddresses",
         "doc": "Represents a specific street address",
+        "combo": ["postalCodeId", "streetName", "buildingNumber", "stair", "roomNumber"],
         "props": [
           {
             "ref": "postal_code"
@@ -60,6 +81,16 @@
             "type": "Option[String]",
             "length": 10,
             "doc": "Number of the targeted room within that stair / building, if applicable"
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who registered this address"
+          },
+          {
+            "type": "creation",
+            "index": false
           }
         ]
       }
@@ -73,7 +104,29 @@
           {
             "name": "yCode",
             "length": 10,
+            "index": true,
             "doc": "Official registration code of this company (id in the country system)"
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who registered this company to this system"
+          },
+          {
+            "type": "creation",
+            "doc": "Time when this company was registered"
+          }
+        ]
+      },
+      {
+        "name": "CompanyDetails",
+        "name_plural": "CompanyDetails",
+        "doc": "Contains company information which may change and on which there may be varying views",
+        "props": [
+          {
+            "ref": "company",
+            "doc": "Id of the company which this describes"
           },
           {
             "name": "name",
@@ -91,6 +144,26 @@
             "type": "Option[String]",
             "length": 16,
             "doc": "Tax-related identifier code for this company"
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who wrote this description"
+          },
+          {
+            "type": "creation",
+            "index": false
+          },
+          {
+            "type": "deprecation"
+          },
+          {
+            "name": "isOfficial",
+            "name_plural": "areOfficial",
+            "type": "Boolean",
+            "default": false,
+            "doc": "Whether this information is by the company which is being described, having a more authority"
           }
         ]
       },
@@ -106,6 +179,16 @@
           {
             "ref": "company",
             "doc": "Id of the owned company"
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who created this link"
+          },
+          {
+            "type": "creation",
+            "index": false
           }
         ]
       },
@@ -116,23 +199,35 @@
           {
             "name": "name",
             "length": 64,
+            "index": true,
             "doc": "(Short) name of this bank"
           },
           {
             "name": "bic",
             "length": 12,
+            "index": true,
             "doc": "BIC-code of this bank"
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who registered this address"
+          },
+          {
+            "type": "creation",
+            "index": false
           }
         ]
       },
       {
-        "name": "CompanyBankAddress",
-        "name_plural": "CompanyBankAddresses",
-        "doc": "Used for listing which bank addresses belong to which company",
+        "name": "CompanyBankAccount",
+        "name_plural": "CompanyBankAccounts",
+        "doc": "Used for listing which bank accounts belong to which company",
         "props": [
           {
             "ref": "company",
-            "doc": "Id of the company which owns this bank account address"
+            "doc": "Id of the company which owns this bank account"
           },
           {
             "ref": "bank",
@@ -145,28 +240,60 @@
             "doc": "The linked bank account address"
           },
           {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]"
+          },
+          {
             "type": "creation",
+            "index": false,
             "doc": "Time when this information was registered"
           },
           {
-            "name": "isDefault",
-            "name_plural": "defaults",
+            "type": "deprecation"
+          },
+          {
+            "name": "isOfficial",
+            "name_plural": "areOfficial",
             "type": "boolean",
-            "doc": "Whether this is the preferred / primary bank address used by this company"
+            "default": false,
+            "doc": "Whether this bank account information was written by the company authorities"
           }
         ]
       }
     ],
     "invoice": [
       {
+        "name": "UnitCategory",
+        "name_plural": "UnitCategories",
+        "doc": "Represents different categories a unit can belong to. Units within a category can be compared.",
+        "described": true,
+        "description_link": "unit_category_id"
+      },
+      {
         "name": "ItemUnit",
         "described": true,
-        "doc": "Represents a unit in which items can be counted"
+        "description_link": "unit_id",
+        "doc": "Represents a unit in which items can be counted",
+        "props": [
+          {
+            "name": "categoryId",
+            "ref": "unit_category",
+            "doc": "Id of the category this unit belongs to"
+          },
+          {
+            "name": "multiplier",
+            "type": "double",
+            "default": 1.0,
+            "doc": "A multiplier that, when applied to this unit, makes it comparable with the other units in the same category"
+          }
+        ]
       },
       {
         "name": "CompanyProduct",
         "description_link": "product_id",
         "doc": "Represents a type of product sold by an individual company",
+        "combo": ["discontinuedAfter", "created"],
         "props": [
           {
             "ref": "company",
@@ -189,6 +316,11 @@
             "doc": "A modifier that is applied to this product's price to get the applied tax"
           },
           {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]"
+          },
+          {
             "type": "creation",
             "doc": "Time when this product was registered"
           },
@@ -209,18 +341,29 @@
             "doc": "Id of the company who sent this invoice (payment recipient)"
           },
           {
-            "name": "recipientCompanyId",
-            "ref": "company",
-            "doc": "Id of the recipient company of this invoice"
+            "name": "recipientCompanyDetailsId",
+            "ref": "company_details",
+            "doc": "Id of the details of the recipient company used in this invoice"
+          },
+          {
+            "name": "senderBankAccountId",
+            "ref": "bank_account",
+            "doc": "Id of the bank account the invoice sender wants the recipient to transfer money to"
+          },
+          {
+            "ref": "language",
+            "doc": "Id of the language used in this invoice"
           },
           {
             "name": "referenceCode",
             "length": 16,
+            "index": true,
             "doc": "A custom reference code used by the sender to identify this invoice"
           },
           {
-            "name": "paymentDurationDays",
-            "name_plural": "paymentDurationDays",
+            "name": "paymentDuration",
+            "name_plural": "paymentDuration",
+            "column_name": "payment_duration_days",
             "type": "days",
             "default": "Days(30)",
             "doc": "Number of days during which this invoice can be paid before additional consequences"
@@ -238,6 +381,10 @@
           },
           {
             "type": "creation"
+          },
+          {
+            "name": "cancelledAfter",
+            "type": "deprecation"
           }
         ]
       },
@@ -257,19 +404,20 @@
           {
             "name": "description",
             "length": 255,
-            "doc": "Name or description of this item (in the same language the invoice is)"
-          },
-          {
-            "name": "amount",
-            "type": "double",
-            "default": 1.0,
-            "doc": "Amount of items sold within the specified unit"
+            "doc": "Name or description of this item (in the same language the invoice is given in)"
           },
           {
             "name": "pricePerUnit",
             "name_plural": "perUnitPrices",
             "type": "double",
             "doc": "Euro (€) price per each sold unit of this item, without taxes applied"
+          },
+          {
+            "name": "unitsSold",
+            "name_plural": "unitsSold",
+            "type": "double",
+            "default": 1.0,
+            "doc": "Amount of items sold in the product's unit"
           }
         ]
       }
