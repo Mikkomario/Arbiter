@@ -67,13 +67,13 @@ object InvoiceActions
 				val deliveryDate = StdIn.read().localDate
 				
 				// Prepares information for the next phase
-				val unitNames = DbItemUnitDescriptions.all.forRoleWithId(nameRoleId).pull
+				val unitNames = DbItemUnitDescriptions.withRoleId(nameRoleId).pull
 					.map { dl => dl.targetId -> dl.description.text }.toMap
 				val availableUnitIds = unitNames.keySet.toVector.sorted
 				
 				var existingProducts = DbCompany(companyId).products.pull
 				var productNames = DbCompanyProductDescriptions(existingProducts.map { _.id }.toSet)
-					.forRoleWithId(nameRoleId).pull
+					.withRoleId(nameRoleId).pull
 					.map { dl => dl.targetId -> dl.description.text }.toMap
 				
 				// Creates / prepares the invoice items
@@ -121,8 +121,9 @@ object InvoiceActions
 										// Inserts the product and it's name to the database
 										val product = CompanyProductModel.insert(CompanyProductData(companyId, unitId,
 											defaultPrice, taxModifier))
-										DbCompanyProductDescription.model.insert(product.id, DescriptionData(nameRoleId,
-											DbLanguageId.forIsoCode(languageCode).getOrInsert(), name, Some(userId)))
+										DbCompanyProductDescription.linkModel
+											.insert(product.id, DescriptionData(nameRoleId,
+												DbLanguageId.forIsoCode(languageCode).getOrInsert(), name, Some(userId)))
 										
 										// Adds this product to existing options
 										existingProducts :+= product

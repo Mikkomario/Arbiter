@@ -1,8 +1,10 @@
 package vf.arbiter.core.model.combined.invoice
 
-import utopia.metropolis.model.combined.description.{DescribedWrapper, SimplyDescribed}
+import utopia.metropolis.model.combined.description.{DescribedFactory, DescribedWrapper, SimplyDescribed}
 import utopia.metropolis.model.stored.description.{DescriptionLink, DescriptionRole}
 import vf.arbiter.core.model.stored.invoice.CompanyProduct
+
+object DescribedCompanyProduct extends DescribedFactory[CompanyProduct, DescribedCompanyProduct]
 
 /**
   * Combines CompanyProduct with the linked descriptions

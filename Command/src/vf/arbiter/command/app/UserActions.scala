@@ -7,7 +7,7 @@ import utopia.citadel.database.access.single.description.DbDescription
 import utopia.citadel.database.access.single.language.DbLanguage
 import utopia.citadel.database.model.description.DescriptionLinkModel
 import utopia.citadel.database.model.user.{UserLanguageModel, UserModel}
-import utopia.citadel.model.enumeration.StandardDescriptionRoleId
+import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.flow.parse.Regex
 import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
@@ -26,8 +26,6 @@ import scala.io.StdIn
 object UserActions
 {
 	private val notLetterRegex = !Regex.alpha
-	
-	private def nameId = StandardDescriptionRoleId.name
 	
 	/**
 	 * Registers a new user, if possible
@@ -79,12 +77,12 @@ object UserActions
 			.toVector.filter { _.nonEmpty }.map { _.toLowerCase }
 		val languages = languageCodes.map { code => DbLanguage.forIsoCode(code).getOrInsert() }
 		val languageNames = languages.map { language =>
-			language.id -> DbDescription.ofLanguageWithId(language.id)(language.id, nameId).getOrElse {
+			language.id -> DbDescription.ofLanguageWithId(language.id).name.inLanguageWithId(language.id).getOrElse {
 				// If the language didn't have a name yet, asks and inserts one
 				val name = StdIn.readLineUntilNotEmpty(
 					s"What's the name of '${language.isoCode}' in '${language.isoCode}'")
 				DescriptionLinkModel.language.insert(language.id,
-					DescriptionData(nameId, language.id, name, Some(user.id)))
+					DescriptionData(Name.id, language.id, name, Some(user.id)))
 				name
 			}
 		}.toMap
@@ -93,7 +91,7 @@ object UserActions
 		val availableProficiencies = DbLanguageFamiliarities.all
 		val proficiencyNames = DbDescriptions
 			.ofLanguageFamiliaritiesWithIds(availableProficiencies.map { _.id }.toSet)
-			.forRoleInLanguages(nameId, languageOrder)
+			.forRoleInLanguages(Name.id, languageOrder)
 			.view.mapValues { _.description.text }.toMap
 		val proficiencyOptions =
 		{

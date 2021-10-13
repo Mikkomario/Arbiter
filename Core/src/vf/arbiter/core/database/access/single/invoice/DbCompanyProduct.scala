@@ -1,12 +1,11 @@
 package vf.arbiter.core.database.access.single.invoice
 
-import utopia.flow.generic.ValueConversions._
-import utopia.vault.database.Connection
+import utopia.citadel.database.access.single.description.SingleIdDescribedAccess
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
-import utopia.vault.nosql.access.single.model.distinct.UniqueModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.NonDeprecatedView
 import vf.arbiter.core.database.access.many.description.DbCompanyProductDescriptions
+import vf.arbiter.core.database.access.single.description.DbCompanyProductDescription
 import vf.arbiter.core.database.factory.invoice.CompanyProductFactory
 import vf.arbiter.core.database.model.invoice.CompanyProductModel
 import vf.arbiter.core.model.combined.invoice.DescribedCompanyProduct
@@ -44,30 +43,17 @@ object DbCompanyProduct
 	
 	// NESTED	--------------------
 	
-	class DbSingleCompanyProduct(val id: Int) 
-		extends UniqueCompanyProductAccess with UniqueModelAccess[CompanyProduct]
+	// TODO: Add these features to Vault-Coder also
+	class DbSingleCompanyProduct(override val id: Int)
+		extends UniqueCompanyProductAccess with SingleIdDescribedAccess[CompanyProduct, DescribedCompanyProduct]
 	{
-		// COMPUTED ------------------------
+		// IMPLEMENTED  --------------------
 		
-		// TODO: Add to Vault-Coder (these can form a trait, probably)
-		def descriptions = DbCompanyProductDescriptions(id)
-		// TODO: Add to Vault-Coder (under distinct single trait)
-		def described(implicit connection: Connection) = pull.map { product =>
-			DescribedCompanyProduct(product, descriptions.toSet)
-		}
+		override protected def singleDescriptionAccess = DbCompanyProductDescription
 		
+		override protected def manyDescriptionsAccess = DbCompanyProductDescriptions
 		
-		// OTHER    ------------------------
-		
-		// TODO: This kind of methods should be added to Vault-Coder, but only after DescriptionRole
-		//  trait support is added back
-		def descriptionsOfRole(roleId: Int)(implicit connection: Connection) =
-			descriptions.forRoleWithId(roleId)
-		
-		
-		// IMPLEMENTED	--------------------
-		
-		override def condition = index <=> id
+		override protected def describedFactory = DescribedCompanyProduct
 	}
 }
 
