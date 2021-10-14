@@ -13,7 +13,7 @@ import vf.arbiter.core.model.stored.invoice.InvoiceItem
 /**
   * A common trait for access points that return individual and distinct InvoiceItems.
   * @author Mikko Hilpinen
-  * @since 2021-10-11
+  * @since 2021-10-14
   */
 trait UniqueInvoiceItemAccess 
 	extends SingleRowModelAccess[InvoiceItem] 
@@ -32,20 +32,20 @@ trait UniqueInvoiceItemAccess
 	def productId(implicit connection: Connection) = pullColumn(model.productIdColumn).int
 	
 	/**
-	  * Name or description of this item (in the same language the invoice is). None if no instance (or value) was found.
+	  * Name or description of this item (in the same language the invoice is given in). None if no instance (or value) was found.
 	  */
 	def description(implicit connection: Connection) = pullColumn(model.descriptionColumn).string
-	
-	/**
-	  * Amount of items sold within the specified unit. None if no instance (or value) was found.
-	  */
-	def amount(implicit connection: Connection) = pullColumn(model.amountColumn).double
 	
 	/**
 	  * Euro (€) price per each sold unit of this item, 
 		without taxes applied. None if no instance (or value) was found.
 	  */
 	def pricePerUnit(implicit connection: Connection) = pullColumn(model.pricePerUnitColumn).double
+	
+	/**
+	  * Amount of items sold in the product's unit. None if no instance (or value) was found.
+	  */
+	def unitsSold(implicit connection: Connection) = pullColumn(model.unitsSoldColumn).double
 	
 	def id(implicit connection: Connection) = pullColumn(index).int
 	
@@ -61,14 +61,6 @@ trait UniqueInvoiceItemAccess
 	
 	
 	// OTHER	--------------------
-	
-	/**
-	  * Updates the amount of the targeted InvoiceItem instance(s)
-	  * @param newAmount A new amount to assign
-	  * @return Whether any InvoiceItem instance was affected
-	  */
-	def amount_=(newAmount: Double)(implicit connection: Connection) = putColumn(model.amountColumn, 
-		newAmount)
 	
 	/**
 	  * Updates the description of the targeted InvoiceItem instance(s)
@@ -101,5 +93,13 @@ trait UniqueInvoiceItemAccess
 	  */
 	def productId_=(newProductId: Int)(implicit connection: Connection) = 
 		putColumn(model.productIdColumn, newProductId)
+	
+	/**
+	  * Updates the unitsSold of the targeted InvoiceItem instance(s)
+	  * @param newUnitsSold A new unitsSold to assign
+	  * @return Whether any InvoiceItem instance was affected
+	  */
+	def unitsSold_=(newUnitsSold: Double)(implicit connection: Connection) = 
+		putColumn(model.unitsSoldColumn, newUnitsSold)
 }
 

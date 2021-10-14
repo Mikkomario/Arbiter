@@ -1,6 +1,7 @@
 package vf.arbiter.core.model.stored.invoice
 
 import utopia.vault.model.template.StoredModelConvertible
+import vf.arbiter.core.database.access.single.invoice.DbSingleItemUnit
 import vf.arbiter.core.model.partial.invoice.ItemUnitData
 
 /**
@@ -8,8 +9,15 @@ import vf.arbiter.core.model.partial.invoice.ItemUnitData
   * @param id id of this ItemUnit in the database
   * @param data Wrapped ItemUnit data
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
-@deprecated("Please refer to item unit ids instead", "v0.1")
 case class ItemUnit(id: Int, data: ItemUnitData) extends StoredModelConvertible[ItemUnitData]
+{
+	// COMPUTED	--------------------
+	
+	/**
+	  * An access point to this ItemUnit in the database
+	  */
+	def access = DbSingleItemUnit(id)
+}
 

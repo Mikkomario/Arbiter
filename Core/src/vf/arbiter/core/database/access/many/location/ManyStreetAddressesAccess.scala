@@ -1,17 +1,29 @@
 package vf.arbiter.core.database.access.many.location
 
+import java.time.Instant
 import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
+import utopia.vault.nosql.view.SubView
+import utopia.vault.sql.Condition
 import vf.arbiter.core.database.factory.location.StreetAddressFactory
 import vf.arbiter.core.database.model.location.StreetAddressModel
 import vf.arbiter.core.model.stored.location.StreetAddress
 
+object ManyStreetAddressesAccess
+{
+	// NESTED	--------------------
+	
+	private class ManyStreetAddressesSubView(override val parent: ManyRowModelAccess[StreetAddress], 
+		override val filterCondition: Condition) 
+		extends ManyStreetAddressesAccess with SubView
+}
+
 /**
   * A common trait for access points which target multiple StreetAddresses at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with Indexed
 {
@@ -47,6 +59,18 @@ trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with I
 	def roomNumbers(implicit connection: Connection) = 
 		pullColumn(model.roomNumberColumn).flatMap { value => value.string }
 	
+	/**
+	  * creatorIds of the accessible StreetAddresses
+	  */
+	def creatorIds(implicit connection: Connection) = 
+		pullColumn(model.creatorIdColumn).flatMap { value => value.int }
+	
+	/**
+	  * createds of the accessible StreetAddresses
+	  */
+	def createds(implicit connection: Connection) = 
+		pullColumn(model.createdColumn).flatMap { value => value.instant }
+	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
 	
 	/**
@@ -61,6 +85,9 @@ trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with I
 	
 	override protected def defaultOrdering = None
 	
+	override def filter(additionalCondition: Condition): ManyStreetAddressesAccess = 
+		new ManyStreetAddressesAccess.ManyStreetAddressesSubView(this, additionalCondition)
+	
 	
 	// OTHER	--------------------
 	
@@ -71,6 +98,22 @@ trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with I
 	  */
 	def buildingNumber_=(newBuildingNumber: String)(implicit connection: Connection) = 
 		putColumn(model.buildingNumberColumn, newBuildingNumber)
+	
+	/**
+	  * Updates the created of the targeted StreetAddress instance(s)
+	  * @param newCreated A new created to assign
+	  * @return Whether any StreetAddress instance was affected
+	  */
+	def created_=(newCreated: Instant)(implicit connection: Connection) = 
+		putColumn(model.createdColumn, newCreated)
+	
+	/**
+	  * Updates the creatorId of the targeted StreetAddress instance(s)
+	  * @param newCreatorId A new creatorId to assign
+	  * @return Whether any StreetAddress instance was affected
+	  */
+	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) = 
+		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
 	  * Updates the postalCodeId of the targeted StreetAddress instance(s)

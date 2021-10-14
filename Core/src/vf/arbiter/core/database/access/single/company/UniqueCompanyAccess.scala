@@ -1,5 +1,6 @@
 package vf.arbiter.core.database.access.single.company
 
+import java.time.Instant
 import utopia.flow.datastructure.immutable.Value
 import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
@@ -13,7 +14,7 @@ import vf.arbiter.core.model.stored.company.Company
 /**
   * A common trait for access points that return individual and distinct Companies.
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 trait UniqueCompanyAccess 
 	extends SingleRowModelAccess[Company] with DistinctModelAccess[Company, Option[Company], Value] 
@@ -27,19 +28,14 @@ trait UniqueCompanyAccess
 	def yCode(implicit connection: Connection) = pullColumn(model.yCodeColumn).string
 	
 	/**
-	  * Name of this company. None if no instance (or value) was found.
+	  * Id of the user who registered this company to this system. None if no instance (or value) was found.
 	  */
-	def name(implicit connection: Connection) = pullColumn(model.nameColumn).string
+	def creatorId(implicit connection: Connection) = pullColumn(model.creatorIdColumn).int
 	
 	/**
-	  * Street address of this company's headquarters or operation. None if no instance (or value) was found.
+	  * Time when this company was registered. None if no instance (or value) was found.
 	  */
-	def addressId(implicit connection: Connection) = pullColumn(model.addressIdColumn).int
-	
-	/**
-	  * Tax-related identifier code for this company. None if no instance (or value) was found.
-	  */
-	def taxCode(implicit connection: Connection) = pullColumn(model.taxCodeColumn).string
+	def created(implicit connection: Connection) = pullColumn(model.createdColumn).instant
 	
 	def id(implicit connection: Connection) = pullColumn(index).int
 	
@@ -57,27 +53,20 @@ trait UniqueCompanyAccess
 	// OTHER	--------------------
 	
 	/**
-	  * Updates the addressId of the targeted Company instance(s)
-	  * @param newAddressId A new addressId to assign
+	  * Updates the created of the targeted Company instance(s)
+	  * @param newCreated A new created to assign
 	  * @return Whether any Company instance was affected
 	  */
-	def addressId_=(newAddressId: Int)(implicit connection: Connection) = 
-		putColumn(model.addressIdColumn, newAddressId)
+	def created_=(newCreated: Instant)(implicit connection: Connection) = 
+		putColumn(model.createdColumn, newCreated)
 	
 	/**
-	  * Updates the name of the targeted Company instance(s)
-	  * @param newName A new name to assign
+	  * Updates the creatorId of the targeted Company instance(s)
+	  * @param newCreatorId A new creatorId to assign
 	  * @return Whether any Company instance was affected
 	  */
-	def name_=(newName: String)(implicit connection: Connection) = putColumn(model.nameColumn, newName)
-	
-	/**
-	  * Updates the taxCode of the targeted Company instance(s)
-	  * @param newTaxCode A new taxCode to assign
-	  * @return Whether any Company instance was affected
-	  */
-	def taxCode_=(newTaxCode: String)(implicit connection: Connection) = 
-		putColumn(model.taxCodeColumn, newTaxCode)
+	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) = 
+		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
 	  * Updates the yCode of the targeted Company instance(s)

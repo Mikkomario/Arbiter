@@ -9,7 +9,7 @@ import vf.arbiter.core.model.stored.company.OrganizationCompany
 /**
   * Used for reading OrganizationCompany data from the DB
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 object OrganizationCompanyFactory extends FromValidatedRowModelFactory[OrganizationCompany]
 {
@@ -19,6 +19,6 @@ object OrganizationCompanyFactory extends FromValidatedRowModelFactory[Organizat
 	
 	override def fromValidatedModel(valid: Model[Constant]) = 
 		OrganizationCompany(valid("id").getInt, OrganizationCompanyData(valid("organizationId").getInt, 
-			valid("companyId").getInt))
+			valid("companyId").getInt, valid("creatorId").int, valid("created").getInstant))
 }
 

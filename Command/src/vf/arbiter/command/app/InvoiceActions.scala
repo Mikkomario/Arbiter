@@ -1,5 +1,6 @@
 package vf.arbiter.command.app
 
+/*
 import utopia.citadel.database.access.id.single.DbLanguageId
 import utopia.flow.datastructure.mutable.PointerWithEvents
 import utopia.flow.time.Days
@@ -17,7 +18,7 @@ import vf.arbiter.core.util.ReferenceCode
 
 import scala.io.StdIn
 import scala.util.Random
-
+*/
 /**
  * Contains interactive invoice-related actions
  * @author Mikko Hilpinen
@@ -25,6 +26,7 @@ import scala.util.Random
  */
 object InvoiceActions
 {
+	/*
 	private def nameRoleId = ArbiterDescriptionRoleId.name
 	
 	/*
@@ -177,5 +179,5 @@ object InvoiceActions
 				else
 					None
 			}
-	}
+	}*/
 }

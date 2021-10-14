@@ -9,7 +9,7 @@ import vf.arbiter.core.model.stored.location.County
 /**
   * Used for reading County data from the DB
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 object CountyFactory extends FromValidatedRowModelFactory[County]
 {
@@ -18,6 +18,7 @@ object CountyFactory extends FromValidatedRowModelFactory[County]
 	override def table = CoreTables.county
 	
 	override def fromValidatedModel(valid: Model[Constant]) = 
-		County(valid("id").getInt, CountyData(valid("name").getString))
+		County(valid("id").getInt, CountyData(valid("name").getString, valid("creatorId").int, 
+			valid("created").getInstant))
 }
 

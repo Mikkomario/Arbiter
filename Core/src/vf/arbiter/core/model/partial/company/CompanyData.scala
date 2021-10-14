@@ -1,32 +1,24 @@
 package vf.arbiter.core.model.partial.company
 
+import java.time.Instant
 import utopia.flow.datastructure.immutable.Model
 import utopia.flow.generic.ModelConvertible
 import utopia.flow.generic.ValueConversions._
+import utopia.flow.time.Now
 
 /**
   * Represents a registered company (or an individual person)
   * @param yCode Official registration code of this company (id in the country system)
-  * @param name Name of this company
-  * @param addressId Street address of this company's headquarters or operation
-  * @param taxCode Tax-related identifier code for this company
+  * @param creatorId Id of the user who registered this company to this system
+  * @param created Time when this company was registered
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
-case class CompanyData(yCode: String, name: String, addressId: Int, taxCode: Option[String] = None) 
+case class CompanyData(yCode: String, creatorId: Option[Int] = None, created: Instant = Now) 
 	extends ModelConvertible
 {
-	// COMPUTED ------------------------
-	
-	/**
-	 * @return This company's name and y-code back to back
-	 */
-	def nameAndYCode = s"$name $yCode"
-	
-	
 	// IMPLEMENTED	--------------------
 	
-	override def toModel =
-		Model(Vector("y_code" -> yCode, "name" -> name, "address_id" -> addressId, "tax_code" -> taxCode))
+	override def toModel = Model(Vector("y_code" -> yCode, "creator_id" -> creatorId, "created" -> created))
 }
 

@@ -1,5 +1,6 @@
 package vf.arbiter.core.database.model.location
 
+import java.time.Instant
 import utopia.flow.datastructure.immutable.Value
 import utopia.flow.generic.ValueConversions._
 import utopia.vault.model.immutable.StorableWithFactory
@@ -11,7 +12,7 @@ import vf.arbiter.core.model.stored.location.StreetAddress
 /**
   * Used for constructing StreetAddressModel instances and for inserting StreetAddresss to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 object StreetAddressModel extends DataInserter[StreetAddressModel, StreetAddress, StreetAddressData]
 {
@@ -42,6 +43,16 @@ object StreetAddressModel extends DataInserter[StreetAddressModel, StreetAddress
 	  */
 	val roomNumberAttName = "roomNumber"
 	
+	/**
+	  * Name of the property that contains StreetAddress creatorId
+	  */
+	val creatorIdAttName = "creatorId"
+	
+	/**
+	  * Name of the property that contains StreetAddress created
+	  */
+	val createdAttName = "created"
+	
 	
 	// COMPUTED	--------------------
 	
@@ -71,6 +82,16 @@ object StreetAddressModel extends DataInserter[StreetAddressModel, StreetAddress
 	def roomNumberColumn = table(roomNumberAttName)
 	
 	/**
+	  * Column that contains StreetAddress creatorId
+	  */
+	def creatorIdColumn = table(creatorIdAttName)
+	
+	/**
+	  * Column that contains StreetAddress created
+	  */
+	def createdColumn = table(createdAttName)
+	
+	/**
 	  * The factory object used by this model type
 	  */
 	def factory = StreetAddressFactory
@@ -82,7 +103,7 @@ object StreetAddressModel extends DataInserter[StreetAddressModel, StreetAddress
 	
 	override def apply(data: StreetAddressData) = 
 		apply(None, Some(data.postalCodeId), Some(data.streetName), Some(data.buildingNumber), data.stair, 
-			data.roomNumber)
+			data.roomNumber, data.creatorId, Some(data.created))
 	
 	override def complete(id: Value, data: StreetAddressData) = StreetAddress(id.getInt, data)
 	
@@ -94,6 +115,18 @@ object StreetAddressModel extends DataInserter[StreetAddressModel, StreetAddress
 	  * @return A model containing only the specified buildingNumber
 	  */
 	def withBuildingNumber(buildingNumber: String) = apply(buildingNumber = Some(buildingNumber))
+	
+	/**
+	  * @param created Time when this StreetAddress was first created
+	  * @return A model containing only the specified created
+	  */
+	def withCreated(created: Instant) = apply(created = Some(created))
+	
+	/**
+	  * @param creatorId Id of the user who registered this address
+	  * @return A model containing only the specified creatorId
+	  */
+	def withCreatorId(creatorId: Int) = apply(creatorId = Some(creatorId))
 	
 	/**
 	  * @param id A StreetAddress id
@@ -134,12 +167,14 @@ object StreetAddressModel extends DataInserter[StreetAddressModel, StreetAddress
   * @param buildingNumber Number of the targeted building within the specified street
   * @param stair Number or letter of the targeted stair within that building, if applicable
   * @param roomNumber Number of the targeted room within that stair / building, if applicable
+  * @param creatorId Id of the user who registered this address
+  * @param created Time when this StreetAddress was first created
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 case class StreetAddressModel(id: Option[Int] = None, postalCodeId: Option[Int] = None, 
 	streetName: Option[String] = None, buildingNumber: Option[String] = None, stair: Option[String] = None, 
-	roomNumber: Option[String] = None) 
+	roomNumber: Option[String] = None, creatorId: Option[Int] = None, created: Option[Instant] = None) 
 	extends StorableWithFactory[StreetAddress]
 {
 	// IMPLEMENTED	--------------------
@@ -150,7 +185,8 @@ case class StreetAddressModel(id: Option[Int] = None, postalCodeId: Option[Int] 
 	{
 		import StreetAddressModel._
 		Vector("id" -> id, postalCodeIdAttName -> postalCodeId, streetNameAttName -> streetName, 
-			buildingNumberAttName -> buildingNumber, stairAttName -> stair, roomNumberAttName -> roomNumber)
+			buildingNumberAttName -> buildingNumber, stairAttName -> stair, roomNumberAttName -> roomNumber, 
+			creatorIdAttName -> creatorId, createdAttName -> created)
 	}
 	
 	
@@ -161,6 +197,18 @@ case class StreetAddressModel(id: Option[Int] = None, postalCodeId: Option[Int] 
 	  * @return A new copy of this model with the specified buildingNumber
 	  */
 	def withBuildingNumber(buildingNumber: String) = copy(buildingNumber = Some(buildingNumber))
+	
+	/**
+	  * @param created A new created
+	  * @return A new copy of this model with the specified created
+	  */
+	def withCreated(created: Instant) = copy(created = Some(created))
+	
+	/**
+	  * @param creatorId A new creatorId
+	  * @return A new copy of this model with the specified creatorId
+	  */
+	def withCreatorId(creatorId: Int) = copy(creatorId = Some(creatorId))
 	
 	/**
 	  * @param postalCodeId A new postalCodeId

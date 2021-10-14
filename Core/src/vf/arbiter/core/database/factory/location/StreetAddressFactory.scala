@@ -9,7 +9,7 @@ import vf.arbiter.core.model.stored.location.StreetAddress
 /**
   * Used for reading StreetAddress data from the DB
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 object StreetAddressFactory extends FromValidatedRowModelFactory[StreetAddress]
 {
@@ -20,6 +20,6 @@ object StreetAddressFactory extends FromValidatedRowModelFactory[StreetAddress]
 	override def fromValidatedModel(valid: Model[Constant]) = 
 		StreetAddress(valid("id").getInt, StreetAddressData(valid("postalCodeId").getInt, 
 			valid("streetName").getString, valid("buildingNumber").getString, valid("stair").string, 
-			valid("roomNumber").string))
+			valid("roomNumber").string, valid("creatorId").int, valid("created").getInstant))
 }
 

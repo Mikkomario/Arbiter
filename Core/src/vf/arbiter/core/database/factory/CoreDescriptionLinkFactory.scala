@@ -10,5 +10,7 @@ object CoreDescriptionLinkFactory
 	val companyProduct = DescriptionLinkFactory(CoreDescriptionLinkModel.companyProduct)
 	
 	val itemUnit = DescriptionLinkFactory(CoreDescriptionLinkModel.itemUnit)
+	
+	val unitCategory = DescriptionLinkFactory(CoreDescriptionLinkModel.unitCategory)
 }
 

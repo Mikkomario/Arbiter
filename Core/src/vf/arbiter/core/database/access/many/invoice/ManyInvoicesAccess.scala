@@ -6,30 +6,53 @@ import utopia.flow.time.Days
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
+import utopia.vault.nosql.view.SubView
+import utopia.vault.sql.Condition
 import vf.arbiter.core.database.factory.invoice.InvoiceFactory
 import vf.arbiter.core.database.model.invoice.InvoiceModel
 import vf.arbiter.core.model.stored.invoice.Invoice
 
+object ManyInvoicesAccess
+{
+	// NESTED	--------------------
+	
+	private class ManyInvoicesSubView(override val parent: ManyRowModelAccess[Invoice], 
+		override val filterCondition: Condition) 
+		extends ManyInvoicesAccess with SubView
+}
+
 /**
   * A common trait for access points which target multiple Invoices at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-11
+  * @since 2021-10-14
   */
 trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed
 {
 	// COMPUTED	--------------------
 	
 	/**
-	  * senderCompanyIds of the accessible Invoices
+	  * senderCompanyDetailsIds of the accessible Invoices
 	  */
-	def senderCompanyIds(implicit connection: Connection) = 
-		pullColumn(model.senderCompanyIdColumn).flatMap { value => value.int }
+	def senderCompanyDetailsIds(implicit connection: Connection) = 
+		pullColumn(model.senderCompanyDetailsIdColumn).flatMap { value => value.int }
 	
 	/**
-	  * recipientCompanyIds of the accessible Invoices
+	  * recipientCompanyDetailsIds of the accessible Invoices
 	  */
-	def recipientCompanyIds(implicit connection: Connection) = 
-		pullColumn(model.recipientCompanyIdColumn).flatMap { value => value.int }
+	def recipientCompanyDetailsIds(implicit connection: Connection) = 
+		pullColumn(model.recipientCompanyDetailsIdColumn).flatMap { value => value.int }
+	
+	/**
+	  * senderBankAccountIds of the accessible Invoices
+	  */
+	def senderBankAccountIds(implicit connection: Connection) = 
+		pullColumn(model.senderBankAccountIdColumn).flatMap { value => value.int }
+	
+	/**
+	  * languageIds of the accessible Invoices
+	  */
+	def languageIds(implicit connection: Connection) = 
+		pullColumn(model.languageIdColumn).flatMap { value => value.int }
 	
 	/**
 	  * referenceCodes of the accessible Invoices
@@ -38,10 +61,10 @@ trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed
 		pullColumn(model.referenceCodeColumn).flatMap { value => value.string }
 	
 	/**
-	  * paymentDurationDays of the accessible Invoices
+	  * paymentDuration of the accessible Invoices
 	  */
-	def paymentDurationDays(implicit connection: Connection) = 
-		pullColumn(model.paymentDurationDaysColumn).flatMap { value => value.int.map { Days(_) } }
+	def paymentDuration(implicit connection: Connection) = 
+		pullColumn(model.paymentDurationColumn).flatMap { value => value.int.map { Days(_) } }
 	
 	/**
 	  * productDeliveryDates of the accessible Invoices
@@ -61,6 +84,12 @@ trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed
 	def createds(implicit connection: Connection) = 
 		pullColumn(model.createdColumn).flatMap { value => value.instant }
 	
+	/**
+	  * cancelledAfters of the accessible Invoices
+	  */
+	def cancelledAfters(implicit connection: Connection) = 
+		pullColumn(model.cancelledAfterColumn).flatMap { value => value.instant }
+	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
 	
 	/**
@@ -75,8 +104,19 @@ trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed
 	
 	override protected def defaultOrdering = Some(factory.defaultOrdering)
 	
+	override def filter(additionalCondition: Condition): ManyInvoicesAccess = 
+		new ManyInvoicesAccess.ManyInvoicesSubView(this, additionalCondition)
+	
 	
 	// OTHER	--------------------
+	
+	/**
+	  * Updates the cancelledAfter of the targeted Invoice instance(s)
+	  * @param newCancelledAfter A new cancelledAfter to assign
+	  * @return Whether any Invoice instance was affected
+	  */
+	def cancelledAfter_=(newCancelledAfter: Instant)(implicit connection: Connection) = 
+		putColumn(model.cancelledAfterColumn, newCancelledAfter)
 	
 	/**
 	  * Updates the created of the targeted Invoice instance(s)
@@ -95,12 +135,20 @@ trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed
 		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
-	  * Updates the paymentDurationDays of the targeted Invoice instance(s)
-	  * @param newPaymentDurationDays A new paymentDurationDays to assign
+	  * Updates the languageId of the targeted Invoice instance(s)
+	  * @param newLanguageId A new languageId to assign
 	  * @return Whether any Invoice instance was affected
 	  */
-	def paymentDurationDays_=(newPaymentDurationDays: Days)(implicit connection: Connection) = 
-		putColumn(model.paymentDurationDaysColumn, newPaymentDurationDays.length)
+	def languageId_=(newLanguageId: Int)(implicit connection: Connection) = 
+		putColumn(model.languageIdColumn, newLanguageId)
+	
+	/**
+	  * Updates the paymentDuration of the targeted Invoice instance(s)
+	  * @param newPaymentDuration A new paymentDuration to assign
+	  * @return Whether any Invoice instance was affected
+	  */
+	def paymentDuration_=(newPaymentDuration: Days)(implicit connection: Connection) = 
+		putColumn(model.paymentDurationColumn, newPaymentDuration.length)
 	
 	/**
 	  * Updates the productDeliveryDate of the targeted Invoice instance(s)
@@ -111,12 +159,12 @@ trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed
 		putColumn(model.productDeliveryDateColumn, newProductDeliveryDate)
 	
 	/**
-	  * Updates the recipientCompanyId of the targeted Invoice instance(s)
-	  * @param newRecipientCompanyId A new recipientCompanyId to assign
+	  * Updates the recipientCompanyDetailsId of the targeted Invoice instance(s)
+	  * @param newRecipientCompanyDetailsId A new recipientCompanyDetailsId to assign
 	  * @return Whether any Invoice instance was affected
 	  */
-	def recipientCompanyId_=(newRecipientCompanyId: Int)(implicit connection: Connection) = 
-		putColumn(model.recipientCompanyIdColumn, newRecipientCompanyId)
+	def recipientCompanyDetailsId_=(newRecipientCompanyDetailsId: Int)(implicit connection: Connection) = 
+		putColumn(model.recipientCompanyDetailsIdColumn, newRecipientCompanyDetailsId)
 	
 	/**
 	  * Updates the referenceCode of the targeted Invoice instance(s)
@@ -127,11 +175,19 @@ trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed
 		putColumn(model.referenceCodeColumn, newReferenceCode)
 	
 	/**
-	  * Updates the senderCompanyId of the targeted Invoice instance(s)
-	  * @param newSenderCompanyId A new senderCompanyId to assign
+	  * Updates the senderBankAccountId of the targeted Invoice instance(s)
+	  * @param newSenderBankAccountId A new senderBankAccountId to assign
 	  * @return Whether any Invoice instance was affected
 	  */
-	def senderCompanyId_=(newSenderCompanyId: Int)(implicit connection: Connection) = 
-		putColumn(model.senderCompanyIdColumn, newSenderCompanyId)
+	def senderBankAccountId_=(newSenderBankAccountId: Int)(implicit connection: Connection) = 
+		putColumn(model.senderBankAccountIdColumn, newSenderBankAccountId)
+	
+	/**
+	  * Updates the senderCompanyDetailsId of the targeted Invoice instance(s)
+	  * @param newSenderCompanyDetailsId A new senderCompanyDetailsId to assign
+	  * @return Whether any Invoice instance was affected
+	  */
+	def senderCompanyDetailsId_=(newSenderCompanyDetailsId: Int)(implicit connection: Connection) = 
+		putColumn(model.senderCompanyDetailsIdColumn, newSenderCompanyDetailsId)
 }
 

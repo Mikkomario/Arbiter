@@ -6,6 +6,7 @@ import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.Days
 import utopia.vault.model.immutable.StorableWithFactory
 import utopia.vault.nosql.storable.DataInserter
+import utopia.vault.nosql.storable.deprecation.NullDeprecatable
 import vf.arbiter.core.database.factory.invoice.InvoiceFactory
 import vf.arbiter.core.model.partial.invoice.InvoiceData
 import vf.arbiter.core.model.stored.invoice.Invoice
@@ -13,21 +14,32 @@ import vf.arbiter.core.model.stored.invoice.Invoice
 /**
   * Used for constructing InvoiceModel instances and for inserting Invoices to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-11
+  * @since 2021-10-14
   */
-object InvoiceModel extends DataInserter[InvoiceModel, Invoice, InvoiceData]
+object InvoiceModel 
+	extends DataInserter[InvoiceModel, Invoice, InvoiceData] with NullDeprecatable[InvoiceModel]
 {
 	// ATTRIBUTES	--------------------
 	
 	/**
-	  * Name of the property that contains Invoice senderCompanyId
+	  * Name of the property that contains Invoice senderCompanyDetailsId
 	  */
-	val senderCompanyIdAttName = "senderCompanyId"
+	val senderCompanyDetailsIdAttName = "senderCompanyDetailsId"
 	
 	/**
-	  * Name of the property that contains Invoice recipientCompanyId
+	  * Name of the property that contains Invoice recipientCompanyDetailsId
 	  */
-	val recipientCompanyIdAttName = "recipientCompanyId"
+	val recipientCompanyDetailsIdAttName = "recipientCompanyDetailsId"
+	
+	/**
+	  * Name of the property that contains Invoice senderBankAccountId
+	  */
+	val senderBankAccountIdAttName = "senderBankAccountId"
+	
+	/**
+	  * Name of the property that contains Invoice languageId
+	  */
+	val languageIdAttName = "languageId"
 	
 	/**
 	  * Name of the property that contains Invoice referenceCode
@@ -35,9 +47,9 @@ object InvoiceModel extends DataInserter[InvoiceModel, Invoice, InvoiceData]
 	val referenceCodeAttName = "referenceCode"
 	
 	/**
-	  * Name of the property that contains Invoice paymentDurationDays
+	  * Name of the property that contains Invoice paymentDuration
 	  */
-	val paymentDurationDaysAttName = "paymentDurationDays"
+	val paymentDurationAttName = "paymentDuration"
 	
 	/**
 	  * Name of the property that contains Invoice productDeliveryDate
@@ -54,18 +66,35 @@ object InvoiceModel extends DataInserter[InvoiceModel, Invoice, InvoiceData]
 	  */
 	val createdAttName = "created"
 	
+	/**
+	  * Name of the property that contains Invoice cancelledAfter
+	  */
+	val cancelledAfterAttName = "cancelledAfter"
+	
+	override val deprecationAttName = "cancelledAfter"
+	
 	
 	// COMPUTED	--------------------
 	
 	/**
-	  * Column that contains Invoice senderCompanyId
+	  * Column that contains Invoice senderCompanyDetailsId
 	  */
-	def senderCompanyIdColumn = table(senderCompanyIdAttName)
+	def senderCompanyDetailsIdColumn = table(senderCompanyDetailsIdAttName)
 	
 	/**
-	  * Column that contains Invoice recipientCompanyId
+	  * Column that contains Invoice recipientCompanyDetailsId
 	  */
-	def recipientCompanyIdColumn = table(recipientCompanyIdAttName)
+	def recipientCompanyDetailsIdColumn = table(recipientCompanyDetailsIdAttName)
+	
+	/**
+	  * Column that contains Invoice senderBankAccountId
+	  */
+	def senderBankAccountIdColumn = table(senderBankAccountIdAttName)
+	
+	/**
+	  * Column that contains Invoice languageId
+	  */
+	def languageIdColumn = table(languageIdAttName)
 	
 	/**
 	  * Column that contains Invoice referenceCode
@@ -73,9 +102,9 @@ object InvoiceModel extends DataInserter[InvoiceModel, Invoice, InvoiceData]
 	def referenceCodeColumn = table(referenceCodeAttName)
 	
 	/**
-	  * Column that contains Invoice paymentDurationDays
+	  * Column that contains Invoice paymentDuration
 	  */
-	def paymentDurationDaysColumn = table(paymentDurationDaysAttName)
+	def paymentDurationColumn = table(paymentDurationAttName)
 	
 	/**
 	  * Column that contains Invoice productDeliveryDate
@@ -93,6 +122,11 @@ object InvoiceModel extends DataInserter[InvoiceModel, Invoice, InvoiceData]
 	def createdColumn = table(createdAttName)
 	
 	/**
+	  * Column that contains Invoice cancelledAfter
+	  */
+	def cancelledAfterColumn = table(cancelledAfterAttName)
+	
+	/**
 	  * The factory object used by this model type
 	  */
 	def factory = InvoiceFactory
@@ -103,13 +137,23 @@ object InvoiceModel extends DataInserter[InvoiceModel, Invoice, InvoiceData]
 	override def table = factory.table
 	
 	override def apply(data: InvoiceData) = 
-		apply(None, Some(data.senderCompanyId), Some(data.recipientCompanyId), Some(data.referenceCode), 
-			Some(data.paymentDurationDays), data.productDeliveryDate, data.creatorId, Some(data.created))
+		apply(None, Some(data.senderCompanyDetailsId), Some(data.recipientCompanyDetailsId), 
+			Some(data.senderBankAccountId), Some(data.languageId), Some(data.referenceCode), 
+			Some(data.paymentDuration), data.productDeliveryDate, data.creatorId, Some(data.created), 
+			data.cancelledAfter)
 	
 	override def complete(id: Value, data: InvoiceData) = Invoice(id.getInt, data)
 	
+	override def withDeprecatedAfter(deprecationTime: Instant) = withCancelledAfter(deprecationTime)
+	
 	
 	// OTHER	--------------------
+	
+	/**
+	  * @param cancelledAfter Time when this Invoice became deprecated. None while this Invoice is still valid.
+	  * @return A model containing only the specified cancelledAfter
+	  */
+	def withCancelledAfter(cancelledAfter: Instant) = apply(cancelledAfter = Some(cancelledAfter))
 	
 	/**
 	  * @param created Time when this Invoice was first created
@@ -130,11 +174,16 @@ object InvoiceModel extends DataInserter[InvoiceModel, Invoice, InvoiceData]
 	def withId(id: Int) = apply(Some(id))
 	
 	/**
-	  * @param paymentDurationDays Number of days during which this invoice can be paid before additional consequences
-	  * @return A model containing only the specified paymentDurationDays
+	  * @param languageId Id of the language used in this invoice
+	  * @return A model containing only the specified languageId
 	  */
-	def withPaymentDurationDays(paymentDurationDays: Days) = 
-		apply(paymentDurationDays = Some(paymentDurationDays))
+	def withLanguageId(languageId: Int) = apply(languageId = Some(languageId))
+	
+	/**
+	  * @param paymentDuration Number of days during which this invoice can be paid before additional consequences
+	  * @return A model containing only the specified paymentDuration
+	  */
+	def withPaymentDuration(paymentDuration: Days) = apply(paymentDuration = Some(paymentDuration))
 	
 	/**
 	  * @param productDeliveryDate Date when the sold products were delivered, if applicable
@@ -144,10 +193,11 @@ object InvoiceModel extends DataInserter[InvoiceModel, Invoice, InvoiceData]
 		apply(productDeliveryDate = Some(productDeliveryDate))
 	
 	/**
-	  * @param recipientCompanyId Id of the recipient company of this invoice
-	  * @return A model containing only the specified recipientCompanyId
+	  * @param recipientCompanyDetailsId Id of the details of the recipient company used in this invoice
+	  * @return A model containing only the specified recipientCompanyDetailsId
 	  */
-	def withRecipientCompanyId(recipientCompanyId: Int) = apply(recipientCompanyId = Some(recipientCompanyId))
+	def withRecipientCompanyDetailsId(recipientCompanyDetailsId: Int) = 
+		apply(recipientCompanyDetailsId = Some(recipientCompanyDetailsId))
 	
 	/**
 	  * @param referenceCode A custom reference code used by the sender to identify this invoice
@@ -156,29 +206,40 @@ object InvoiceModel extends DataInserter[InvoiceModel, Invoice, InvoiceData]
 	def withReferenceCode(referenceCode: String) = apply(referenceCode = Some(referenceCode))
 	
 	/**
-	  * @param senderCompanyId Id of the company who sent this invoice (payment recipient)
-	  * @return A model containing only the specified senderCompanyId
+	  * @param senderBankAccountId Id of the bank account the invoice sender wants the recipient to transfer money to
+	  * @return A model containing only the specified senderBankAccountId
 	  */
-	def withSenderCompanyId(senderCompanyId: Int) = apply(senderCompanyId = Some(senderCompanyId))
+	def withSenderBankAccountId(senderBankAccountId: Int) = apply(senderBankAccountId = Some(senderBankAccountId))
+	
+	/**
+	  * @param senderCompanyDetailsId Id of the details of the company who sent this invoice (payment recipient)
+	  * @return A model containing only the specified senderCompanyDetailsId
+	  */
+	def withSenderCompanyDetailsId(senderCompanyDetailsId: Int) = 
+		apply(senderCompanyDetailsId = Some(senderCompanyDetailsId))
 }
 
 /**
   * Used for interacting with Invoices in the database
   * @param id Invoice database id
-  * @param senderCompanyId Id of the company who sent this invoice (payment recipient)
-  * @param recipientCompanyId Id of the recipient company of this invoice
+  * @param senderCompanyDetailsId Id of the details of the company who sent this invoice (payment recipient)
+  * @param recipientCompanyDetailsId Id of the details of the recipient company used in this invoice
+  * @param senderBankAccountId Id of the bank account the invoice sender wants the recipient to transfer money to
+  * @param languageId Id of the language used in this invoice
   * @param referenceCode A custom reference code used by the sender to identify this invoice
-  * @param paymentDurationDays Number of days during which this invoice can be paid before additional consequences
+  * @param paymentDuration Number of days during which this invoice can be paid before additional consequences
   * @param productDeliveryDate Date when the sold products were delivered, if applicable
   * @param creatorId Id of the user who created this invoice
   * @param created Time when this Invoice was first created
+  * @param cancelledAfter Time when this Invoice became deprecated. None while this Invoice is still valid.
   * @author Mikko Hilpinen
-  * @since 2021-10-11
+  * @since 2021-10-14
   */
-case class InvoiceModel(id: Option[Int] = None, senderCompanyId: Option[Int] = None, 
-	recipientCompanyId: Option[Int] = None, referenceCode: Option[String] = None, 
-	paymentDurationDays: Option[Days] = None, productDeliveryDate: Option[LocalDate] = None, 
-	creatorId: Option[Int] = None, created: Option[Instant] = None) 
+case class InvoiceModel(id: Option[Int] = None, senderCompanyDetailsId: Option[Int] = None, 
+	recipientCompanyDetailsId: Option[Int] = None, senderBankAccountId: Option[Int] = None, 
+	languageId: Option[Int] = None, referenceCode: Option[String] = None, 
+	paymentDuration: Option[Days] = None, productDeliveryDate: Option[LocalDate] = None, 
+	creatorId: Option[Int] = None, created: Option[Instant] = None, cancelledAfter: Option[Instant] = None) 
 	extends StorableWithFactory[Invoice]
 {
 	// IMPLEMENTED	--------------------
@@ -188,15 +249,23 @@ case class InvoiceModel(id: Option[Int] = None, senderCompanyId: Option[Int] = N
 	override def valueProperties = 
 	{
 		import InvoiceModel._
-		Vector("id" -> id, senderCompanyIdAttName -> senderCompanyId, 
-			recipientCompanyIdAttName -> recipientCompanyId, referenceCodeAttName -> referenceCode, 
-			paymentDurationDaysAttName -> paymentDurationDays.map { _.length }, 
+		Vector("id" -> id, senderCompanyDetailsIdAttName -> senderCompanyDetailsId, 
+			recipientCompanyDetailsIdAttName -> recipientCompanyDetailsId, 
+			senderBankAccountIdAttName -> senderBankAccountId, languageIdAttName -> languageId, 
+			referenceCodeAttName -> referenceCode, 
+			paymentDurationAttName -> paymentDuration.map { _.length }, 
 			productDeliveryDateAttName -> productDeliveryDate, creatorIdAttName -> creatorId, 
-			createdAttName -> created)
+			createdAttName -> created, cancelledAfterAttName -> cancelledAfter)
 	}
 	
 	
 	// OTHER	--------------------
+	
+	/**
+	  * @param cancelledAfter A new cancelledAfter
+	  * @return A new copy of this model with the specified cancelledAfter
+	  */
+	def withCancelledAfter(cancelledAfter: Instant) = copy(cancelledAfter = Some(cancelledAfter))
 	
 	/**
 	  * @param created A new created
@@ -211,10 +280,16 @@ case class InvoiceModel(id: Option[Int] = None, senderCompanyId: Option[Int] = N
 	def withCreatorId(creatorId: Int) = copy(creatorId = Some(creatorId))
 	
 	/**
-	  * @param paymentDurationDays A new paymentDurationDays
-	  * @return A new copy of this model with the specified paymentDurationDays
+	  * @param languageId A new languageId
+	  * @return A new copy of this model with the specified languageId
 	  */
-	def withPaymentDurationDays(paymentDurationDays: Days) = copy(paymentDurationDays = Some(paymentDurationDays))
+	def withLanguageId(languageId: Int) = copy(languageId = Some(languageId))
+	
+	/**
+	  * @param paymentDuration A new paymentDuration
+	  * @return A new copy of this model with the specified paymentDuration
+	  */
+	def withPaymentDuration(paymentDuration: Days) = copy(paymentDuration = Some(paymentDuration))
 	
 	/**
 	  * @param productDeliveryDate A new productDeliveryDate
@@ -224,10 +299,11 @@ case class InvoiceModel(id: Option[Int] = None, senderCompanyId: Option[Int] = N
 		copy(productDeliveryDate = Some(productDeliveryDate))
 	
 	/**
-	  * @param recipientCompanyId A new recipientCompanyId
-	  * @return A new copy of this model with the specified recipientCompanyId
+	  * @param recipientCompanyDetailsId A new recipientCompanyDetailsId
+	  * @return A new copy of this model with the specified recipientCompanyDetailsId
 	  */
-	def withRecipientCompanyId(recipientCompanyId: Int) = copy(recipientCompanyId = Some(recipientCompanyId))
+	def withRecipientCompanyDetailsId(recipientCompanyDetailsId: Int) = 
+		copy(recipientCompanyDetailsId = Some(recipientCompanyDetailsId))
 	
 	/**
 	  * @param referenceCode A new referenceCode
@@ -236,9 +312,16 @@ case class InvoiceModel(id: Option[Int] = None, senderCompanyId: Option[Int] = N
 	def withReferenceCode(referenceCode: String) = copy(referenceCode = Some(referenceCode))
 	
 	/**
-	  * @param senderCompanyId A new senderCompanyId
-	  * @return A new copy of this model with the specified senderCompanyId
+	  * @param senderBankAccountId A new senderBankAccountId
+	  * @return A new copy of this model with the specified senderBankAccountId
 	  */
-	def withSenderCompanyId(senderCompanyId: Int) = copy(senderCompanyId = Some(senderCompanyId))
+	def withSenderBankAccountId(senderBankAccountId: Int) = copy(senderBankAccountId = Some(senderBankAccountId))
+	
+	/**
+	  * @param senderCompanyDetailsId A new senderCompanyDetailsId
+	  * @return A new copy of this model with the specified senderCompanyDetailsId
+	  */
+	def withSenderCompanyDetailsId(senderCompanyDetailsId: Int) = 
+		copy(senderCompanyDetailsId = Some(senderCompanyDetailsId))
 }
 

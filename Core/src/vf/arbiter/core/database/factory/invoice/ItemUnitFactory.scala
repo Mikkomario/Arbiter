@@ -9,7 +9,7 @@ import vf.arbiter.core.model.stored.invoice.ItemUnit
 /**
   * Used for reading ItemUnit data from the DB
   * @author Mikko Hilpinen
-  * @since 2021-10-11
+  * @since 2021-10-14
   */
 object ItemUnitFactory extends FromValidatedRowModelFactory[ItemUnit]
 {
@@ -17,6 +17,7 @@ object ItemUnitFactory extends FromValidatedRowModelFactory[ItemUnit]
 	
 	override def table = CoreTables.itemUnit
 	
-	override def fromValidatedModel(valid: Model[Constant]) = ItemUnit(valid("id").getInt, ItemUnitData())
+	override def fromValidatedModel(valid: Model[Constant]) = 
+		ItemUnit(valid("id").getInt, ItemUnitData(valid("categoryId").getInt, valid("multiplier").getDouble))
 }
 

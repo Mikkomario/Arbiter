@@ -1,6 +1,7 @@
 package vf.arbiter.core.model.stored.location
 
 import utopia.vault.model.template.StoredModelConvertible
+import vf.arbiter.core.database.access.single.location.DbSingleStreetAddress
 import vf.arbiter.core.model.partial.location.StreetAddressData
 
 /**
@@ -8,7 +9,15 @@ import vf.arbiter.core.model.partial.location.StreetAddressData
   * @param id id of this StreetAddress in the database
   * @param data Wrapped StreetAddress data
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 case class StreetAddress(id: Int, data: StreetAddressData) extends StoredModelConvertible[StreetAddressData]
+{
+	// COMPUTED	--------------------
+	
+	/**
+	  * An access point to this StreetAddress in the database
+	  */
+	def access = DbSingleStreetAddress(id)
+}
 

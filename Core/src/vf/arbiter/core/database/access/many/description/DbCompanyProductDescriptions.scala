@@ -5,9 +5,8 @@ import vf.arbiter.core.database.factory.CoreDescriptionLinkFactory
 
 object DbCompanyProductDescriptions extends DescriptionLinksAccess
 {
-	/**
-	  * Factory used when reading CompanyProduct description links
-	  */
+	// IMPLEMENTED	--------------------
+	
 	override def factory = CoreDescriptionLinkFactory.companyProduct
 }
 

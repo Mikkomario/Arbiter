@@ -5,7 +5,7 @@ import utopia.vault.nosql.view.UnconditionalView
 /**
   * The root access point when targeting multiple Banks at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 object DbBanks extends ManyBanksAccess with UnconditionalView
 

@@ -1,5 +1,6 @@
 package vf.arbiter.command.app
 
+/*
 import utopia.citadel.database.access.id.single.DbLanguageId
 import utopia.citadel.database.access.many.description.DbDescriptions
 import utopia.citadel.database.access.single.organization.DbOrganization
@@ -15,7 +16,7 @@ import vf.arbiter.core.model.partial.location.StreetAddressData
 import vf.arbiter.core.model.stored.company.Company
 
 import scala.io.StdIn
-
+*/
 /**
  * Contains interactive functions related to company interactions
  * @author Mikko Hilpinen
@@ -23,6 +24,7 @@ import scala.io.StdIn
  */
 object CompanyActions
 {
+	/*
 	/**
 	 * Searches for a company based on its name
 	 * @param nameSearch Search string
@@ -225,4 +227,5 @@ object CompanyActions
 		// Registers a link between the company and the organization
 		company.access.linkToOrganizationWithId(organizationId)
 	}
+	*/
 }

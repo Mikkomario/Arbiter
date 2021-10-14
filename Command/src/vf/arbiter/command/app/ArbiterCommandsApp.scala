@@ -1,5 +1,6 @@
 package vf.arbiter.command.app
 
+/*
 import utopia.bunnymunch.jawn.JsonBunny
 import utopia.citadel.util.CitadelContext
 import utopia.flow.datastructure.mutable.PointerWithEvents
@@ -13,7 +14,7 @@ import utopia.metropolis.model.stored.user.User
 import vf.arbiter.core.model.stored.company.Company
 
 import scala.io.StdIn
-
+*/
 /**
  * A command line application for the Arbiter project
  * @author Mikko Hilpinen
@@ -21,6 +22,7 @@ import scala.io.StdIn
  */
 object ArbiterCommandsApp extends App
 {
+	/*
 	DataType.setup()
 	implicit val jsonParser: JsonParser = JsonBunny
 	CitadelContext.setup(executionContext, connectionPool, "arbiter_db")
@@ -106,5 +108,5 @@ object ArbiterCommandsApp extends App
 	println("Welcome to Arbiter")
 	println("Instructions: use 'help' or 'man' commands to get more information. Use exit to quit.")
 	Console(commandsPointer, "Please enter the next command", closeCommandName = "exit").run()
-	println("Bye!")
+	println("Bye!")*/
 }

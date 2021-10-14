@@ -1,5 +1,6 @@
 package vf.arbiter.command.app
 
+/*
 import utopia.citadel.database.access.many.description.DbDescriptions
 import utopia.citadel.database.access.many.language.DbLanguageFamiliarities
 import utopia.citadel.database.access.many.user.DbManyUserSettings
@@ -17,7 +18,7 @@ import utopia.metropolis.model.stored.user.User
 import utopia.vault.database.Connection
 
 import scala.io.StdIn
-
+*/
 /**
  * Contains interactive actions related to users
  * @author Mikko Hilpinen
@@ -25,6 +26,7 @@ import scala.io.StdIn
  */
 object UserActions
 {
+	/*
 	private val notLetterRegex = !Regex.alpha
 	
 	/**
@@ -118,5 +120,5 @@ object UserActions
 	
 	private def findUserForName(userName: String)(implicit connection: Connection) =
 		DbManyUserSettings.withName(userName).bestMatch(Vector(_.email.isEmpty))
-			.headOption.map { s => User(s.userId, s) }
+			.headOption.map { s => User(s.userId, s) }*/
 }

@@ -1,54 +1,59 @@
 package vf.arbiter.core.database.access.many.company
 
+import utopia.citadel.database.Tables
+import utopia.citadel.database.model.organization.MembershipModel
+
+import java.time.Instant
 import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.SubView
-import utopia.vault.sql.Condition
-import vf.arbiter.core.database.access.many.company.ManyCompaniesAccess.CompaniesSubView
+import utopia.vault.sql.{Condition, Select, Where}
 import vf.arbiter.core.database.factory.company.CompanyFactory
-import vf.arbiter.core.database.model.company.CompanyModel
+import vf.arbiter.core.database.model.company.{CompanyModel, OrganizationCompanyModel}
 import vf.arbiter.core.model.stored.company.Company
 
 object ManyCompaniesAccess
 {
-	// NESTED   -----------------------------------
+	// NESTED	--------------------
 	
-	private class CompaniesSubView(override val parent: ManyRowModelAccess[Company],
-	                               override val filterCondition: Condition)
+	private class ManyCompaniesSubView(override val parent: ManyRowModelAccess[Company], 
+		override val filterCondition: Condition) 
 		extends ManyCompaniesAccess with SubView
 }
 
 /**
   * A common trait for access points which target multiple Companies at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 trait ManyCompaniesAccess extends ManyRowModelAccess[Company] with Indexed
 {
 	// COMPUTED	--------------------
 	
 	/**
+	 * @return Model used for interacting with company-organization links
+	 */
+	protected def organizationLinkModel = OrganizationCompanyModel
+	
+	/**
 	  * yCodes of the accessible Companies
 	  */
 	def yCodes(implicit connection: Connection) = pullColumn(model.yCodeColumn)
 		.flatMap { value => value.string }
+	
 	/**
-	  * names of the accessible Companies
+	  * creatorIds of the accessible Companies
 	  */
-	def names(implicit connection: Connection) = pullColumn(model.nameColumn)
-		.flatMap { value => value.string }
+	def creatorIds(implicit connection: Connection) = 
+		pullColumn(model.creatorIdColumn).flatMap { value => value.int }
+	
 	/**
-	  * addressIds of the accessible Companies
+	  * createds of the accessible Companies
 	  */
-	def addressIds(implicit connection: Connection) = 
-		pullColumn(model.addressIdColumn).flatMap { value => value.int }
-	/**
-	  * taxCodes of the accessible Companies
-	  */
-	def taxCodes(implicit connection: Connection) = 
-		pullColumn(model.taxCodeColumn).flatMap { value => value.string }
+	def createds(implicit connection: Connection) = 
+		pullColumn(model.createdColumn).flatMap { value => value.instant }
 	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
 	
@@ -62,43 +67,45 @@ trait ManyCompaniesAccess extends ManyRowModelAccess[Company] with Indexed
 	
 	override def factory = CompanyFactory
 	
-	override protected def defaultOrdering = None
+	override protected def defaultOrdering = Some(factory.defaultOrdering)
 	
-	override def filter(additionalCondition: Condition): ManyCompaniesAccess =
-		new CompaniesSubView(this, additionalCondition)
+	override def filter(additionalCondition: Condition): ManyCompaniesAccess = 
+		new ManyCompaniesAccess.ManyCompaniesSubView(this, additionalCondition)
 	
 	
 	// OTHER	--------------------
 	
 	/**
-	 * Finds companies within this group that contain the specified string in their name
-	 * @param companyNamePart String that must be contained within a company name
+	 * @param userId A user id
 	 * @param connection Implicit DB Connection
-	 * @return Companies that have the specified string in their name
+	 * @return All companies that are linked with an organization that user belongs to
 	 */
-	def matchingName(companyNamePart: String)(implicit connection: Connection) =
-		find(model.nameColumn.contains(companyNamePart))
+	def linkedWithUserWithId(userId: Int)(implicit connection: Connection) =
+	{
+		val membershipModel = MembershipModel
+		// Joins to organization link -> organization -> membership
+		factory(connection(
+			Select(table join organizationLinkModel.table join Tables.organization join membershipModel.table, table) +
+				Where(mergeCondition(membershipModel.nonDeprecatedCondition &&
+					membershipModel.withUserId(userId).toCondition))))
+	}
 	
 	/**
-	  * Updates the addressId of the targeted Company instance(s)
-	  * @param newAddressId A new addressId to assign
+	  * Updates the created of the targeted Company instance(s)
+	  * @param newCreated A new created to assign
 	  * @return Whether any Company instance was affected
 	  */
-	def addressId_=(newAddressId: Int)(implicit connection: Connection) = 
-		putColumn(model.addressIdColumn, newAddressId)
+	def created_=(newCreated: Instant)(implicit connection: Connection) = 
+		putColumn(model.createdColumn, newCreated)
+	
 	/**
-	  * Updates the name of the targeted Company instance(s)
-	  * @param newName A new name to assign
+	  * Updates the creatorId of the targeted Company instance(s)
+	  * @param newCreatorId A new creatorId to assign
 	  * @return Whether any Company instance was affected
 	  */
-	def name_=(newName: String)(implicit connection: Connection) = putColumn(model.nameColumn, newName)
-	/**
-	  * Updates the taxCode of the targeted Company instance(s)
-	  * @param newTaxCode A new taxCode to assign
-	  * @return Whether any Company instance was affected
-	  */
-	def taxCode_=(newTaxCode: String)(implicit connection: Connection) = 
-		putColumn(model.taxCodeColumn, newTaxCode)
+	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) = 
+		putColumn(model.creatorIdColumn, newCreatorId)
+	
 	/**
 	  * Updates the yCode of the targeted Company instance(s)
 	  * @param newYCode A new yCode to assign

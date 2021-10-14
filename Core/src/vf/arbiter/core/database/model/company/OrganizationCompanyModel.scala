@@ -1,5 +1,6 @@
 package vf.arbiter.core.database.model.company
 
+import java.time.Instant
 import utopia.flow.datastructure.immutable.Value
 import utopia.flow.generic.ValueConversions._
 import utopia.vault.model.immutable.StorableWithFactory
@@ -11,7 +12,7 @@ import vf.arbiter.core.model.stored.company.OrganizationCompany
 /**
   * Used for constructing OrganizationCompanyModel instances and for inserting OrganizationCompanys to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 object OrganizationCompanyModel 
 	extends DataInserter[OrganizationCompanyModel, OrganizationCompany, OrganizationCompanyData]
@@ -28,6 +29,16 @@ object OrganizationCompanyModel
 	  */
 	val companyIdAttName = "companyId"
 	
+	/**
+	  * Name of the property that contains OrganizationCompany creatorId
+	  */
+	val creatorIdAttName = "creatorId"
+	
+	/**
+	  * Name of the property that contains OrganizationCompany created
+	  */
+	val createdAttName = "created"
+	
 	
 	// COMPUTED	--------------------
 	
@@ -42,6 +53,16 @@ object OrganizationCompanyModel
 	def companyIdColumn = table(companyIdAttName)
 	
 	/**
+	  * Column that contains OrganizationCompany creatorId
+	  */
+	def creatorIdColumn = table(creatorIdAttName)
+	
+	/**
+	  * Column that contains OrganizationCompany created
+	  */
+	def createdColumn = table(createdAttName)
+	
+	/**
 	  * The factory object used by this model type
 	  */
 	def factory = OrganizationCompanyFactory
@@ -52,7 +73,7 @@ object OrganizationCompanyModel
 	override def table = factory.table
 	
 	override def apply(data: OrganizationCompanyData) = 
-		apply(None, Some(data.organizationId), Some(data.companyId))
+		apply(None, Some(data.organizationId), Some(data.companyId), data.creatorId, Some(data.created))
 	
 	override def complete(id: Value, data: OrganizationCompanyData) = OrganizationCompany(id.getInt, data)
 	
@@ -64,6 +85,18 @@ object OrganizationCompanyModel
 	  * @return A model containing only the specified companyId
 	  */
 	def withCompanyId(companyId: Int) = apply(companyId = Some(companyId))
+	
+	/**
+	  * @param created Time when this OrganizationCompany was first created
+	  * @return A model containing only the specified created
+	  */
+	def withCreated(created: Instant) = apply(created = Some(created))
+	
+	/**
+	  * @param creatorId Id of the user who created this link
+	  * @return A model containing only the specified creatorId
+	  */
+	def withCreatorId(creatorId: Int) = apply(creatorId = Some(creatorId))
 	
 	/**
 	  * @param id A OrganizationCompany id
@@ -83,11 +116,13 @@ object OrganizationCompanyModel
   * @param id OrganizationCompany database id
   * @param organizationId Id of the owner organization
   * @param companyId Id of the owned company
+  * @param creatorId Id of the user who created this link
+  * @param created Time when this OrganizationCompany was first created
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 case class OrganizationCompanyModel(id: Option[Int] = None, organizationId: Option[Int] = None, 
-	companyId: Option[Int] = None) 
+	companyId: Option[Int] = None, creatorId: Option[Int] = None, created: Option[Instant] = None) 
 	extends StorableWithFactory[OrganizationCompany]
 {
 	// IMPLEMENTED	--------------------
@@ -97,7 +132,8 @@ case class OrganizationCompanyModel(id: Option[Int] = None, organizationId: Opti
 	override def valueProperties = 
 	{
 		import OrganizationCompanyModel._
-		Vector("id" -> id, organizationIdAttName -> organizationId, companyIdAttName -> companyId)
+		Vector("id" -> id, organizationIdAttName -> organizationId, companyIdAttName -> companyId, 
+			creatorIdAttName -> creatorId, createdAttName -> created)
 	}
 	
 	
@@ -108,6 +144,18 @@ case class OrganizationCompanyModel(id: Option[Int] = None, organizationId: Opti
 	  * @return A new copy of this model with the specified companyId
 	  */
 	def withCompanyId(companyId: Int) = copy(companyId = Some(companyId))
+	
+	/**
+	  * @param created A new created
+	  * @return A new copy of this model with the specified created
+	  */
+	def withCreated(created: Instant) = copy(created = Some(created))
+	
+	/**
+	  * @param creatorId A new creatorId
+	  * @return A new copy of this model with the specified creatorId
+	  */
+	def withCreatorId(creatorId: Int) = copy(creatorId = Some(creatorId))
 	
 	/**
 	  * @param organizationId A new organizationId

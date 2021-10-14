@@ -11,7 +11,7 @@ import vf.arbiter.core.model.stored.invoice.InvoiceItem
 /**
   * Used for constructing InvoiceItemModel instances and for inserting InvoiceItems to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-11
+  * @since 2021-10-14
   */
 object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, InvoiceItemData]
 {
@@ -33,14 +33,14 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
 	val descriptionAttName = "description"
 	
 	/**
-	  * Name of the property that contains InvoiceItem amount
-	  */
-	val amountAttName = "amount"
-	
-	/**
 	  * Name of the property that contains InvoiceItem pricePerUnit
 	  */
 	val pricePerUnitAttName = "pricePerUnit"
+	
+	/**
+	  * Name of the property that contains InvoiceItem unitsSold
+	  */
+	val unitsSoldAttName = "unitsSold"
 	
 	
 	// COMPUTED	--------------------
@@ -61,14 +61,14 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
 	def descriptionColumn = table(descriptionAttName)
 	
 	/**
-	  * Column that contains InvoiceItem amount
-	  */
-	def amountColumn = table(amountAttName)
-	
-	/**
 	  * Column that contains InvoiceItem pricePerUnit
 	  */
 	def pricePerUnitColumn = table(pricePerUnitAttName)
+	
+	/**
+	  * Column that contains InvoiceItem unitsSold
+	  */
+	def unitsSoldColumn = table(unitsSoldAttName)
 	
 	/**
 	  * The factory object used by this model type
@@ -81,8 +81,8 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
 	override def table = factory.table
 	
 	override def apply(data: InvoiceItemData) = 
-		apply(None, Some(data.invoiceId), Some(data.productId), Some(data.description), Some(data.amount), 
-			Some(data.pricePerUnit))
+		apply(None, Some(data.invoiceId), Some(data.productId), Some(data.description), 
+			Some(data.pricePerUnit), Some(data.unitsSold))
 	
 	override def complete(id: Value, data: InvoiceItemData) = InvoiceItem(id.getInt, data)
 	
@@ -90,13 +90,7 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
 	// OTHER	--------------------
 	
 	/**
-	  * @param amount Amount of items sold within the specified unit
-	  * @return A model containing only the specified amount
-	  */
-	def withAmount(amount: Double) = apply(amount = Some(amount))
-	
-	/**
-	  * @param description Name or description of this item (in the same language the invoice is)
+	  * @param description Name or description of this item (in the same language the invoice is given in)
 	  * @return A model containing only the specified description
 	  */
 	def withDescription(description: String) = apply(description = Some(description))
@@ -124,6 +118,12 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
 	  * @return A model containing only the specified productId
 	  */
 	def withProductId(productId: Int) = apply(productId = Some(productId))
+	
+	/**
+	  * @param unitsSold Amount of items sold in the product's unit
+	  * @return A model containing only the specified unitsSold
+	  */
+	def withUnitsSold(unitsSold: Double) = apply(unitsSold = Some(unitsSold))
 }
 
 /**
@@ -131,15 +131,15 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
   * @param id InvoiceItem database id
   * @param invoiceId Id of the invoice on which this item appears
   * @param productId Id of the type of product this item represents / is
-  * @param description Name or description of this item (in the same language the invoice is)
-  * @param amount Amount of items sold within the specified unit
+  * @param description Name or description of this item (in the same language the invoice is given in)
   * @param pricePerUnit Euro (€) price per each sold unit of this item, without taxes applied
+  * @param unitsSold Amount of items sold in the product's unit
   * @author Mikko Hilpinen
-  * @since 2021-10-11
+  * @since 2021-10-14
   */
 case class InvoiceItemModel(id: Option[Int] = None, invoiceId: Option[Int] = None, 
-	productId: Option[Int] = None, description: Option[String] = None, amount: Option[Double] = None, 
-	pricePerUnit: Option[Double] = None) 
+	productId: Option[Int] = None, description: Option[String] = None, pricePerUnit: Option[Double] = None, 
+	unitsSold: Option[Double] = None) 
 	extends StorableWithFactory[InvoiceItem]
 {
 	// IMPLEMENTED	--------------------
@@ -150,17 +150,12 @@ case class InvoiceItemModel(id: Option[Int] = None, invoiceId: Option[Int] = Non
 	{
 		import InvoiceItemModel._
 		Vector("id" -> id, invoiceIdAttName -> invoiceId, productIdAttName -> productId, 
-			descriptionAttName -> description, amountAttName -> amount, pricePerUnitAttName -> pricePerUnit)
+			descriptionAttName -> description, pricePerUnitAttName -> pricePerUnit, 
+			unitsSoldAttName -> unitsSold)
 	}
 	
 	
 	// OTHER	--------------------
-	
-	/**
-	  * @param amount A new amount
-	  * @return A new copy of this model with the specified amount
-	  */
-	def withAmount(amount: Double) = copy(amount = Some(amount))
 	
 	/**
 	  * @param description A new description
@@ -185,5 +180,11 @@ case class InvoiceItemModel(id: Option[Int] = None, invoiceId: Option[Int] = Non
 	  * @return A new copy of this model with the specified productId
 	  */
 	def withProductId(productId: Int) = copy(productId = Some(productId))
+	
+	/**
+	  * @param unitsSold A new unitsSold
+	  * @return A new copy of this model with the specified unitsSold
+	  */
+	def withUnitsSold(unitsSold: Double) = copy(unitsSold = Some(unitsSold))
 }
 

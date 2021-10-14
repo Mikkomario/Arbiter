@@ -4,14 +4,25 @@ import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
+import utopia.vault.nosql.view.SubView
+import utopia.vault.sql.Condition
 import vf.arbiter.core.database.factory.invoice.InvoiceItemFactory
 import vf.arbiter.core.database.model.invoice.InvoiceItemModel
 import vf.arbiter.core.model.stored.invoice.InvoiceItem
 
+object ManyInvoiceItemsAccess
+{
+	// NESTED	--------------------
+	
+	private class ManyInvoiceItemsSubView(override val parent: ManyRowModelAccess[InvoiceItem], 
+		override val filterCondition: Condition) 
+		extends ManyInvoiceItemsAccess with SubView
+}
+
 /**
   * A common trait for access points which target multiple InvoiceItems at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-11
+  * @since 2021-10-14
   */
 trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexed
 {
@@ -36,16 +47,16 @@ trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexe
 		pullColumn(model.descriptionColumn).flatMap { value => value.string }
 	
 	/**
-	  * amounts of the accessible InvoiceItems
-	  */
-	def amounts(implicit connection: Connection) = 
-		pullColumn(model.amountColumn).flatMap { value => value.double }
-	
-	/**
 	  * perUnitPrices of the accessible InvoiceItems
 	  */
 	def perUnitPrices(implicit connection: Connection) = 
 		pullColumn(model.pricePerUnitColumn).flatMap { value => value.double }
+	
+	/**
+	  * unitsSold of the accessible InvoiceItems
+	  */
+	def unitsSold(implicit connection: Connection) = 
+		pullColumn(model.unitsSoldColumn).flatMap { value => value.double }
 	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
 	
@@ -61,16 +72,11 @@ trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexe
 	
 	override protected def defaultOrdering = None
 	
+	override def filter(additionalCondition: Condition): ManyInvoiceItemsAccess = 
+		new ManyInvoiceItemsAccess.ManyInvoiceItemsSubView(this, additionalCondition)
+	
 	
 	// OTHER	--------------------
-	
-	/**
-	  * Updates the amount of the targeted InvoiceItem instance(s)
-	  * @param newAmount A new amount to assign
-	  * @return Whether any InvoiceItem instance was affected
-	  */
-	def amount_=(newAmount: Double)(implicit connection: Connection) = putColumn(model.amountColumn, 
-		newAmount)
 	
 	/**
 	  * Updates the description of the targeted InvoiceItem instance(s)
@@ -103,5 +109,13 @@ trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexe
 	  */
 	def productId_=(newProductId: Int)(implicit connection: Connection) = 
 		putColumn(model.productIdColumn, newProductId)
+	
+	/**
+	  * Updates the unitsSold of the targeted InvoiceItem instance(s)
+	  * @param newUnitsSold A new unitsSold to assign
+	  * @return Whether any InvoiceItem instance was affected
+	  */
+	def unitsSold_=(newUnitsSold: Double)(implicit connection: Connection) = 
+		putColumn(model.unitsSoldColumn, newUnitsSold)
 }
 

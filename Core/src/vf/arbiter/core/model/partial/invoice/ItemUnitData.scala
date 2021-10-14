@@ -2,17 +2,20 @@ package vf.arbiter.core.model.partial.invoice
 
 import utopia.flow.datastructure.immutable.Model
 import utopia.flow.generic.ModelConvertible
+import utopia.flow.generic.ValueConversions._
 
 /**
   * Represents a unit in which items can be counted
+  * @param categoryId Id of the category this unit belongs to
+  * @param multiplier A multiplier that, when applied to this unit, makes it comparable 
+	with the other units in the same category
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
-@deprecated("Please refer to item unit ids instead", "v0.1")
-case class ItemUnitData() extends ModelConvertible
+case class ItemUnitData(categoryId: Int, multiplier: Double = 1.0) extends ModelConvertible
 {
 	// IMPLEMENTED	--------------------
 	
-	override def toModel = Model.empty
+	override def toModel = Model(Vector("category_id" -> categoryId, "multiplier" -> multiplier))
 }
 

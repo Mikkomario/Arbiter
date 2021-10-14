@@ -8,26 +8,46 @@ import utopia.flow.time.{Days, Now}
 
 /**
   * Represents a bill / an invoice sent by one company to another to request a monetary transfer / payment
-  * @param senderCompanyId Id of the company who sent this invoice (payment recipient)
-  * @param recipientCompanyId Id of the recipient company of this invoice
+  * @param senderCompanyDetailsId Id of the details of the company who sent this invoice (payment recipient)
+  * @param recipientCompanyDetailsId Id of the details of the recipient company used in this invoice
+  * @param senderBankAccountId Id of the bank account the invoice sender wants the recipient to transfer money to
+  * @param languageId Id of the language used in this invoice
   * @param referenceCode A custom reference code used by the sender to identify this invoice
-  * @param paymentDurationDays Number of days during which this invoice can be paid before additional consequences
+  * @param paymentDuration Number of days during which this invoice can be paid before additional consequences
   * @param productDeliveryDate Date when the sold products were delivered, if applicable
   * @param creatorId Id of the user who created this invoice
   * @param created Time when this Invoice was first created
+  * @param cancelledAfter Time when this Invoice became deprecated. None while this Invoice is still valid.
   * @author Mikko Hilpinen
-  * @since 2021-10-11
+  * @since 2021-10-14
   */
-case class InvoiceData(senderCompanyId: Int, recipientCompanyId: Int, referenceCode: String, 
-	paymentDurationDays: Days = Days(30), productDeliveryDate: Option[LocalDate] = None, creatorId: Option[Int] = None,
-	created: Instant = Now) 
+case class InvoiceData(senderCompanyDetailsId: Int, recipientCompanyDetailsId: Int, senderBankAccountId: Int, 
+	languageId: Int, referenceCode: String, paymentDuration: Days = Days(30), 
+	productDeliveryDate: Option[LocalDate] = None, creatorId: Option[Int] = None, created: Instant = Now, 
+	cancelledAfter: Option[Instant] = None) 
 	extends ModelConvertible
 {
+	// COMPUTED	--------------------
+	
+	/**
+	  * Whether this Invoice has already been deprecated
+	  */
+	def isDeprecated = cancelledAfter.isDefined
+	
+	/**
+	  * Whether this Invoice is still valid (not deprecated)
+	  */
+	def isValid = !isDeprecated
+	
+	
 	// IMPLEMENTED	--------------------
 	
 	override def toModel = 
-		Model(Vector("sender_company_id" -> senderCompanyId, "recipient_company_id" -> recipientCompanyId, 
-			"reference_code" -> referenceCode, "payment_duration_days" -> paymentDurationDays.length, 
-			"product_delivery_date" -> productDeliveryDate, "creator_id" -> creatorId, "created" -> created))
+		Model(Vector("sender_company_details_id" -> senderCompanyDetailsId, 
+			"recipient_company_details_id" -> recipientCompanyDetailsId, 
+			"sender_bank_account_id" -> senderBankAccountId, "language_id" -> languageId, 
+			"reference_code" -> referenceCode, "payment_duration" -> paymentDuration.length, 
+			"product_delivery_date" -> productDeliveryDate, "creator_id" -> creatorId, "created" -> created, 
+			"cancelled_after" -> cancelledAfter))
 }
 

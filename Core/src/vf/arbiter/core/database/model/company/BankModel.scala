@@ -1,5 +1,6 @@
 package vf.arbiter.core.database.model.company
 
+import java.time.Instant
 import utopia.flow.datastructure.immutable.Value
 import utopia.flow.generic.ValueConversions._
 import utopia.vault.model.immutable.StorableWithFactory
@@ -11,7 +12,7 @@ import vf.arbiter.core.model.stored.company.Bank
 /**
   * Used for constructing BankModel instances and for inserting Banks to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 object BankModel extends DataInserter[BankModel, Bank, BankData]
 {
@@ -27,6 +28,16 @@ object BankModel extends DataInserter[BankModel, Bank, BankData]
 	  */
 	val bicAttName = "bic"
 	
+	/**
+	  * Name of the property that contains Bank creatorId
+	  */
+	val creatorIdAttName = "creatorId"
+	
+	/**
+	  * Name of the property that contains Bank created
+	  */
+	val createdAttName = "created"
+	
 	
 	// COMPUTED	--------------------
 	
@@ -41,6 +52,16 @@ object BankModel extends DataInserter[BankModel, Bank, BankData]
 	def bicColumn = table(bicAttName)
 	
 	/**
+	  * Column that contains Bank creatorId
+	  */
+	def creatorIdColumn = table(creatorIdAttName)
+	
+	/**
+	  * Column that contains Bank created
+	  */
+	def createdColumn = table(createdAttName)
+	
+	/**
 	  * The factory object used by this model type
 	  */
 	def factory = BankFactory
@@ -50,7 +71,8 @@ object BankModel extends DataInserter[BankModel, Bank, BankData]
 	
 	override def table = factory.table
 	
-	override def apply(data: BankData) = apply(None, Some(data.name), Some(data.bic))
+	override def apply(data: BankData) = 
+		apply(None, Some(data.name), Some(data.bic), data.creatorId, Some(data.created))
 	
 	override def complete(id: Value, data: BankData) = Bank(id.getInt, data)
 	
@@ -62,6 +84,18 @@ object BankModel extends DataInserter[BankModel, Bank, BankData]
 	  * @return A model containing only the specified bic
 	  */
 	def withBic(bic: String) = apply(bic = Some(bic))
+	
+	/**
+	  * @param created Time when this Bank was first created
+	  * @return A model containing only the specified created
+	  */
+	def withCreated(created: Instant) = apply(created = Some(created))
+	
+	/**
+	  * @param creatorId Id of the user who registered this address
+	  * @return A model containing only the specified creatorId
+	  */
+	def withCreatorId(creatorId: Int) = apply(creatorId = Some(creatorId))
 	
 	/**
 	  * @param id A Bank id
@@ -81,10 +115,13 @@ object BankModel extends DataInserter[BankModel, Bank, BankData]
   * @param id Bank database id
   * @param name (Short) name of this bank
   * @param bic BIC-code of this bank
+  * @param creatorId Id of the user who registered this address
+  * @param created Time when this Bank was first created
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
-case class BankModel(id: Option[Int] = None, name: Option[String] = None, bic: Option[String] = None) 
+case class BankModel(id: Option[Int] = None, name: Option[String] = None, bic: Option[String] = None, 
+	creatorId: Option[Int] = None, created: Option[Instant] = None) 
 	extends StorableWithFactory[Bank]
 {
 	// IMPLEMENTED	--------------------
@@ -94,7 +131,8 @@ case class BankModel(id: Option[Int] = None, name: Option[String] = None, bic: O
 	override def valueProperties = 
 	{
 		import BankModel._
-		Vector("id" -> id, nameAttName -> name, bicAttName -> bic)
+		Vector("id" -> id, nameAttName -> name, bicAttName -> bic, creatorIdAttName -> creatorId, 
+			createdAttName -> created)
 	}
 	
 	
@@ -105,6 +143,18 @@ case class BankModel(id: Option[Int] = None, name: Option[String] = None, bic: O
 	  * @return A new copy of this model with the specified bic
 	  */
 	def withBic(bic: String) = copy(bic = Some(bic))
+	
+	/**
+	  * @param created A new created
+	  * @return A new copy of this model with the specified created
+	  */
+	def withCreated(created: Instant) = copy(created = Some(created))
+	
+	/**
+	  * @param creatorId A new creatorId
+	  * @return A new copy of this model with the specified creatorId
+	  */
+	def withCreatorId(creatorId: Int) = copy(creatorId = Some(creatorId))
 	
 	/**
 	  * @param name A new name

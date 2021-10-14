@@ -1,7 +1,7 @@
 package vf.arbiter.core.model.stored.company
 
 import utopia.vault.model.template.StoredModelConvertible
-import vf.arbiter.core.database.access.single.company.DbCompany
+import vf.arbiter.core.database.access.single.company.DbSingleCompany
 import vf.arbiter.core.model.partial.company.CompanyData
 
 /**
@@ -9,19 +9,15 @@ import vf.arbiter.core.model.partial.company.CompanyData
   * @param id id of this Company in the database
   * @param data Wrapped Company data
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 case class Company(id: Int, data: CompanyData) extends StoredModelConvertible[CompanyData]
 {
-	// COMPUTED ----------------------
+	// COMPUTED	--------------------
 	
 	/**
-	 * @return An access point to this company in the database
-	 */
-	def access = DbCompany(id)
-	
-	
-	// IMPLEMENTED  ------------------
-	
-	override def toString = data.nameAndYCode
+	  * An access point to this Company in the database
+	  */
+	def access = DbSingleCompany(id)
 }
+

@@ -6,7 +6,7 @@ import utopia.vault.model.immutable.Table
 /**
   * Used for accessing the database tables introduced in this project
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 object CoreTables
 {
@@ -23,18 +23,23 @@ object CoreTables
 	def company = apply("company")
 	
 	/**
-	  * Table that contains CompanyBankAddresses (Used for listing which bank addresses belong to which company)
+	  * Table that contains CompanyBankAccounts (Used for listing which bank accounts belong to which company)
 	  */
-	def companyBankAddress = apply("company_bank_address")
+	def companyBankAccount = apply("company_bank_account")
 	
 	/**
-	 * Table that contains CompanyProducts (Represents a type of product sold by an individual company)
-	 */
+	  * Table that contains CompanyDetails (Contains company information which may change and on which there may be varying views)
+	  */
+	def companyDetails = apply("company_details")
+	
+	/**
+	  * Table that contains CompanyProducts (Represents a type of product sold by an individual company)
+	  */
 	def companyProduct = apply("company_product")
 	
 	/**
-	 * Table that contains CompanyProductDescriptions (Links CompanyProducts with their descriptions)
-	 */
+	  * Table that contains CompanyProductDescriptions (Links CompanyProducts with their descriptions)
+	  */
 	def companyProductDescription = apply("company_product_description")
 	
 	/**
@@ -76,6 +81,16 @@ object CoreTables
 	  * Table that contains StreetAddresses (Represents a specific street address)
 	  */
 	def streetAddress = apply("street_address")
+	
+	/**
+	  * Table that contains UnitCategories (Represents different categories a unit can belong to. Units within a category can be compared.)
+	  */
+	def unitCategory = apply("unit_category")
+	
+	/**
+	  * Table that contains UnitCategoryDescriptions (Links UnitCategories with their descriptions)
+	  */
+	def unitCategoryDescription = apply("unit_category_description")
 	
 	
 	// OTHER	--------------------

@@ -1,5 +1,6 @@
 package vf.arbiter.core.database.access.single.location
 
+import java.time.Instant
 import utopia.flow.datastructure.immutable.Value
 import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
@@ -13,7 +14,7 @@ import vf.arbiter.core.model.stored.location.StreetAddress
 /**
   * A common trait for access points that return individual and distinct StreetAddresses.
   * @author Mikko Hilpinen
-  * @since 2021-10-10
+  * @since 2021-10-14
   */
 trait UniqueStreetAddressAccess 
 	extends SingleRowModelAccess[StreetAddress] 
@@ -48,6 +49,16 @@ trait UniqueStreetAddressAccess
 	  */
 	def roomNumber(implicit connection: Connection) = pullColumn(model.roomNumberColumn).string
 	
+	/**
+	  * Id of the user who registered this address. None if no instance (or value) was found.
+	  */
+	def creatorId(implicit connection: Connection) = pullColumn(model.creatorIdColumn).int
+	
+	/**
+	  * Time when this StreetAddress was first created. None if no instance (or value) was found.
+	  */
+	def created(implicit connection: Connection) = pullColumn(model.createdColumn).instant
+	
 	def id(implicit connection: Connection) = pullColumn(index).int
 	
 	/**
@@ -70,6 +81,22 @@ trait UniqueStreetAddressAccess
 	  */
 	def buildingNumber_=(newBuildingNumber: String)(implicit connection: Connection) = 
 		putColumn(model.buildingNumberColumn, newBuildingNumber)
+	
+	/**
+	  * Updates the created of the targeted StreetAddress instance(s)
+	  * @param newCreated A new created to assign
+	  * @return Whether any StreetAddress instance was affected
+	  */
+	def created_=(newCreated: Instant)(implicit connection: Connection) = 
+		putColumn(model.createdColumn, newCreated)
+	
+	/**
+	  * Updates the creatorId of the targeted StreetAddress instance(s)
+	  * @param newCreatorId A new creatorId to assign
+	  * @return Whether any StreetAddress instance was affected
+	  */
+	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) = 
+		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
 	  * Updates the postalCodeId of the targeted StreetAddress instance(s)
