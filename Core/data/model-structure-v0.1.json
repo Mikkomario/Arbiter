@@ -260,34 +260,6 @@
             "doc": "Whether this bank account information was written by the company authorities"
           }
         ]
-      }
-    ],
-    "invoice": [
-      {
-        "name": "UnitCategory",
-        "name_plural": "UnitCategories",
-        "doc": "Represents different categories a unit can belong to. Units within a category can be compared.",
-        "described": true,
-        "description_link": "unit_category_id"
-      },
-      {
-        "name": "ItemUnit",
-        "described": true,
-        "description_link": "unit_id",
-        "doc": "Represents a unit in which items can be counted",
-        "props": [
-          {
-            "name": "categoryId",
-            "ref": "unit_category",
-            "doc": "Id of the category this unit belongs to"
-          },
-          {
-            "name": "multiplier",
-            "type": "double",
-            "default": 1.0,
-            "doc": "A multiplier that, when applied to this unit, makes it comparable with the other units in the same category"
-          }
-        ]
       },
       {
         "name": "CompanyProduct",
@@ -330,15 +302,43 @@
             "doc": "Time when this product was discontinued (no longer sold)"
           }
         ]
+      }
+    ],
+    "invoice": [
+      {
+        "name": "UnitCategory",
+        "name_plural": "UnitCategories",
+        "doc": "Represents different categories a unit can belong to. Units within a category can be compared.",
+        "described": true,
+        "description_link": "unit_category_id"
+      },
+      {
+        "name": "ItemUnit",
+        "described": true,
+        "description_link": "unit_id",
+        "doc": "Represents a unit in which items can be counted",
+        "props": [
+          {
+            "name": "categoryId",
+            "ref": "unit_category",
+            "doc": "Id of the category this unit belongs to"
+          },
+          {
+            "name": "multiplier",
+            "type": "double",
+            "default": 1.0,
+            "doc": "A multiplier that, when applied to this unit, makes it comparable with the other units in the same category"
+          }
+        ]
       },
       {
         "name": "Invoice",
         "doc": "Represents a bill / an invoice sent by one company to another to request a monetary transfer / payment",
         "props": [
           {
-            "name": "senderCompanyId",
-            "ref": "company",
-            "doc": "Id of the company who sent this invoice (payment recipient)"
+            "name": "senderCompanyDetailsId",
+            "ref": "company_details",
+            "doc": "Id of the details of the company who sent this invoice (payment recipient)"
           },
           {
             "name": "recipientCompanyDetailsId",
