@@ -29,5 +29,12 @@ case class StreetAddressData(postalCodeId: Int, streetName: String, buildingNumb
 		Model(Vector("postal_code_id" -> postalCodeId, "street_name" -> streetName, 
 			"building_number" -> buildingNumber, "stair" -> stair, "room_number" -> roomNumber, 
 			"creator_id" -> creatorId, "created" -> created))
+	
+	override def toString =
+	{
+		val stairPart = stair.map { " " + _ }.getOrElse("")
+		val roomNumberPart = roomNumber.map { " " + _ }.getOrElse("")
+		s"$streetName $buildingNumber$stairPart$roomNumberPart"
+	}
 }
 

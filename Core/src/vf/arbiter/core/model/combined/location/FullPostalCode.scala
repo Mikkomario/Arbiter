@@ -22,5 +22,7 @@ case class FullPostalCode(code: PostalCode, county: County) extends Extender[Pos
 	// IMPLEMENTED	--------------------
 	
 	override def wrapped = code.data
+	
+	override def toString = s"${code.number} ${county.name}"
 }
 

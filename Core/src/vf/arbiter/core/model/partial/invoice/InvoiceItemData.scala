@@ -18,6 +18,14 @@ case class InvoiceItemData(invoiceId: Int, productId: Int, description: String, 
 	unitsSold: Double = 1.0) 
 	extends ModelConvertible
 {
+	// COMPUTED ------------------------
+	
+	/**
+	 * @return Total price of this item without any taxes applied
+	 */
+	def price = pricePerUnit * unitsSold
+	
+	
 	// IMPLEMENTED	--------------------
 	
 	override def toModel = 

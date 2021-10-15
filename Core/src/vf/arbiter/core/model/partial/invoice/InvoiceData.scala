@@ -5,6 +5,7 @@ import utopia.flow.datastructure.immutable.Model
 import utopia.flow.generic.ModelConvertible
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.{Days, Now}
+import utopia.flow.time.TimeExtensions._
 
 /**
   * Represents a bill / an invoice sent by one company to another to request a monetary transfer / payment
@@ -28,6 +29,15 @@ case class InvoiceData(senderCompanyDetailsId: Int, recipientCompanyDetailsId: I
 	extends ModelConvertible
 {
 	// COMPUTED	--------------------
+	
+	/**
+	 * @return Date when this invoice was created
+	 */
+	def date = created.toLocalDateTime.toLocalDate
+	/**
+	 * @return Date when this invoice is due
+	 */
+	def paymentDeadline = date + paymentDuration
 	
 	/**
 	  * Whether this Invoice has already been deprecated

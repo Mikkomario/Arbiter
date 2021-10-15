@@ -1,13 +1,17 @@
 package vf.arbiter.command.app
 
+import utopia.citadel.database.access.single.description.DbLanguageDescription
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.flow.datastructure.mutable.PointerWithEvents
 import utopia.flow.time.Days
 import utopia.flow.util.console.ConsoleExtensions._
+import utopia.flow.util.FileExtensions._
+import utopia.flow.util.StringExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.vault.database.Connection
 import vf.arbiter.command.model.SelectedLanguage
+import vf.arbiter.core.controller.pdf.FillPdfForm
 import vf.arbiter.core.database.access.many.company.DbBanks
 import vf.arbiter.core.database.access.many.invoice.DbItemUnits
 import vf.arbiter.core.database.access.single.company.DbCompany
@@ -16,13 +20,16 @@ import vf.arbiter.core.database.model.CoreDescriptionLinkModel
 import vf.arbiter.core.database.model.company.{BankModel, CompanyBankAccountModel, CompanyProductModel}
 import vf.arbiter.core.database.model.invoice.{InvoiceItemModel, InvoiceModel}
 import vf.arbiter.core.model.combined.company.{DescribedCompanyProduct, DetailedCompany, FullCompanyBankAccount}
+import vf.arbiter.core.model.combined.invoice.{FullInvoice, FullInvoiceItem}
 import vf.arbiter.core.model.enumeration.ArbiterDescriptionRoleId.Abbreviation
 import vf.arbiter.core.model.partial.company.{BankData, CompanyBankAccountData, CompanyProductData}
 import vf.arbiter.core.model.partial.invoice.{InvoiceData, InvoiceItemData}
 import vf.arbiter.core.util.ReferenceCode
 
+import java.nio.file.{Path, Paths}
+import java.time.format.DateTimeFormatter
 import scala.io.StdIn
-import scala.util.Random
+import scala.util.{Failure, Random, Success}
 
 /**
  * Contains interactive invoice-related actions
@@ -31,22 +38,81 @@ import scala.util.Random
  */
 object InvoiceActions
 {
-	/*
-	When creating an invoice, we need following information:
-		- Origin company
-		- Target company
-		- Duration days
-		- Item delivery date (opt)
-		- Product lines
-			- Product
-				- Name
-				- Unit
-				- Default price
-				- Tax %
-			- Description
-			- Amount
-			- Price per unit
+	// OTHER    -------------------------------
+	
+	/**
+	 * Asks the user to select a bank account. Also allows account creation.
+	 * @param userId Id of the user who's selecting the account
+	 * @param companyId Id of the company for which the account is selected
+	 * @param connection Implicit DB connection
+	 * @return Selected or created account. None if no account was selected or created.
 	 */
+	def selectOrCreateBankAccount(userId: Int, companyId: Int)(implicit connection: Connection) =
+	{
+		val existingAccounts = DbCompany(companyId).fullBankAccounts
+		if (existingAccounts.isEmpty)
+			createBankAccount(userId, companyId)
+		else
+			ActionUtils.selectFrom(existingAccounts.map { a => a -> s"${a.bank.name}: ${a.address}" }).orElse {
+				if (StdIn.ask("Would you add a new bank account instead?"))
+					createBankAccount(userId, companyId)
+				else
+					None
+			}
+	}
+	
+	/**
+	 * Creates a new bank account for the specified company
+	 * @param userId Id of the user adding the bank account
+	 * @param companyId Id of the company for which the bank account is added
+	 * @param connection Implicit DB Connection
+	 * @return Inserted bank account. None if user cancelled.
+	 */
+	def createBankAccount(userId: Int, companyId: Int)(implicit connection: Connection) =
+		selectOrCreateBank(userId).flatMap { bank =>
+			println(s"What's your bank account number (IBAN) in ${bank.name}?")
+			StdIn.readNonEmptyLine().map { address =>
+				// TODO: Should check for duplicates
+				val newAccount = CompanyBankAccountModel.insert(
+					CompanyBankAccountData(companyId, bank.id, address, Some(userId)))
+				FullCompanyBankAccount(newAccount, bank)
+			}
+		}
+	
+	/**
+	 * Allows the user to select from existing banks or to create a new one
+	 * @param userId Id of the user
+	 * @param connection Implicit DB Connection
+	 * @return Selected or created bank. None if user didn't want to select nor create.
+	 */
+	def selectOrCreateBank(userId: Int)(implicit connection: Connection) =
+	{
+		val existingBanks = DbBanks.pull
+		if (existingBanks.isEmpty)
+			createBank(userId)
+		else
+			ActionUtils.selectFrom(existingBanks.map { b => b -> b.nameAndBic }, "banks").orElse {
+				if (StdIn.ask("Would you like to add a new bank instead?"))
+					createBank(userId)
+				else
+					None
+			}
+	}
+	
+	/**
+	 * Creates a new bank, provided the user gives the necessary information
+	 * @param userId Id of the user who's adding information
+	 * @param connection Implicit DB Connection
+	 * @return Created bank. None if user didn't provide information.
+	 */
+	// TODO: Should probably check for duplicates
+	def createBank(userId: Int)(implicit connection: Connection) =
+		StdIn.readNonEmptyLine("What's the name of the bank?").flatMap { name =>
+			StdIn.readNonEmptyLine("What's the BIC of the bank?").map { bic =>
+				BankModel.insert(BankData(name, bic, Some(userId)))
+			}
+		}
+	
 	/**
 	 * Creates a new invoice by interacting with the user
 	 * @param userId Id of the user who creates this invoice
@@ -64,6 +130,66 @@ object InvoiceActions
 			println("What language this invoice is in?")
 			val language = ActionUtils.forceSelectKnownLanguage()
 			_create(userId, senderCompany, targetCompany, language, languageIds)
+		}
+	}
+	
+	/**
+	 * Prints an invoice
+	 * @param invoice Invoice to print - linked descriptions should in in invoice language
+	 * @param connection Implicit DB Connection
+	 */
+	def print(invoice: FullInvoice)(implicit connection: Connection): Unit =
+	{
+		println("Please type the path to the invoice form pdf file")
+		val root = Paths.get("")
+		println(s"Instructions: You can specify an absolute path or a path relative to ${root.toAbsolutePath}")
+		DbLanguageDescription(invoice.languageId).name.inLanguageWithId(invoice.languageId).foreach { langName =>
+			println(s"The invoice is in $langName, so you may want to pick a $langName template")
+		}
+		val somePaths = root.allChildrenIterator.flatMap { _.toOption }.filter { _.fileType == "pdf" }.take(5)
+		if (somePaths.nonEmpty)
+		{
+			println("Some paths that were found:")
+			somePaths.foreach { p => println("- " + root.relativize(p)) }
+		}
+		StdIn.readNonEmptyLine() match
+		{
+			case Some(pathString) =>
+				val path: Path = pathString
+				if (path.isRegularFile && path.fileType == "pdf")
+				{
+					val defaultFileName = s"${invoice.date}-${invoice.recipientCompany.details.name
+						.replaceAll(" ", "-")}-${invoice.id}.pdf"
+					val rawOutputPath: Path = Paths.get(StdIn.readNonEmptyLine(
+						s"Please specify a path for the generated file (default = invoices/$defaultFileName)")
+						.getOrElse(s"invoices/$defaultFileName"))
+					val outputPath = {
+						if (rawOutputPath.isDirectory)
+							rawOutputPath/defaultFileName
+						else if (rawOutputPath.fileType != "pdf")
+							rawOutputPath.withMappedFileName { _.untilLast(".") + ".pdf" }
+						else
+							rawOutputPath
+					}
+					outputPath.createParentDirectories()
+					
+					println("Filling the invoice form...")
+					val printFields = PrintFields.from(invoice)
+					FillPdfForm(path, printFields, outputPath) match
+					{
+						case Success(failures) =>
+							println("Form filled!")
+							if (failures.nonEmpty)
+								println(s"Warning: ${failures.size} fields were not written correctly")
+							outputPath.openInDesktop()
+						case Failure(error) =>
+							error.printStackTrace()
+							println(s"Printing failed due to error: ${error.getMessage}")
+					}
+				}
+				else
+					println(s"${path.toAbsolutePath} is not an existing pdf")
+			case None => println("Printing cancelled")
 		}
 	}
 	
@@ -250,6 +376,13 @@ object InvoiceActions
 					val invoiceItems = InvoiceItemModel.insert(invoiceItemData
 						.map { case (productId, description, pricePerUnit, amount) =>
 							InvoiceItemData(invoice.id, productId, description, pricePerUnit, amount) })
+					
+					// May print the invoice afterwards
+					if (StdIn.ask("Do you want to export this invoice into a pdf?"))
+					{
+						// TODO: Continue
+					}
+					
 					Some(invoice -> invoiceItems)
 				}
 			}
@@ -258,76 +391,85 @@ object InvoiceActions
 		}
 	}
 	
-	/**
-	 * Asks the user to select a bank account. Also allows account creation.
-	 * @param userId Id of the user who's selecting the account
-	 * @param companyId Id of the company for which the account is selected
-	 * @param connection Implicit DB connection
-	 * @return Selected or created account. None if no account was selected or created.
-	 */
-	def selectOrCreateBankAccount(userId: Int, companyId: Int)(implicit connection: Connection) =
-	{
-		val existingAccounts = DbCompany(companyId).fullBankAccounts
-		if (existingAccounts.isEmpty)
-			createBankAccount(userId, companyId)
-		else
-			ActionUtils.selectFrom(existingAccounts.map { a => a -> s"${a.bank.name}: ${a.address}" }).orElse {
-				if (StdIn.ask("Would you add a new bank account instead?"))
-					createBankAccount(userId, companyId)
-				else
-					None
-			}
-	}
 	
-	/**
-	 * Creates a new bank account for the specified company
-	 * @param userId Id of the user adding the bank account
-	 * @param companyId Id of the company for which the bank account is added
-	 * @param connection Implicit DB Connection
-	 * @return Inserted bank account. None if user cancelled.
-	 */
-	def createBankAccount(userId: Int, companyId: Int)(implicit connection: Connection) =
-		selectOrCreateBank(userId).flatMap { bank =>
-			println(s"What's your bank account number (IBAN) in ${bank.name}?")
-			StdIn.readNonEmptyLine().map { address =>
-				// TODO: Should check for duplicates
-				val newAccount = CompanyBankAccountModel.insert(
-					CompanyBankAccountData(companyId, bank.id, address, Some(userId)))
-				FullCompanyBankAccount(newAccount, bank)
+	// NESTED   ------------------------------
+	
+	private object PrintFields
+	{
+		val dateFormat = DateTimeFormatter.ofPattern("dd.MM.uuuu")
+		
+		val invoiceNumber = "invoice-index"
+		val referenceCode = "reference-code"
+		
+		val date = "date"
+		val duration = "payment-duration"
+		val deadline = "payment-deadline"
+		val delivery = "delivery-date"
+		
+		val totalPrice = "payment-total"
+		val totalTax = "tax-total"
+		val totalPriceTaxed = "payment-total-taxed"
+		
+		object Recipient
+		{
+			val name = "buyer-name"
+			val yCode = "buyer-y-code"
+			val id = "customer-code"
+			val address = "buyer-address"
+			val postalCode = "buyer-postal-code"
+		}
+		
+		object ItemRow
+		{
+			val name = "name"
+			val amount = "amount"
+			val unit = "unit"
+			val unitPrice = "unit-price"
+			val price = "price"
+			val taxPercent = "tax"
+			val totalPrice = "price-taxed"
+			
+			def from(item: FullInvoiceItem, index: Int) =
+			{
+				val unit = item.product.unit.abbreviationOrName.getOrElse("")
+				val taxMod = item.product.product.taxModifier
+				
+				val prefix = s"p${index + 1}-"
+				Map[String, String](
+					(prefix + name) -> item.description,
+					(prefix + amount) -> round(item.unitsSold),
+					(prefix + unit) -> unit,
+					(prefix + unitPrice) -> (round(item.pricePerUnit) + s" €/$unit"),
+					(prefix + price) -> (round(item.price) + " €"),
+					(prefix + taxPercent) -> s"${(taxMod * 100).round}%",
+					(prefix + totalPrice) -> (round(item.price * (1 + taxMod)) + " €")
+				)
 			}
 		}
-	
-	/**
-	 * Allows the user to select from existing banks or to create a new one
-	 * @param userId Id of the user
-	 * @param connection Implicit DB Connection
-	 * @return Selected or created bank. None if user didn't want to select nor create.
-	 */
-	def selectOrCreateBank(userId: Int)(implicit connection: Connection) =
-	{
-		val existingBanks = DbBanks.pull
-		if (existingBanks.isEmpty)
-			createBank(userId)
-		else
-			ActionUtils.selectFrom(existingBanks.map { b => b -> b.nameAndBic }, "banks").orElse {
-				if (StdIn.ask("Would you like to add a new bank instead?"))
-					createBank(userId)
-				else
-					None
-			}
-	}
-	
-	/**
-	 * Creates a new bank, provided the user gives the necessary information
-	 * @param userId Id of the user who's adding information
-	 * @param connection Implicit DB Connection
-	 * @return Created bank. None if user didn't provide information.
-	 */
-	// TODO: Should probably check for duplicates
-	def createBank(userId: Int)(implicit connection: Connection) =
-		StdIn.readNonEmptyLine("What's the name of the bank?").flatMap { name =>
-			StdIn.readNonEmptyLine("What's the BIC of the bank?").map { bic =>
-				BankModel.insert(BankData(name, bic, Some(userId)))
-			}
+		
+		def from(invoice: FullInvoice) =
+		{
+			val price = invoice.totalPrice
+			val tax = invoice.totalTax
+			
+			Map[String, String](
+				invoiceNumber -> invoice.id.toString,
+				referenceCode -> invoice.referenceCode,
+				date -> dateFormat.format(invoice.date),
+				duration -> s"${invoice.paymentDuration.length} pv netto",
+				deadline -> dateFormat.format(invoice.paymentDeadline),
+				delivery -> invoice.productDeliveryDate.map(dateFormat.format).getOrElse(""),
+				Recipient.name -> invoice.recipientCompany.details.name,
+				Recipient.yCode -> invoice.recipientCompany.yCode,
+				Recipient.id -> invoice.recipientCompany.id.toString,
+				Recipient.address -> invoice.recipientCompany.details.address.address.toString,
+				Recipient.postalCode -> invoice.recipientCompany.details.address.postalCode.toString,
+				totalPrice -> round(price),
+				totalTax -> round(tax),
+				totalPriceTaxed -> round(price + tax)
+			) ++ invoice.items.zipWithIndex.flatMap { case (item, index) => ItemRow.from(item, index) }
 		}
+		
+		private def round(price: Double) = f"${(price * 100.0).round / 100.0}%1.2f"
+	}
 }

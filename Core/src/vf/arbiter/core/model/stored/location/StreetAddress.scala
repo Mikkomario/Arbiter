@@ -19,5 +19,10 @@ case class StreetAddress(id: Int, data: StreetAddressData) extends StoredModelCo
 	  * An access point to this StreetAddress in the database
 	  */
 	def access = DbSingleStreetAddress(id)
+	
+	
+	// IMPLEMENTED  ----------------
+	
+	override def toString = data.toString
 }
 
