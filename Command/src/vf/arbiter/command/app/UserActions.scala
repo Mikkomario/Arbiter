@@ -3,6 +3,7 @@ package vf.arbiter.command.app
 import utopia.citadel.database.access.many.language.DbLanguageFamiliarities
 import utopia.citadel.database.access.many.user.DbManyUserSettings
 import utopia.citadel.database.access.single.language.DbLanguage
+import utopia.citadel.database.access.single.user.DbUser
 import utopia.citadel.database.model.description.DescriptionLinkModel
 import utopia.citadel.database.model.user.{UserLanguageModel, UserModel}
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
@@ -45,8 +46,11 @@ object UserActions
 					None -> None
 			// Case: User doesn't exist => creates one
 			case None =>
-				val (user, company) = _register(userName)
-				Some(user) -> company
+				 _register(userName) match
+				 {
+					 case Some((user, company)) => Some(user) -> company
+					 case None => None -> None
+				 }
 		}
 	
 	/**
@@ -60,21 +64,73 @@ object UserActions
 		findUserForName(userName).map { _ -> None }.orElse {
 			if (StdIn.ask(
 				s"No user was found with that name. Do you want to register '$userName' as a new user?"))
-				Some(_register(userName))
+				_register(userName)
 			else
 				None
 		}
 	
+	def validLanguageIdListForUserWithId(userId: Int)(implicit connection: Connection) =
+	{
+		val existingList = DbUser(userId).languageIdsList
+		if (existingList.nonEmpty)
+			existingList
+		else
+		{
+			println("Please write a list of the languages you know")
+			println("Instruction: Each language should be written as a two letter ISO-code (like 'en')")
+			val languageCodes = StdIn.readLineIterator.flatMap { line =>
+				val codes = notLetterRegex.split(line).toVector.filter { _.length == 2 }.map { _.toLowerCase }
+				if (codes.isEmpty)
+				{
+					println(s"Couldn't find a single language code from input '$line'. Please try again.")
+					None
+				}
+				else if (codes.contains("en") ||
+					StdIn.ask("You didn't specify english (en) as a language. Are you sure you want to continue anyway?"))
+					Some(codes)
+				else
+				{
+					println("Please write a new set of language codes")
+					None
+				}
+			}.next()
+			setUserLanguages(userId, languageCodes)
+		}
+	}
+	
 	private def _register(userName: String)(implicit connection: Connection) =
 	{
-		// Registers the user
-		val user = UserModel.insert(UserSettingsData(userName))
-		
 		// Registers language proficiencies for the user
 		println("What languages do you know?")
 		println("Instruction: Use 2-letter ISO-codes like 'en'. Insert all codes on the same line.")
-		val languageCodes = notLetterRegex.split(StdIn.readLineUntilNotEmpty())
+		val languageCodes = notLetterRegex.split(StdIn.readLine())
 			.toVector.filter { _.length == 2 }.map { _.toLowerCase }
+		if (languageCodes.isEmpty)
+		{
+			println("Looks like you didn't specify any language codes. " +
+				"Unfortunately you can't create a user account without doing so. Please try again later.")
+			None
+		}
+		else
+		{
+			// Registers the user and the language data
+			val user = UserModel.insert(UserSettingsData(userName))
+			implicit val languageIds: LanguageIds = setUserLanguages(user.id, languageCodes)
+			
+			// Creates a new company for that user (or joins an existing company)
+			println(s"What's the name of your company?")
+			println("Hint: If you wish to join an existing company, you can write part of that company's name")
+			val company = StdIn.readNonEmptyLine().flatMap { CompanyActions.startOrJoin(user.id, _) }
+			Some(user -> company)
+		}
+	}
+	
+	private def findUserForName(userName: String)(implicit connection: Connection) =
+		DbManyUserSettings.withName(userName).bestMatch(Vector(_.email.isEmpty))
+			.headOption.map { s => User(s.userId, s) }
+	
+	private def setUserLanguages(userId: Int, languageCodes: Vector[String])(implicit connection: Connection) =
+	{
 		val languages = languageCodes.map { code => DbLanguage.forIsoCode(code).getOrInsert() }
 		val languageNames = languages.map { language =>
 			language.id -> language.access.description.name.inLanguageWithId(language.id).getOrElse {
@@ -82,7 +138,7 @@ object UserActions
 				val name = StdIn.readLineUntilNotEmpty(
 					s"What's the name of '${language.isoCode}' in '${language.isoCode}'")
 				DescriptionLinkModel.language.insert(language.id,
-					DescriptionData(Name.id, language.id, name, Some(user.id)))
+					DescriptionData(Name.id, language.id, name, Some(userId)))
 				name
 			}
 		}.toMap
@@ -97,16 +153,7 @@ object UserActions
 			language -> proficiency
 		}
 		UserLanguageModel.insert(newProficiencyData
-			.map { case (language, proficiency) => UserLanguageData(user.id, language.id, proficiency.id) })
-		
-		// Creates a new company for that user (or joins an existing company)
-		println(s"What's the name of your company?")
-		println("Hint: If you wish to join an existing company, you can write part of that company's name")
-		val company = StdIn.readNonEmptyLine().flatMap { CompanyActions.startOrJoin(user.id, _) }
-		user -> company
+			.map { case (language, proficiency) => UserLanguageData(userId, language.id, proficiency.id) })
+		LanguageIds(newProficiencyData.sortBy { _._2.wrapped.orderIndex }.map { _._1.id })
 	}
-	
-	private def findUserForName(userName: String)(implicit connection: Connection) =
-		DbManyUserSettings.withName(userName).bestMatch(Vector(_.email.isEmpty))
-			.headOption.map { s => User(s.userId, s) }
 }

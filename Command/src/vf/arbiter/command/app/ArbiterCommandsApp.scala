@@ -1,6 +1,5 @@
 package vf.arbiter.command.app
 
-/*
 import utopia.bunnymunch.jawn.JsonBunny
 import utopia.citadel.util.CitadelContext
 import utopia.flow.datastructure.mutable.PointerWithEvents
@@ -10,11 +9,12 @@ import utopia.flow.generic.DataType
 import utopia.flow.parse.JsonParser
 import utopia.flow.util.console.{ArgumentSchema, Command, Console}
 import utopia.flow.util.console.ConsoleExtensions._
+import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.stored.user.User
-import vf.arbiter.core.model.stored.company.Company
+import vf.arbiter.core.model.combined.company.DetailedCompany
 
 import scala.io.StdIn
-*/
+
 /**
  * A command line application for the Arbiter project
  * @author Mikko Hilpinen
@@ -22,7 +22,6 @@ import scala.io.StdIn
  */
 object ArbiterCommandsApp extends App
 {
-	/*
 	DataType.setup()
 	implicit val jsonParser: JsonParser = JsonBunny
 	CitadelContext.setup(executionContext, connectionPool, "arbiter_db")
@@ -34,11 +33,16 @@ object ArbiterCommandsApp extends App
 	
 	def loggedIn = user.nonEmpty
 	
-	val companyPointer = new PointerWithEvents[Option[Company]](None)
+	val languageIdsPointer = userPointer.lazyMap {
+		case Some(user) => connectionPool { implicit c => UserActions.validLanguageIdListForUserWithId(user.id) }
+		case None => LanguageIds(Vector())
+	}
+	
+	val companyPointer = new PointerWithEvents[Option[DetailedCompany]](None)
 	def company = companyPointer.value
-	def company_=(newCompany: Option[Company]) = companyPointer.value = newCompany
-	def company_=(newCompany: Company) = companyPointer.value = Some(newCompany)
-	companyPointer.addListener { _.newValue.foreach { c => println(s"Using company ${c.name}") } }
+	def company_=(newCompany: Option[DetailedCompany]) = companyPointer.value = newCompany
+	def company_=(newCompany: DetailedCompany) = companyPointer.value = Some(newCompany)
+	companyPointer.addListener { _.newValue.foreach { c => println(s"Using company ${c.details.name}") } }
 	userPointer.addAnyChangeListener { company = None }
 	
 	val loginCommand = Command("login", help = "Logs you in as a specific user, enabling other actions")(
@@ -77,20 +81,31 @@ object ArbiterCommandsApp extends App
 				case "company" =>
 					user match
 					{
-						case Some(user) => CompanyActions.startOrSelectFromOwn(user.id, name).foreach { company = _ }
+						case Some(user) =>
+							implicit val languageIds: LanguageIds = languageIdsPointer.value
+							CompanyActions.startOrSelectFromOwn(user.id, name).foreach { company = _ }
 						case None => println("You must be logged in to register a new company")
 					}
 				case "customer" =>
-					CompanyActions.findOrCreateOne(name)
-						.foreach { c => println(s"${c.nameAndYCode} is now registered and can be used as a customer") }
+					user match
+					{
+						case Some(user) =>
+							CompanyActions.findOrCreateOne(user.id, name)
+								.foreach { c => println(
+									s"${c.nameAndYCode} is now registered and can be used as a customer") }
+						case None => println("You should be logged in to register a new customer")
+					}
 				case other => println(s"Unrecognized target $other. Available options are: user | company | customer")
 			}
 		}
 	}
 	
-	def createInvoiceCommand(userId: Int, companyId: Int) =
+	def createInvoiceCommand(userId: Int, senderCompany: DetailedCompany) =
 		Command.withoutArguments("invoice", "send", "Creates a new invoice") {
-			connectionPool { implicit connection => InvoiceActions.create(userId, companyId) }
+			connectionPool { implicit connection =>
+				implicit val languageIds: LanguageIds = languageIdsPointer.value
+				InvoiceActions.create(userId, senderCompany)
+			}
 			// TODO: Print the invoice afterwards
 		}
 	
@@ -98,7 +113,7 @@ object ArbiterCommandsApp extends App
 	val commandsPointer = userPointer.lazyMergeWith(companyPointer) { (user, company) =>
 		val statefulCommands = user match
 		{
-			case Some(user) => company.map { company => createInvoiceCommand(user.id, company.id) }
+			case Some(user) => company.map { company => createInvoiceCommand(user.id, company) }
 			case None => Some(loginCommand)
 		}
 		Vector(registerCommand) ++ statefulCommands
@@ -108,5 +123,5 @@ object ArbiterCommandsApp extends App
 	println("Welcome to Arbiter")
 	println("Instructions: use 'help' or 'man' commands to get more information. Use exit to quit.")
 	Console(commandsPointer, "Please enter the next command", closeCommandName = "exit").run()
-	println("Bye!")*/
+	println("Bye!")
 }
