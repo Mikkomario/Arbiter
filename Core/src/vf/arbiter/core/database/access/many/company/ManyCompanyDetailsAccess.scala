@@ -104,7 +104,7 @@ trait ManyCompanyDetailsAccess extends ManyRowModelAccess[CompanyDetails] with I
 	 * @return Companies that have the specified string in their name
 	 */
 	def matchingName(companyNamePart: String)(implicit connection: Connection) =
-		find(model.nameColumn.contains(companyNamePart))
+		find(model.nameMatchCondition(companyNamePart))
 	
 	/**
 	  * Updates the addressId of the targeted CompanyDetails instance(s)

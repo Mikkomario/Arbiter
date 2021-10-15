@@ -18,6 +18,14 @@ import utopia.flow.time.Now
 case class BankData(name: String, bic: String, creatorId: Option[Int] = None, created: Instant = Now) 
 	extends ModelConvertible
 {
+	// COMPUTED ------------------------
+	
+	/**
+	 * @return Name and BIC of this bank
+	 */
+	def nameAndBic = s"$name ($bic)"
+	
+	
 	// IMPLEMENTED	--------------------
 	
 	override def toModel = 

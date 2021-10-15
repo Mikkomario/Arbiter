@@ -1,6 +1,6 @@
 package vf.arbiter.core.model.enumeration
 
-import utopia.citadel.model.enumeration.StandardDescriptionRoleId
+import utopia.metropolis.model.enumeration.DescriptionRoleIdWrapper
 
 /**
  * Used for accessing description role ids for the Arbiter project
@@ -9,13 +9,8 @@ import utopia.citadel.model.enumeration.StandardDescriptionRoleId
  */
 object ArbiterDescriptionRoleId
 {
-	/**
-	 * Id of the abbreviation description role
-	 */
-	val abbreviation = 2
-	
-	/**
-	 * @return Id of the name description role
-	 */
-	def name = StandardDescriptionRoleId.name
+	case object Abbreviation extends DescriptionRoleIdWrapper
+	{
+		override val id = 2
+	}
 }

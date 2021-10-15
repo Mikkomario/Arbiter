@@ -8,4 +8,9 @@ import utopia.vault.nosql.view.UnconditionalView
   * @since 2021-10-14
   */
 object DbCompanies extends ManyCompaniesAccess with UnconditionalView
-
+{
+	/**
+	 * @return An access point to detailed copies of these companies
+	 */
+	def detailed = DbDetailedCompanies
+}

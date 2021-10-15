@@ -18,6 +18,11 @@ case class DetailedCompany(company: Company, details: CompanyDetails) extends Ex
 	  */
 	def id = company.id
 	
+	/**
+	 * @return Name and Y-code of this company
+	 */
+	def nameAndYCode = s"${details.name} (${company.yCode})"
+	
 	
 	// IMPLEMENTED	--------------------
 	

@@ -1,24 +1,23 @@
 package vf.arbiter.command.app
 
-/*
-import utopia.citadel.database.access.many.description.DbDescriptions
 import utopia.citadel.database.access.many.language.DbLanguageFamiliarities
 import utopia.citadel.database.access.many.user.DbManyUserSettings
-import utopia.citadel.database.access.single.description.DbDescription
 import utopia.citadel.database.access.single.language.DbLanguage
 import utopia.citadel.database.model.description.DescriptionLinkModel
 import utopia.citadel.database.model.user.{UserLanguageModel, UserModel}
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
+import utopia.citadel.util.MetropolisAccessExtensions._
 import utopia.flow.parse.Regex
 import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
+import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.metropolis.model.partial.user.{UserLanguageData, UserSettingsData}
 import utopia.metropolis.model.stored.user.User
 import utopia.vault.database.Connection
 
 import scala.io.StdIn
-*/
+
 /**
  * Contains interactive actions related to users
  * @author Mikko Hilpinen
@@ -26,7 +25,6 @@ import scala.io.StdIn
  */
 object UserActions
 {
-	/*
 	private val notLetterRegex = !Regex.alpha
 	
 	/**
@@ -76,10 +74,10 @@ object UserActions
 		println("What languages do you know?")
 		println("Instruction: Use 2-letter ISO-codes like 'en'. Insert all codes on the same line.")
 		val languageCodes = notLetterRegex.split(StdIn.readLineUntilNotEmpty())
-			.toVector.filter { _.nonEmpty }.map { _.toLowerCase }
+			.toVector.filter { _.length == 2 }.map { _.toLowerCase }
 		val languages = languageCodes.map { code => DbLanguage.forIsoCode(code).getOrInsert() }
 		val languageNames = languages.map { language =>
-			language.id -> DbDescription.ofLanguageWithId(language.id).name.inLanguageWithId(language.id).getOrElse {
+			language.id -> language.access.description.name.inLanguageWithId(language.id).getOrElse {
 				// If the language didn't have a name yet, asks and inserts one
 				val name = StdIn.readLineUntilNotEmpty(
 					s"What's the name of '${language.isoCode}' in '${language.isoCode}'")
@@ -88,19 +86,10 @@ object UserActions
 				name
 			}
 		}.toMap
-		// TODO: This part could use some refactoring for sure
-		val languageOrder = languages.map { _.id }
-		val availableProficiencies = DbLanguageFamiliarities.all
-		val proficiencyNames = DbDescriptions
-			.ofLanguageFamiliaritiesWithIds(availableProficiencies.map { _.id }.toSet)
-			.forRoleInLanguages(Name.id, languageOrder)
-			.view.mapValues { _.description.text }.toMap
-		val proficiencyOptions =
-		{
-			if (proficiencyNames.isEmpty)
-				availableProficiencies.sortBy { -_.orderIndex }.map { p => p -> p.orderIndex.toString }
-			else
-				availableProficiencies.flatMap { p => proficiencyNames.get(p.id).map { p -> _ } }
+		implicit val languageIds: LanguageIds = LanguageIds(languages.map { _.id })
+		val availableProficiencies = DbLanguageFamiliarities.described
+		val proficiencyOptions = availableProficiencies.sortBy { _.orderIndex }.map { p =>
+			p -> p(Name).getOrElse(p.orderIndex.toString)
 		}
 		val newProficiencyData = languages.map { language =>
 			println(s"How proficient are you in ${languageNames(language.id)} (${language.isoCode})?")
@@ -109,10 +98,9 @@ object UserActions
 		}
 		UserLanguageModel.insert(newProficiencyData
 			.map { case (language, proficiency) => UserLanguageData(user.id, language.id, proficiency.id) })
-		val mostProficientLanguage = newProficiencyData.maxBy { _._2 }._1
 		
 		// Creates a new company for that user (or joins an existing company)
-		println(s"What's the name of your company? (in ${languageNames(mostProficientLanguage.id)})")
+		println(s"What's the name of your company?")
 		println("Hint: If you wish to join an existing company, you can write part of that company's name")
 		val company = StdIn.readNonEmptyLine().flatMap { CompanyActions.startOrJoin(user.id, _) }
 		user -> company
@@ -120,5 +108,5 @@ object UserActions
 	
 	private def findUserForName(userName: String)(implicit connection: Connection) =
 		DbManyUserSettings.withName(userName).bestMatch(Vector(_.email.isEmpty))
-			.headOption.map { s => User(s.userId, s) }*/
+			.headOption.map { s => User(s.userId, s) }
 }
