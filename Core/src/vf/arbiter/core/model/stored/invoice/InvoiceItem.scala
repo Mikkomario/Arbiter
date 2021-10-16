@@ -2,6 +2,8 @@ package vf.arbiter.core.model.stored.invoice
 
 import utopia.vault.model.template.StoredModelConvertible
 import vf.arbiter.core.database.access.single.invoice.DbSingleInvoiceItem
+import vf.arbiter.core.model.combined.company.FullCompanyProduct
+import vf.arbiter.core.model.combined.invoice.FullInvoiceItem
 import vf.arbiter.core.model.partial.invoice.InvoiceItemData
 
 /**
@@ -19,5 +21,14 @@ case class InvoiceItem(id: Int, data: InvoiceItemData) extends StoredModelConver
 	  * An access point to this InvoiceItem in the database
 	  */
 	def access = DbSingleInvoiceItem(id)
+	
+	
+	// OTHER    ---------------------
+	
+	/**
+	 * @param product Product information
+	 * @return This item with that product information included
+	 */
+	def +(product: FullCompanyProduct) = FullInvoiceItem(this, product)
 }
 

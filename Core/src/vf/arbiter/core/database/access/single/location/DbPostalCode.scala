@@ -6,6 +6,7 @@ import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.UnconditionalView
 import vf.arbiter.core.database.factory.location.PostalCodeFactory
 import vf.arbiter.core.database.model.location.PostalCodeModel
+import vf.arbiter.core.model.combined.location.FullPostalCode
 import vf.arbiter.core.model.partial.location.PostalCodeData
 import vf.arbiter.core.model.stored.location.PostalCode
 
@@ -55,10 +56,14 @@ object DbPostalCode extends SingleRowModelAccess[PostalCode] with UnconditionalV
 	 * @param code Postal code
 	 * @param creatorId Id of the user who gave this information (if applicable & needed, call-by-name)
 	 * @param connection Implicit DB Connection
-	 * @return Existing or new postal code
+	 * @return Existing or new postal code, with county data included
 	 */
 	def getOrInsert(countyName: String, code: String, creatorId: => Option[Int] = None)
-	               (implicit connection: Connection): PostalCode =
-		getOrInsert(DbCounty.getOrInsert(countyName, creatorId).id, code, creatorId)
+	               (implicit connection: Connection): FullPostalCode =
+	{
+		val county = DbCounty.getOrInsert(countyName, creatorId)
+		val postal = getOrInsert(county.id, code, creatorId)
+		FullPostalCode(postal, county)
+	}
 }
 

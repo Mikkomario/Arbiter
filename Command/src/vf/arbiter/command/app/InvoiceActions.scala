@@ -16,10 +16,11 @@ import vf.arbiter.core.database.access.many.company.DbBanks
 import vf.arbiter.core.database.access.many.invoice.DbItemUnits
 import vf.arbiter.core.database.access.single.company.DbCompany
 import vf.arbiter.core.database.access.single.description.DbCompanyProductDescription
+import vf.arbiter.core.database.access.single.invoice.DbItemUnit
 import vf.arbiter.core.database.model.CoreDescriptionLinkModel
 import vf.arbiter.core.database.model.company.{BankModel, CompanyBankAccountModel, CompanyProductModel}
 import vf.arbiter.core.database.model.invoice.{InvoiceItemModel, InvoiceModel}
-import vf.arbiter.core.model.combined.company.{DescribedCompanyProduct, DetailedCompany, FullCompanyBankAccount}
+import vf.arbiter.core.model.combined.company.{DescribedCompanyProduct, DetailedCompany, FullCompanyBankAccount, FullCompanyProduct}
 import vf.arbiter.core.model.combined.invoice.{FullInvoice, FullInvoiceItem}
 import vf.arbiter.core.model.enumeration.ArbiterDescriptionRoleId.Abbreviation
 import vf.arbiter.core.model.partial.company.{BankData, CompanyBankAccountData, CompanyProductData}
@@ -254,7 +255,7 @@ object InvoiceActions
 			var existingProducts = DbCompany(senderCompany.id).products.described
 			
 			// Creates / prepares the invoice items
-			val lastProductPointer = new PointerWithEvents[Option[DescribedCompanyProduct]](None)
+			val lastProductPointer = new PointerWithEvents[Option[FullCompanyProduct]](None)
 			lastProductPointer.addListener { _.newValue.flatMap { _(Name) }
 				.foreach { n => println(s"Using product $n for the next invoice item") } }
 			// Collected info: product id + description + amount + price per unit
@@ -263,7 +264,7 @@ object InvoiceActions
 				if (index <= 1 || StdIn.ask("Do you want to add another item to this invoice?"))
 				{
 					// Selects the product to use
-					val product: Option[DescribedCompanyProduct] = lastProductPointer.value
+					val product: Option[FullCompanyProduct] = lastProductPointer.value
 						// Option A: Use same product as for the last line
 						.filter { product =>
 							StdIn.ask(s"Is the next item of the same product (${
@@ -277,8 +278,13 @@ object InvoiceActions
 									"products", "refer to")
 									// Makes sure the product has a name in the correct language
 									.map { p =>
+										// Includes unit information also
+										// TODO: Read might technically fail (see get below)
+										// TODO: The selectable options should be FullCompanyProducts
+										val productUnit = units.find { _.id == p.wrapped.unitId }
+											.getOrElse { DbItemUnit(p.wrapped.unitId).described.get }
 										if (p.description(Name).exists { _.languageId == invoiceLanguage.id })
-											p
+											FullCompanyProduct(p, productUnit)
 										else
 											StdIn.readNonEmptyLine(s"What's the name of ${
 												p(Name).getOrElse("this product")} in ${invoiceLanguage.name}?") match
@@ -292,8 +298,8 @@ object InvoiceActions
 															newDescription)
 													existingProducts = existingProducts
 														.filterNot { _.id == p.id } :+ modifiedProduct
-													modifiedProduct
-												case None => p
+													FullCompanyProduct(modifiedProduct, productUnit)
+												case None => FullCompanyProduct(p, productUnit)
 											}
 									}
 							else
@@ -326,7 +332,7 @@ object InvoiceActions
 									
 									// Adds this product to existing options
 									existingProducts :+= describedProduct
-									describedProduct
+									FullCompanyProduct(describedProduct, selectedUnit)
 								}
 							else
 								None
@@ -336,11 +342,7 @@ object InvoiceActions
 					product.map { product =>
 						// Collects invoice item information
 						val productName = product(Name).getOrElse(s"Unnamed product #${product.id}")
-						val unitName = units.find { _.id == product.wrapped.unitId } match
-						{
-							case Some(u) => u(Name).getOrElse(u(Abbreviation).getOrElse("unit"))
-							case None => "unit"
-						}
+						val unitName = product.unit(Name, Abbreviation).getOrElse("unit")
 						println("Please add a short description for this invoice item")
 						println(s"Leaving this empty will yield: $productName")
 						val description = StdIn.readNonEmptyLine().getOrElse(productName)
@@ -348,7 +350,7 @@ object InvoiceActions
 						println("Hint: Allows for decimal numbers")
 						val amount = StdIn.read().doubleOr(1.0)
 						println(s"What's the price of a single $unitName of $productName (without applying any taxes)?")
-						val pricePerUnit = product.wrapped.defaultUnitPrice match
+						val pricePerUnit = product.product.defaultUnitPrice match
 						{
 							case Some(default) =>
 								println(s"Default = $default €/$unitName")
@@ -356,7 +358,7 @@ object InvoiceActions
 							case None => StdIn.readIterator.flatMap { _.double }.next()
 						}
 						// Collects the information together
-						(product.id, description, pricePerUnit, amount)
+						(product, description, pricePerUnit, amount)
 					}
 				}
 				else
@@ -374,13 +376,25 @@ object InvoiceActions
 						ReferenceCode(userId, senderCompany.id, recipientCompany.id, Random.nextInt(1000)),
 						duration, deliveryDate, Some(userId)))
 					val invoiceItems = InvoiceItemModel.insert(invoiceItemData
-						.map { case (productId, description, pricePerUnit, amount) =>
-							InvoiceItemData(invoice.id, productId, description, pricePerUnit, amount) })
+						.map { case (product, description, pricePerUnit, amount) =>
+							InvoiceItemData(invoice.id, product.id, description, pricePerUnit, amount) })
 					
 					// May print the invoice afterwards
 					if (StdIn.ask("Do you want to export this invoice into a pdf?"))
 					{
-						// TODO: Continue
+						// Creates full invoice data
+						senderCompany.details.addressAccess.full.flatMap { senderAddress =>
+							recipientCompany.details.addressAccess.full.map { recipientAddress =>
+								val fullInvoiceItems = invoiceItems.zip(invoiceItemData)
+									.map { case (item, (product, _, _, _)) => item + product }
+								FullInvoice(invoice, senderCompany + senderAddress,
+									recipientCompany + recipientAddress, bankAccount, fullInvoiceItems)
+							}
+						} match
+						{
+							case Some(invoice) => print(invoice)
+							case None => println("Some required data was missing (inform the developer of this problem)")
+						}
 					}
 					
 					Some(invoice -> invoiceItems)
@@ -431,14 +445,14 @@ object InvoiceActions
 			
 			def from(item: FullInvoiceItem, index: Int) =
 			{
-				val unit = item.product.unit.abbreviationOrName.getOrElse("")
+				val unitName = item.product.unit(Abbreviation, Name).getOrElse("")
 				val taxMod = item.product.product.taxModifier
 				
 				val prefix = s"p${index + 1}-"
 				Map[String, String](
 					(prefix + name) -> item.description,
 					(prefix + amount) -> round(item.unitsSold),
-					(prefix + unit) -> unit,
+					(prefix + unit) -> unitName,
 					(prefix + unitPrice) -> (round(item.pricePerUnit) + s" €/$unit"),
 					(prefix + price) -> (round(item.price) + " €"),
 					(prefix + taxPercent) -> s"${(taxMod * 100).round}%",

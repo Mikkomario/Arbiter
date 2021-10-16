@@ -2,6 +2,8 @@ package vf.arbiter.core.model.stored.company
 
 import utopia.vault.model.template.StoredModelConvertible
 import vf.arbiter.core.database.access.single.company.DbSingleCompanyDetails
+import vf.arbiter.core.model.combined.company.FullCompanyDetails
+import vf.arbiter.core.model.combined.location.FullStreetAddress
 import vf.arbiter.core.model.partial.company.CompanyDetailsData
 
 /**
@@ -20,5 +22,14 @@ case class CompanyDetails(id: Int, data: CompanyDetailsData)
 	  * An access point to this CompanyDetails in the database
 	  */
 	def access = DbSingleCompanyDetails(id)
+	
+	
+	// OTHER    --------------------
+	
+	/**
+	 * @param address Address information (inclusive)
+	 * @return These details with that address information
+	 */
+	def +(address: FullStreetAddress) = FullCompanyDetails(this, address)
 }
 

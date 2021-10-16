@@ -1,6 +1,7 @@
 package vf.arbiter.core.model.combined.company
 
 import utopia.flow.util.Extender
+import vf.arbiter.core.model.combined.location.FullStreetAddress
 import vf.arbiter.core.model.partial.company.CompanyData
 import vf.arbiter.core.model.stored.company.{Company, CompanyDetails}
 
@@ -27,5 +28,14 @@ case class DetailedCompany(company: Company, details: CompanyDetails) extends Ex
 	// IMPLEMENTED	--------------------
 	
 	override def wrapped = company.data
+	
+	
+	// OTHER    ------------------------
+	
+	/**
+	 * @param address Street address data (inclusive)
+	 * @return This company information with that address data included
+	 */
+	def +(address: FullStreetAddress) = FullyDetailedCompany(company, details + address)
 }
 

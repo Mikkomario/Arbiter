@@ -5,6 +5,7 @@ import utopia.flow.datastructure.immutable.Model
 import utopia.flow.generic.ModelConvertible
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.Now
+import vf.arbiter.core.database.access.single.location.DbSingleStreetAddress
 
 /**
   * Contains company information which may change and on which there may be varying views
@@ -31,11 +32,15 @@ case class CompanyDetailsData(companyId: Int, name: String, addressId: Int, taxC
 	  * Whether this CompanyDetails has already been deprecated
 	  */
 	def isDeprecated = deprecatedAfter.isDefined
-	
 	/**
 	  * Whether this CompanyDetails is still valid (not deprecated)
 	  */
 	def isValid = !isDeprecated
+	
+	/**
+	 * @return An access point to this company's address
+	 */
+	def addressAccess = DbSingleStreetAddress(addressId)
 	
 	
 	// IMPLEMENTED	--------------------

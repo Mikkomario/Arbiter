@@ -1,9 +1,7 @@
 package vf.arbiter.core.model.combined.invoice
 
-import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.metropolis.model.combined.description.{DescribedFactory, DescribedWrapper, SimplyDescribed}
 import utopia.metropolis.model.stored.description.{DescriptionLink, DescriptionRole}
-import vf.arbiter.core.model.enumeration.ArbiterDescriptionRoleId.Abbreviation
 import vf.arbiter.core.model.stored.invoice.ItemUnit
 
 object DescribedItemUnit extends DescribedFactory[ItemUnit, DescribedItemUnit]
@@ -15,14 +13,6 @@ object DescribedItemUnit extends DescribedFactory[ItemUnit, DescribedItemUnit]
 case class DescribedItemUnit(itemUnit: ItemUnit, descriptions: Set[DescriptionLink])
 	extends DescribedWrapper[ItemUnit] with SimplyDescribed
 {
-	// COMPUTED ------------------------
-	
-	/**
-	 * @return The abbreviation or the name of this unit, if available
-	 */
-	def abbreviationOrName = apply(Abbreviation).orElse(apply(Name))
-	
-	
 	// IMPLEMENTED	--------------------
 	
 	override def wrapped = itemUnit
