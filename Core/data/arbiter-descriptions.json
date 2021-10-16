@@ -2,6 +2,9 @@
   {
     "target": "language",
     "names": {
+      "en": {
+        "2": "Finnish"
+      },
       "fi": {
         "1": "englanti",
         "2": "suomi"
@@ -9,9 +12,22 @@
     }
   },
   {
+    "target": "language_familiarity",
+    "names": {
+      "fi": {
+        "1": "äidinkieli",
+        "2": "luonteva",
+        "3": "sujuva",
+        "4": "tyydyttävä",
+        "5": "välttävä",
+        "6": "tyhjää parempi"
+      }
+    }
+  },
+  {
     "target": {
       "table": "unit_category_description",
-      "column": "categoryId"
+      "column": "unitCategoryId"
     },
     "names": {
       "en": {
@@ -31,7 +47,7 @@
   {
     "target": {
       "table": "item_unit_description",
-      "column": "itemUnitId"
+      "column": "unitId"
     },
     "names": {
       "en": {

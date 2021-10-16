@@ -365,7 +365,7 @@
           },
           {
             "name": "senderBankAccountId",
-            "ref": "bank_account",
+            "ref": "company_bank_account",
             "doc": "Id of the bank account the invoice sender wants the recipient to transfer money to"
           },
           {

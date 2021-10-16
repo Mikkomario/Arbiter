@@ -132,8 +132,8 @@ object UserActions
 	private def setUserLanguages(userId: Int, languageCodes: Vector[String])(implicit connection: Connection) =
 	{
 		val languages = languageCodes.map { code => DbLanguage.forIsoCode(code).getOrInsert() }
-		val languageNames = languages.map { language =>
-			language.id -> language.access.description.name.inLanguageWithId(language.id).getOrElse {
+		val languageNames: Map[Int, String] = languages.map { language =>
+			val name = language.access.description.name.inLanguageWithId(language.id).text.getOrElse {
 				// If the language didn't have a name yet, asks and inserts one
 				val name = StdIn.readLineUntilNotEmpty(
 					s"What's the name of '${language.isoCode}' in '${language.isoCode}'")
@@ -141,6 +141,7 @@ object UserActions
 					DescriptionData(Name.id, language.id, name, Some(userId)))
 				name
 			}
+			language.id -> name
 		}.toMap
 		implicit val languageIds: LanguageIds = LanguageIds(languages.map { _.id })
 		val availableProficiencies = DbLanguageFamiliarities.described

@@ -11,6 +11,8 @@ import utopia.flow.util.console.{ArgumentSchema, Command, Console}
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.stored.user.User
+import utopia.vault.util.ErrorHandling
+import utopia.vault.util.ErrorHandlingPrinciple.Throw
 import vf.arbiter.core.model.combined.company.DetailedCompany
 
 import scala.io.StdIn
@@ -25,6 +27,7 @@ object ArbiterCommandsApp extends App
 	DataType.setup()
 	implicit val jsonParser: JsonParser = JsonBunny
 	CitadelContext.setup(executionContext, connectionPool, "arbiter_db")
+	ErrorHandling.defaultPrinciple = Throw
 	
 	val userPointer = new PointerWithEvents[Option[User]](None)
 	def user = userPointer.value

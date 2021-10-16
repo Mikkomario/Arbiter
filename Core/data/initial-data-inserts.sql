@@ -14,7 +14,7 @@ INSERT INTO description_role (id, json_key_singular, json_key_plural) VALUES
 -- 2 time (minutes)
 -- 3 time period (days)
 -- 4 time period (months) - Separate because not directly comparable
-INSERT INTO unit_category (id) VALUES (1), (2), (3);
+INSERT INTO unit_category (id) VALUES (1), (2), (3), (4);
 
 -- Inserts item units
 -- Piece (1)
