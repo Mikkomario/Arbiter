@@ -64,7 +64,9 @@ object FillPdfForm
 							// form.getField(fieldName).getWidgets.get(0).getRectangle.getAsNumber(1)
 							// TODO: Use this kind of a rectangle to set image position & size accordingly
 							// See: https://www.concretepage.com/itext/add-image-in-pdf-using-itext-in-java
-							Try { form.getField(fieldName).setValue(fieldValue) }.failure.map { fieldName -> _ }
+							// TODO: Consider gathering / logging fields that were not found
+							Try { Option(form.getField(fieldName)).foreach { _.setValue(fieldValue) } }
+								.failure.map { fieldName -> _ }
 						}
 						// Only fails if all value sets failed, otherwise returns a list of failures
 						if (setFailures.nonEmpty && setFailures.size == fieldValues.size)

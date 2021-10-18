@@ -240,7 +240,13 @@ object InvoiceActions
 						case Success(failures) =>
 							println("Form filled!")
 							if (failures.nonEmpty)
+							{
+								failures.foreach { case (fieldName, error) =>
+									println(s"Failed to write field: $fieldName = ${printFields(fieldName)}")
+									error.printStackTrace()
+								}
 								println(s"Warning: ${failures.size} fields were not written correctly")
+							}
 							outputPath.openInDesktop()
 						case Failure(error) =>
 							error.printStackTrace()
@@ -474,7 +480,7 @@ object InvoiceActions
 		val referenceCode = "reference-code"
 		
 		val date = "date"
-		val duration = "payment-duration"
+		val duration = "pay-duration"
 		val deadline = "payment-deadline"
 		val delivery = "delivery-date"
 		
@@ -511,7 +517,7 @@ object InvoiceActions
 					(prefix + name) -> item.description,
 					(prefix + amount) -> round(item.unitsSold),
 					(prefix + unit) -> unitName,
-					(prefix + unitPrice) -> (round(item.pricePerUnit) + s" €/$unit"),
+					(prefix + unitPrice) -> (round(item.pricePerUnit) + s" €/$unitName"),
 					(prefix + price) -> (round(item.price) + " €"),
 					(prefix + taxPercent) -> s"${(taxMod * 100).round}%",
 					(prefix + totalPrice) -> (round(item.price * (1 + taxMod)) + " €")
@@ -523,22 +529,34 @@ object InvoiceActions
 		{
 			val price = invoice.totalPrice
 			val tax = invoice.totalTax
+			val priceWithTax = round(price + tax) + " €"
+			val dl = dateFormat.format(invoice.paymentDeadline)
+			
+			val recipientName = invoice.recipientCompany.details.name
+			val recipientAddress = invoice.recipientCompany.details.address.address.toString
+			val recipientPostal = invoice.recipientCompany.details.address.postalCode.toString
 			
 			Map[String, String](
 				invoiceNumber -> invoice.id.toString,
 				referenceCode -> invoice.referenceCode,
+				s"$referenceCode-2" -> invoice.referenceCode,
 				date -> dateFormat.format(invoice.date),
 				duration -> s"${invoice.paymentDuration.length} pv netto",
 				deadline -> dateFormat.format(invoice.paymentDeadline),
+				s"$deadline-2" -> dl,
 				delivery -> invoice.productDeliveryDate.map(dateFormat.format).getOrElse(""),
-				Recipient.name -> invoice.recipientCompany.details.name,
+				Recipient.name -> recipientName,
+				s"${Recipient.name}-2" -> recipientName,
 				Recipient.yCode -> invoice.recipientCompany.yCode,
 				Recipient.id -> invoice.recipientCompany.id.toString,
-				Recipient.address -> invoice.recipientCompany.details.address.address.toString,
-				Recipient.postalCode -> invoice.recipientCompany.details.address.postalCode.toString,
-				totalPrice -> round(price),
-				totalTax -> round(tax),
-				totalPriceTaxed -> round(price + tax)
+				Recipient.address -> recipientAddress,
+				s"${Recipient.address}-2" -> recipientAddress,
+				Recipient.postalCode -> recipientPostal,
+				s"${Recipient.postalCode}-2" -> recipientPostal,
+				totalPrice -> (round(price) + " €"),
+				totalTax -> (round(tax) + " €"),
+				totalPriceTaxed -> priceWithTax,
+				s"$totalPriceTaxed-2" -> priceWithTax
 			) ++ invoice.items.zipWithIndex.flatMap { case (item, index) => ItemRow.from(item, index) }
 		}
 		
