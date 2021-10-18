@@ -30,7 +30,7 @@ object InvoiceFactory
 		Invoice(valid("id").getInt, InvoiceData(valid("senderCompanyDetailsId").getInt, 
 			valid("recipientCompanyDetailsId").getInt, valid("senderBankAccountId").getInt, 
 			valid("languageId").getInt, valid("referenceCode").getString, 
-			Days(valid("paymentDuration").getInt), valid("productDeliveryDate").localDate, 
+			Days(valid("paymentDurationDays").getInt), valid("productDeliveryDate").localDate,
 			valid("creatorId").int, valid("created").getInstant, valid("cancelledAfter").instant))
 }
 

@@ -5,6 +5,9 @@
       <root url="jar://$PROJECT_DIR$/Core/lib/io-7.1.16.jar!/" />
       <root url="jar://$PROJECT_DIR$/Core/lib/kernel-7.1.16.jar!/" />
       <root url="jar://$PROJECT_DIR$/Core/lib/layout-7.1.16.jar!/" />
+      <root url="jar://$PROJECT_DIR$/Core/lib/log4j-1.2.16.jar!/" />
+      <root url="jar://$PROJECT_DIR$/Core/lib/slf4j-log4j12-1.6.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/Core/lib/slf4j.api-1.6.1.jar!/" />
     </CLASSES>
     <JAVADOC>
       <root url="jar://$PROJECT_DIR$/Core/lib/forms-7.1.16-javadoc.jar!/" />

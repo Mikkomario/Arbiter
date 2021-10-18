@@ -44,14 +44,17 @@ object DbCompany extends SingleRowModelAccess[Company] with UnconditionalView wi
 	 * @param addressId Id of the company's address
 	 * @param taxCode Tax code of the company (optional)
 	 * @param creatorId Id of the user who provided this data (optional)
+	 * @param isOfficial Whether this data is official (provided by company owner)
 	 * @param connection Implicit DB Connection
 	 * @return Inserted company
 	 */
 	def insert(yCode: String, name: String, addressId: Int, taxCode: Option[String] = None,
-	           creatorId: Option[Int] = None)(implicit connection: Connection) =
+	           creatorId: Option[Int] = None, isOfficial: Boolean = false)
+	          (implicit connection: Connection) =
 	{
 		val company = model.insert(CompanyData(yCode, creatorId))
-		val details = CompanyDetailsModel.insert(CompanyDetailsData(company.id, name, addressId, taxCode, creatorId))
+		val details = CompanyDetailsModel.insert(CompanyDetailsData(company.id, name, addressId, taxCode, creatorId,
+			isOfficial = isOfficial))
 		company + details
 	}
 }

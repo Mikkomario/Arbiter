@@ -58,6 +58,11 @@ object ArbiterCommandsApp extends App
 			.foreach { case (newUser, newCompany) =>
 				user = newUser
 				company = newCompany
+				
+				// Prompts company selection next
+				if (newCompany.isEmpty)
+					connectionPool { implicit c => CompanyActions.selectOneFromOwn(newUser.id) }
+						.foreach { company = _ }
 			}
 	}
 	val registerCommand = Command("register", "new", "Registers a new user, company or customer")(
@@ -103,23 +108,32 @@ object ArbiterCommandsApp extends App
 		}
 	}
 	
+	def selectCompanyCommand(userId: Int) = Command.withoutArguments("use",
+		help = "Switches between owned companies") {
+		connectionPool { implicit c => CompanyActions.selectOneFromOwn(userId) }.foreach { company = _ }
+	}
+	def printInvoiceCommand(companyId: Int) = Command.withoutArguments("print", help = "Prints an invoice") {
+		connectionPool { implicit c => InvoiceActions.findAndPrint(companyId) }
+	}
 	def createInvoiceCommand(userId: Int, senderCompany: DetailedCompany) =
 		Command.withoutArguments("invoice", "send", "Creates a new invoice") {
 			connectionPool { implicit connection =>
 				implicit val languageIds: LanguageIds = languageIdsPointer.value
 				InvoiceActions.create(userId, senderCompany)
 			}
-			// TODO: Print the invoice afterwards
 		}
 	
 	// Updates the available commands when the user logs in / selects a company
 	val commandsPointer = userPointer.lazyMergeWith(companyPointer) { (user, company) =>
 		val statefulCommands = user match
 		{
-			case Some(user) => company.map { company => createInvoiceCommand(user.id, company) }
-			case None => Some(loginCommand)
+			case Some(user) =>
+				Vector(selectCompanyCommand(user.id)) ++
+					company.map { company => createInvoiceCommand(user.id, company) }
+			case None => Vector(loginCommand)
 		}
-		Vector(registerCommand) ++ statefulCommands
+		val companyStatefulCommands = company.map { company => printInvoiceCommand(company.id) }
+		Vector(registerCommand) ++ statefulCommands ++ companyStatefulCommands
 	}
 	
 	// Starts the console

@@ -61,9 +61,9 @@ trait ManyCompaniesAccessLike[+A] extends ManyRowModelAccess[A] with Indexed
 		val membershipModel = MembershipModel
 		// Joins to organization link -> organization -> membership
 		factory(connection(
-			Select(table join organizationLinkModel.table join Tables.organization join membershipModel.table, table) +
-				Where(mergeCondition(membershipModel.nonDeprecatedCondition &&
-					membershipModel.withUserId(userId).toCondition))))
+			Select.tables(target join organizationLinkModel.table join Tables.organization join membershipModel.table,
+				factory.tables) + Where(mergeCondition(membershipModel.nonDeprecatedCondition &&
+				membershipModel.withUserId(userId).toCondition))))
 	}
 	
 	/**

@@ -6,6 +6,7 @@ import utopia.flow.generic.ModelConvertible
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.{Days, Now}
 import utopia.flow.time.TimeExtensions._
+import vf.arbiter.core.database.access.single.company.{DbCompanyBankAccount, DbCompanyDetails}
 
 /**
   * Represents a bill / an invoice sent by one company to another to request a monetary transfer / payment
@@ -43,11 +44,23 @@ case class InvoiceData(senderCompanyDetailsId: Int, recipientCompanyDetailsId: I
 	  * Whether this Invoice has already been deprecated
 	  */
 	def isDeprecated = cancelledAfter.isDefined
-	
 	/**
 	  * Whether this Invoice is still valid (not deprecated)
 	  */
 	def isValid = !isDeprecated
+	
+	/**
+	 * @return An access point to information concerning invoice sender
+	 */
+	def senderDetailsAccess = DbCompanyDetails(senderCompanyDetailsId)
+	/**
+	 * @return An access point to information concerning invoice recipient
+	 */
+	def recipientDetailsAccess = DbCompanyDetails(recipientCompanyDetailsId)
+	/**
+	 * @return An access point to the invoice sender's bank account
+	 */
+	def bankAccountAccess = DbCompanyBankAccount(senderBankAccountId)
 	
 	
 	// IMPLEMENTED	--------------------

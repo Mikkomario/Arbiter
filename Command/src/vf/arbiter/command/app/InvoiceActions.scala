@@ -3,6 +3,7 @@ package vf.arbiter.command.app
 import utopia.citadel.database.access.single.description.DbLanguageDescription
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.flow.datastructure.mutable.PointerWithEvents
+import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.Days
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.FileExtensions._
@@ -12,15 +13,15 @@ import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.vault.database.Connection
 import vf.arbiter.command.model.SelectedLanguage
 import vf.arbiter.core.controller.pdf.FillPdfForm
-import vf.arbiter.core.database.access.many.company.DbBanks
-import vf.arbiter.core.database.access.many.invoice.DbItemUnits
+import vf.arbiter.core.database.access.many.company.{DbBanks, DbCompanies}
+import vf.arbiter.core.database.access.many.invoice.{DbInvoices, DbItemUnits}
 import vf.arbiter.core.database.access.single.company.DbCompany
 import vf.arbiter.core.database.access.single.description.DbCompanyProductDescription
-import vf.arbiter.core.database.access.single.invoice.DbItemUnit
+import vf.arbiter.core.database.access.single.invoice.{DbInvoice, DbItemUnit}
 import vf.arbiter.core.database.model.CoreDescriptionLinkModel
 import vf.arbiter.core.database.model.company.{BankModel, CompanyBankAccountModel, CompanyProductModel}
 import vf.arbiter.core.database.model.invoice.{InvoiceItemModel, InvoiceModel}
-import vf.arbiter.core.model.combined.company.{DescribedCompanyProduct, DetailedCompany, FullCompanyBankAccount, FullCompanyProduct}
+import vf.arbiter.core.model.combined.company.{DescribedCompanyProduct, DetailedCompany, FullCompanyBankAccount, FullCompanyProduct, FullyDetailedCompany}
 import vf.arbiter.core.model.combined.invoice.{FullInvoice, FullInvoiceItem}
 import vf.arbiter.core.model.enumeration.ArbiterDescriptionRoleId.Abbreviation
 import vf.arbiter.core.model.partial.company.{BankData, CompanyBankAccountData, CompanyProductData}
@@ -108,8 +109,8 @@ object InvoiceActions
 	 */
 	// TODO: Should probably check for duplicates
 	def createBank(userId: Int)(implicit connection: Connection) =
-		StdIn.readNonEmptyLine("What's the name of the bank?").flatMap { name =>
-			StdIn.readNonEmptyLine("What's the BIC of the bank?").map { bic =>
+		StdIn.readNonEmptyLine("What's the name of the bank you're using?").flatMap { name =>
+			StdIn.readNonEmptyLine("What's the BIC of the bank you're using?").map { bic =>
 				BankModel.insert(BankData(name, bic, Some(userId)))
 			}
 		}
@@ -135,6 +136,63 @@ object InvoiceActions
 	}
 	
 	/**
+	 * Finds an invoice and prints it
+	 * @param senderCompanyId Id of the company who sent the invoice
+	 * @param connection Implicit DB Connection
+	 */
+	def findAndPrint(senderCompanyId: Int)(implicit connection: Connection) =
+	{
+		println("Which key you want to search with?")
+		ActionUtils.selectFrom(Vector(1 -> "Invoice index", 2 -> "Reference number", 3 -> "Customer name"),
+			"search keys", "use", skipQuestion = true).foreach { searchKey =>
+			val searchKeyName = if (searchKey == 1) "invoice index" else if (searchKey == 2) "reference number" else
+				"customer name"
+			StdIn.readNonEmptyLine(s"What's the $searchKeyName you want to find?").foreach { searched =>
+				// Finds the invoice with the searched key
+				val invoice = {
+					if (searchKey == 1)
+						searched.int match
+						{
+							case Some(invoiceId) => DbInvoice(invoiceId).pull
+							case None =>
+								println(s"$searched is not a valid invoice index")
+								None
+						}
+					else if (searchKey == 2)
+						DbInvoice.withReferenceCode(searched)
+					else
+						CompanyActions.findAndSelectOne(searched).flatMap { recipientCompany =>
+							val invoices = DbInvoices.betweenCompanies(senderCompanyId, recipientCompany.id)
+							ActionUtils.selectFrom(invoices.map { i => i -> s"${i.date}: ${i.id} / ${i.referenceCode}" })
+						}
+				}
+				invoice.foreach { invoice =>
+					// Reads associated data
+					// The invoice must belong to the sender company
+					invoice.senderDetailsAccess.full.filter { _.companyId == senderCompanyId } match
+					{
+						case Some(senderDetails) =>
+							invoice.recipientDetailsAccess.full.foreach { recipientDetails =>
+								val companiesById = DbCompanies(
+									Set(senderDetails.companyId, recipientDetails.companyId)).pull
+									.map { c => c.id -> c }.toMap
+								invoice.bankAccountAccess.full.foreach { bank =>
+									val items = invoice.access.items.fullInLanguageWithId(invoice.languageId)
+									val sender = FullyDetailedCompany(companiesById(senderDetails.companyId),
+										senderDetails)
+									val recipient = FullyDetailedCompany(
+										companiesById(recipientDetails.companyId), recipientDetails)
+									print(FullInvoice(invoice, sender, recipient, bank, items))
+								}
+							}
+						case None => println("This invoice doesn't belong to your company")
+					}
+				}
+			}
+		}
+	}
+	
+	/**
 	 * Prints an invoice
 	 * @param invoice Invoice to print - linked descriptions should in in invoice language
 	 * @param connection Implicit DB Connection
@@ -144,7 +202,8 @@ object InvoiceActions
 		println("Please type the path to the invoice form pdf file")
 		val root = Paths.get("")
 		println(s"Instructions: You can specify an absolute path or a path relative to ${root.toAbsolutePath}")
-		DbLanguageDescription(invoice.languageId).name.inLanguageWithId(invoice.languageId).foreach { langName =>
+		DbLanguageDescription(invoice.languageId).name.inLanguageWithId(invoice.languageId).foreach { langDesc =>
+			val langName = langDesc.description.text
 			println(s"The invoice is in $langName, so you may want to pick a $langName template")
 		}
 		val somePaths = root.allChildrenIterator.flatMap { _.toOption }.filter { _.fileType == "pdf" }.take(5)
@@ -204,13 +263,12 @@ object InvoiceActions
 			"How many days does the company have time to pay this bill? (default = 30)")
 			.intOr(30))
 		println("When were the services or items delivered for the customer?")
-		println("Allowed formats: YYYY-MM-DD and DD.MM.YYYY")
 		println("Leave empty if not applicable")
-		val deliveryDate = StdIn.read().localDate
+		val deliveryDate = ActionUtils.readDate()
 		
 		// Prepares information for the next phase
 		// Units must have some kind of description available
-		val readUnits = DbItemUnits.described.filter { u => u(Name).isDefined || u(Abbreviation).isDefined }
+		val readUnits = DbItemUnits.described.filter { u => u.has(Name) || u.has(Abbreviation) }
 			.sortBy { _.wrapped.categoryId }
 		if (readUnits.isEmpty)
 			None
@@ -219,12 +277,12 @@ object InvoiceActions
 			// Also makes sure units have appropriate names in the targeted language
 			val units = readUnits.map { u =>
 				val (unitPlaceholderName, hasName, hasAbbreviation) = u.description(Name) match {
-					case Some(description) =>
+					case Some(nameDescription) =>
 						val hasAbbreviation = u.description(Abbreviation).exists { _.languageId == invoiceLanguage.id }
-						if (description.languageId == invoiceLanguage.id)
-							(description.text, false, hasAbbreviation)
+						if (nameDescription.languageId == invoiceLanguage.id)
+							(nameDescription.text, true, hasAbbreviation)
 						else
-							(description.text, true, hasAbbreviation)
+							(nameDescription.text, false, hasAbbreviation)
 					case None =>
 						val abbreviation = u.description(Abbreviation).get
 						(abbreviation.text, false, abbreviation.languageId == invoiceLanguage.id)
@@ -268,7 +326,7 @@ object InvoiceActions
 						// Option A: Use same product as for the last line
 						.filter { product =>
 							StdIn.ask(s"Is the next item of the same product (${
-								product(Name).getOrElse(s"Unnamed product #${product.id}") }?")
+								product(Name).getOrElse(s"Unnamed product #${product.id}") })?")
 						}
 						// Option B: Select from existing products
 						.orElse {

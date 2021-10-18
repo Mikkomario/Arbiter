@@ -35,55 +35,46 @@ trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed
 	  */
 	def senderCompanyDetailsIds(implicit connection: Connection) = 
 		pullColumn(model.senderCompanyDetailsIdColumn).flatMap { value => value.int }
-	
 	/**
 	  * recipientCompanyDetailsIds of the accessible Invoices
 	  */
 	def recipientCompanyDetailsIds(implicit connection: Connection) = 
 		pullColumn(model.recipientCompanyDetailsIdColumn).flatMap { value => value.int }
-	
 	/**
 	  * senderBankAccountIds of the accessible Invoices
 	  */
 	def senderBankAccountIds(implicit connection: Connection) = 
 		pullColumn(model.senderBankAccountIdColumn).flatMap { value => value.int }
-	
 	/**
 	  * languageIds of the accessible Invoices
 	  */
 	def languageIds(implicit connection: Connection) = 
 		pullColumn(model.languageIdColumn).flatMap { value => value.int }
-	
 	/**
 	  * referenceCodes of the accessible Invoices
 	  */
 	def referenceCodes(implicit connection: Connection) = 
 		pullColumn(model.referenceCodeColumn).flatMap { value => value.string }
-	
 	/**
 	  * paymentDuration of the accessible Invoices
 	  */
 	def paymentDuration(implicit connection: Connection) = 
 		pullColumn(model.paymentDurationColumn).flatMap { value => value.int.map { Days(_) } }
-	
 	/**
 	  * productDeliveryDates of the accessible Invoices
 	  */
 	def productDeliveryDates(implicit connection: Connection) = 
 		pullColumn(model.productDeliveryDateColumn).flatMap { value => value.localDate }
-	
 	/**
 	  * creatorIds of the accessible Invoices
 	  */
 	def creatorIds(implicit connection: Connection) = 
 		pullColumn(model.creatorIdColumn).flatMap { value => value.int }
-	
 	/**
 	  * createds of the accessible Invoices
 	  */
 	def createds(implicit connection: Connection) = 
 		pullColumn(model.createdColumn).flatMap { value => value.instant }
-	
 	/**
 	  * cancelledAfters of the accessible Invoices
 	  */

@@ -10,6 +10,7 @@ import utopia.metropolis.model.cached.LanguageIds
 import utopia.vault.database.Connection
 import vf.arbiter.command.model.SelectedLanguage
 
+import java.time.LocalDate
 import scala.io.StdIn
 
 /**
@@ -19,6 +20,34 @@ import scala.io.StdIn
  */
 object ActionUtils
 {
+	/**
+	 * Reads a date from input. Allows the user to reattempt input on parse failure.
+	 * @param prompt Prompt to show before the first input request
+	 * @return
+	 */
+	def readDate(prompt: String = "") =
+	{
+		prompt.notEmpty.foreach(println)
+		println("Instruction: Supported formats are YYYY-MM-DD and DD.MM.YYYY")
+		StdIn.readIterator.findMap[Option[LocalDate]] { v =>
+			if (v.isEmpty)
+				Some(None)
+			else
+				v.localDate match
+				{
+					case Some(d) => Some(Some(d))
+					case None =>
+						if (StdIn.ask(s"Couldn't convert '${v.getString}' to a date. Do you want to try again?"))
+						{
+							println("Please write the date again")
+							None
+						}
+						else
+							Some(None)
+				}
+		}.get
+	}
+	
 	/**
 	 * Forces the user to select one of their known language
 	 * @param connection Implicit connection
@@ -89,26 +118,41 @@ object ActionUtils
 	 * @param options Options for the user to select from. Option descriptions are on the right side.
 	 * @param target word used for the selected items (plural) (default = items)
 	 * @param verb Verb used for the selection action (default = select)
+	 * @param skipQuestion Whether the question: "Do you want to use one of these...?" should be skipped
+	 *                     (default = false)
 	 * @tparam A Type of the selected item
 	 * @return Item selected by the user. None if there were no items to select from or if the user didn't want to
 	 *         select any of them.
 	 */
-	def selectFrom[A](options: Seq[(A, String)], target: String = "items", verb: String = "select"): Option[A] =
+	def selectFrom[A](options: Seq[(A, String)], target: String = "items", verb: String = "select",
+	                  skipQuestion: Boolean = false): Option[A] =
 	{
 		if (options.isEmpty)
 		{
-			println("No matches found")
+			println(s"No $target found")
 			None
+		}
+		else if (options.size == 1)
+		{
+			if (StdIn.ask(s"Found ${options.head._2}. Do you want to $verb it?"))
+				Some(options.head._1)
+			else
+				None
 		}
 		else
 		{
-			val bestNameMatches = options.map { _._2 }.sortBy { _.length }.take(3)
-			println(s"Found ${options.size} matches: ${bestNameMatches.mkString(", ")}${
-				if (options.size > bestNameMatches.size) "..." else ""}")
-			if (StdIn.ask(s"Do you want to $verb one of these $target?"))
-				Some(forceSelectFrom(options))
+			if (skipQuestion)
+				_selectFrom(options)
 			else
-				None
+			{
+				val bestNameMatches = options.map { _._2 }.sortBy { _.length }.take(3)
+				println(s"Found ${options.size} $target: ${bestNameMatches.mkString(", ")}${
+					if (options.size > bestNameMatches.size) "..." else ""}")
+				if (StdIn.ask(s"Do you want to $verb one of these $target?"))
+					_selectFrom(options)
+				else
+					None
+			}
 		}
 	}
 	
@@ -167,6 +211,62 @@ object ActionUtils
 			}.get match
 			{
 				case Right(index) => options(index - 1)._1
+				case Left(filter) => _narrow(filter)
+			}
+		}
+	}
+	
+	// This variant of select allows for cancelling
+	// Options mustn't be empty
+	private def _selectFrom[A](options: Seq[(A, String)]): Option[A] =
+	{
+		def _narrow(filter: String): Option[A] =
+		{
+			val narrowed = options.filter { _._2.toLowerCase.contains(filter) }
+			if (narrowed.isEmpty)
+			{
+				println("No results could be found with that filter, please try again")
+				_selectFrom(options)
+			}
+			else
+				narrowed.find { _._2 ~== filter }.map { _._1 }.orElse { _selectFrom(narrowed) }
+		}
+		
+		if (options.size == 1)
+		{
+			val (result, resultName) = options.head
+			println(s"Found $resultName")
+			Some(result)
+		}
+		else if (options.size > 10)
+		{
+			println(s"Found ${options.size} options")
+			StdIn.readNonEmptyLine(
+				"Please narrow the selection by specifying an additional filter (empty cancels)")
+				.flatMap { filter => _narrow(filter.toLowerCase) }
+		}
+		else
+		{
+			println(s"Found ${options.size} options")
+			options.indices.foreach { index => println(s"${index + 1}: ${options(index)._2}") }
+			println("Please select the correct index or narrow the selection by typing text (empty cancels)")
+			StdIn.readIterator.findMap { input =>
+				input.int match
+				{
+					// Case: User typed a row index => makes sure it is in range
+					case Some(index) =>
+						if (index > 0 && index <= options.size)
+							Some(Some(Right(index)))
+						else
+						{
+							println("That index is out of range, please select a new one")
+							None
+						}
+					// Case: User typed text or nothing => Returns that
+					case None => Some(input.string.map { Left(_) })
+				}
+			}.get.flatMap {
+				case Right(index) => Some(options(index - 1)._1)
 				case Left(filter) => _narrow(filter)
 			}
 		}

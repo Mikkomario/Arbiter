@@ -192,18 +192,19 @@ object CompanyActions
 		println("What language the company name is in?")
 		val language = ActionUtils.forceSelectKnownLanguage()
 		// Inserts company information
-		val company = newCompany(ownerId, companyName)
+		val company = newCompany(ownerId, companyName, isOwned = true)
 		// Inserts organization information
 		linkCompanyToNewOrganization(ownerId, company, language.id)
 		company
 	}
 	
-	private def newCompany(userId: Int, companyName: String)(implicit connection: Connection) =
+	private def newCompany(userId: Int, companyName: String, isOwned: Boolean = false)
+	                      (implicit connection: Connection) =
 	{
 		val yCode = StdIn.readLineUntilNotEmpty("What's the identifier (Y-Tunnus) of the company?")
 		val countyName = StdIn.readLineUntilNotEmpty("County?").capitalize
 		val postalCodeInput = StdIn.readLineUntilNotEmpty("Postal code?")
-		val streetName = StdIn.readLineUntilNotEmpty("Street name?").capitalize
+		val streetName = StdIn.readLineUntilNotEmpty("Street name (without number)?").capitalize
 		val houseNumber = StdIn.readLineUntilNotEmpty("Building number?")
 		val stair = StdIn.readNonEmptyLine("Stair? (optional)")
 		val roomNumber = StdIn.readNonEmptyLine("Room number? (optional)")
@@ -215,7 +216,7 @@ object CompanyActions
 		val address = DbStreetAddress.getOrInsert(
 			StreetAddressData(postalCode.id, streetName, houseNumber, stair, roomNumber, Some(userId)))
 		// Inserts company information
-		DbCompany.insert(yCode, companyName, address.id, taxCode, Some(userId))
+		DbCompany.insert(yCode, companyName, address.id, taxCode, Some(userId), isOfficial = isOwned)
 	}
 	
 	private def linkCompanyToNewOrganization(ownerId: Int, company: DetailedCompany, companyNameLanguageId: Int)

@@ -1,5 +1,6 @@
 package vf.arbiter.core.database.access.single.invoice
 
+import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.NonDeprecatedView
@@ -34,5 +35,13 @@ object DbInvoice extends SingleRowModelAccess[Invoice] with NonDeprecatedView[In
 	  * @return An access point to that Invoice
 	  */
 	def apply(id: Int) = DbSingleInvoice(id)
+	
+	/**
+	 * @param reference A reference code
+	 * @param connection Implicit DB Connection
+	 * @return Invoice with that reference code
+	 */
+	def withReferenceCode(reference: String)(implicit connection: Connection) =
+		find(model.withReferenceCode(reference).toCondition)
 }
 

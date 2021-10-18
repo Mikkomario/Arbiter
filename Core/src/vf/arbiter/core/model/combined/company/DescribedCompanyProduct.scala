@@ -2,6 +2,7 @@ package vf.arbiter.core.model.combined.company
 
 import utopia.metropolis.model.combined.description.{DescribedFactory, DescribedWrapper, SimplyDescribed}
 import utopia.metropolis.model.stored.description.{DescriptionLink, DescriptionRole}
+import vf.arbiter.core.model.combined.invoice.DescribedItemUnit
 import vf.arbiter.core.model.stored.company.CompanyProduct
 
 object DescribedCompanyProduct extends DescribedFactory[CompanyProduct, DescribedCompanyProduct]
@@ -16,5 +17,14 @@ case class DescribedCompanyProduct(wrapped: CompanyProduct, descriptions: Set[De
 	// IMPLEMENTED	--------------------
 	
 	override protected def simpleBaseModel(roles: Iterable[DescriptionRole]) = wrapped.toModel
+	
+	
+	// OTHER    ------------------------
+	
+	/**
+	 * @param unit Unit information
+	 * @return This product with that information included
+	 */
+	def +(unit: DescribedItemUnit) = FullCompanyProduct(this, unit)
 }
 
