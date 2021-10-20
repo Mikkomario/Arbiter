@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/data/invoice-forms" />
       <excludeFolder url="file://$MODULE_DIR$/data/test-output" />
+      <excludeFolder url="file://$MODULE_DIR$/data/coder-build" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -18,7 +19,7 @@
     <orderEntry type="module" module-name="Metropolis" />
     <orderEntry type="module" module-name="Vault" />
     <orderEntry type="module" module-name="BunnyMunch" />
-    <orderEntry type="library" name="ch.vorburger.mariaDB4j" level="project" />
     <orderEntry type="module" module-name="Trove" />
+    <orderEntry type="library" name="ch.vorburger.mariaDB4j:mariaDB4j:2.4.0" level="project" />
   </component>
 </module>

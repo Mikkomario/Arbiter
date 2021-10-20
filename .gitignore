@@ -1,5 +1,6 @@
 out/
 Core/data/coder-build
+Command/data/coder-build
 Command/data/invoice-forms
 Command/data/test-output
 .idea/workspace.xml

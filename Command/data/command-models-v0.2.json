@@ -1,0 +1,33 @@
+{
+  "author": "Mikko Hilpinen",
+  "package": "vf.arbiter.command",
+  "classes": {
+    "device": [
+      {
+        "name": "InvoiceForm",
+        "doc": "Stores information about invoice form locations",
+        "props": [
+          {
+            "name": "ownerId",
+            "ref": "user",
+            "doc": "Id of the user who uses this form"
+          },
+          {
+            "ref": "language",
+            "doc": "Id of the language this form uses"
+          },
+          {
+            "ref": "company",
+            "type": "Option[Int]",
+            "doc": "Id of the company for which this form is used (if used for a specific company)"
+          },
+          {
+            "name": "path",
+            "length": 255,
+            "doc": "Path to the form file in the local file system"
+          }
+        ]
+      }
+    ]
+  }
+}
