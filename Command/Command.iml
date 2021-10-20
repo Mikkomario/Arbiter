@@ -15,10 +15,10 @@
     <orderEntry type="module" module-name="Citadel" />
     <orderEntry type="module" module-name="Core" />
     <orderEntry type="module" module-name="Flow" />
-    <orderEntry type="module" module-name="Genesis" />
-    <orderEntry type="module" module-name="Inception" />
     <orderEntry type="module" module-name="Metropolis" />
     <orderEntry type="module" module-name="Vault" />
     <orderEntry type="module" module-name="BunnyMunch" />
+    <orderEntry type="library" name="ch.vorburger.mariaDB4j" level="project" />
+    <orderEntry type="module" module-name="Trove" />
   </component>
 </module>

@@ -1,21 +1,30 @@
 package vf.arbiter.command.app
 
 import utopia.bunnymunch.jawn.JsonBunny
+import utopia.citadel.database.Tables
 import utopia.citadel.util.CitadelContext
+import utopia.flow.async.CloseHook
 import utopia.flow.datastructure.mutable.PointerWithEvents
 import utopia.flow.generic.ValueConversions._
-import vf.arbiter.core.util.Globals._
 import utopia.flow.generic.DataType
 import utopia.flow.parse.JsonParser
-import utopia.flow.util.console.{ArgumentSchema, Command, Console}
+import utopia.flow.time.TimeExtensions._
+import utopia.flow.util.CollectionExtensions._
+import utopia.flow.util.console.{ArgumentSchema, Command, CommandArguments, Console}
 import utopia.flow.util.console.ConsoleExtensions._
+import utopia.flow.util.FileExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.stored.user.User
+import utopia.trove.controller.LocalDatabase
+import utopia.vault.database.Connection
 import utopia.vault.util.ErrorHandling
 import utopia.vault.util.ErrorHandlingPrinciple.Throw
+import vf.arbiter.command.controller.ArbiterDbSetupListener
 import vf.arbiter.core.model.combined.company.DetailedCompany
+import vf.arbiter.core.util.Globals._
 
 import scala.io.StdIn
+import scala.util.{Failure, Success}
 
 /**
  * A command line application for the Arbiter project
@@ -26,6 +35,46 @@ object ArbiterCommandsApp extends App
 {
 	DataType.setup()
 	implicit val jsonParser: JsonParser = JsonBunny
+	
+	val startArguments = CommandArguments(Vector(
+		ArgumentSchema("connect", "C", false, "Whether to use a local MariaDB database instead of Trove"),
+		ArgumentSchema("user", "u", "root", "User used when connecting to a local MariaDB Database"),
+		ArgumentSchema("password", "pw", "Password used when connecting to a local MariaDB Database")
+	), args.toVector)
+	
+	// Sets up database access
+	if (startArguments("connect").getBoolean)
+	{
+		Connection.modifySettings { _.copy(user = startArguments("user").getString,
+			password = startArguments("password").getString) }
+	}
+	else
+	{
+		val listener = new ArbiterDbSetupListener()
+		println("Configuring the database...")
+		LocalDatabase.setup("sql", "arbiter_db", "database_version",
+			Tables("arbiter_db", "database_version"), Some(listener))
+		if (listener.failed)
+		{
+			println("Shutting down the database and quitting...")
+			LocalDatabase.shutDown().failure.foreach { error =>
+				error.printStackTrace()
+				println(s"Failure while shutting down the database: ${error.getMessage}")
+			}
+			System.exit(1)
+		}
+		else
+		{
+			CloseHook.maxShutdownTime = 20.seconds
+			CloseHook.registerAsyncAction { LocalDatabase.shutDownAsync().map {
+				case Success(_) => ()
+				case Failure(error) =>
+					error.printStackTrace()
+					println("Failed to shut down the local database")
+			} }
+		}
+	}
+	
 	CitadelContext.setup(executionContext, connectionPool, "arbiter_db")
 	ErrorHandling.defaultPrinciple = Throw
 	
@@ -141,4 +190,6 @@ object ArbiterCommandsApp extends App
 	println("Instructions: use 'help' or 'man' commands to get more information. Use exit to quit.")
 	Console(commandsPointer, "Please enter the next command", closeCommandName = "exit").run()
 	println("Bye!")
+	
+	System.exit(0)
 }
