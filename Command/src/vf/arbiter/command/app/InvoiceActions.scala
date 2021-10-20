@@ -1,17 +1,23 @@
 package vf.arbiter.command.app
 
 import utopia.citadel.database.access.single.description.DbLanguageDescription
+import utopia.citadel.database.access.single.language.DbLanguage
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
+import utopia.flow.datastructure.immutable.Lazy
 import utopia.flow.datastructure.mutable.PointerWithEvents
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.Days
+import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.FileExtensions._
 import utopia.flow.util.StringExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.vault.database.Connection
+import vf.arbiter.command.database.access.many.device.DbInvoiceForms
+import vf.arbiter.command.database.model.device.InvoiceFormModel
 import vf.arbiter.command.model.SelectedLanguage
+import vf.arbiter.command.model.partial.device.InvoiceFormData
 import vf.arbiter.core.controller.pdf.FillPdfForm
 import vf.arbiter.core.database.access.many.company.{DbBanks, DbCompanies}
 import vf.arbiter.core.database.access.many.invoice.{DbInvoices, DbItemUnits}
@@ -22,7 +28,7 @@ import vf.arbiter.core.database.model.CoreDescriptionLinkModel
 import vf.arbiter.core.database.model.company.{BankModel, CompanyBankAccountModel, CompanyProductModel}
 import vf.arbiter.core.database.model.invoice.{InvoiceItemModel, InvoiceModel}
 import vf.arbiter.core.model.combined.company.{DescribedCompanyProduct, DetailedCompany, FullCompanyBankAccount, FullCompanyProduct, FullyDetailedCompany}
-import vf.arbiter.core.model.combined.invoice.{FullInvoice, FullInvoiceItem}
+import vf.arbiter.core.model.combined.invoice.{DescribedItemUnit, FullInvoice, FullInvoiceItem}
 import vf.arbiter.core.model.enumeration.ArbiterDescriptionRoleId.Abbreviation
 import vf.arbiter.core.model.partial.company.{BankData, CompanyBankAccountData, CompanyProductData}
 import vf.arbiter.core.model.partial.invoice.{InvoiceData, InvoiceItemData}
@@ -55,11 +61,8 @@ object InvoiceActions
 		if (existingAccounts.isEmpty)
 			createBankAccount(userId, companyId)
 		else
-			ActionUtils.selectFrom(existingAccounts.map { a => a -> s"${a.bank.name}: ${a.address}" }).orElse {
-				if (StdIn.ask("Would you add a new bank account instead?"))
-					createBankAccount(userId, companyId)
-				else
-					None
+			ActionUtils.selectOrInsert(existingAccounts.map { a => a -> s"${a.bank.name}: ${a.address}" }) {
+				createBankAccount(userId, companyId)
 			}
 	}
 	
@@ -73,7 +76,8 @@ object InvoiceActions
 	def createBankAccount(userId: Int, companyId: Int)(implicit connection: Connection) =
 		selectOrCreateBank(userId).flatMap { bank =>
 			println(s"What's your bank account number (IBAN) in ${bank.name}?")
-			StdIn.readNonEmptyLine().map { address =>
+			StdIn.readNonEmptyLine(
+				retryPrompt = "This information is required. Leaving empty will cancel this process.").map { address =>
 				// TODO: Should check for duplicates
 				val newAccount = CompanyBankAccountModel.insert(
 					CompanyBankAccountData(companyId, bank.id, address, Some(userId)))
@@ -93,12 +97,7 @@ object InvoiceActions
 		if (existingBanks.isEmpty)
 			createBank(userId)
 		else
-			ActionUtils.selectFrom(existingBanks.map { b => b -> b.nameAndBic }, "banks").orElse {
-				if (StdIn.ask("Would you like to add a new bank instead?"))
-					createBank(userId)
-				else
-					None
-			}
+			ActionUtils.selectOrInsert(existingBanks.map { b => b -> b.nameAndBic }, "bank") { createBank(userId) }
 	}
 	
 	/**
@@ -109,11 +108,14 @@ object InvoiceActions
 	 */
 	// TODO: Should probably check for duplicates
 	def createBank(userId: Int)(implicit connection: Connection) =
-		StdIn.readNonEmptyLine("What's the name of the bank you're using?").flatMap { name =>
-			StdIn.readNonEmptyLine("What's the BIC of the bank you're using?").map { bic =>
+	{
+		val retryPrompt = "This information is required for bank creation. Leaving empty will cancel this process."
+		StdIn.readNonEmptyLine("What's the name of the bank you're using?", retryPrompt).flatMap { name =>
+			StdIn.readNonEmptyLine("What's the BIC of the bank you're using?", retryPrompt).map { bic =>
 				BankModel.insert(BankData(name, bic, Some(userId)))
 			}
 		}
+	}
 	
 	/**
 	 * Creates a new invoice by interacting with the user
@@ -130,8 +132,9 @@ object InvoiceActions
 		StdIn.readNonEmptyLine().flatMap { CompanyActions.findOrCreateOne(userId, _) }.flatMap { targetCompany =>
 			// Asks for basic information
 			println("What language this invoice is in?")
-			val language = ActionUtils.forceSelectKnownLanguage()
-			_create(userId, senderCompany, targetCompany, language, languageIds)
+			UserActions.selectOrAddKnownLanguage(userId).flatMap { language =>
+				_create(userId, senderCompany, targetCompany, language, languageIds)
+			}
 		}
 	}
 	
@@ -140,7 +143,7 @@ object InvoiceActions
 	 * @param senderCompanyId Id of the company who sent the invoice
 	 * @param connection Implicit DB Connection
 	 */
-	def findAndPrint(senderCompanyId: Int)(implicit connection: Connection) =
+	def findAndPrint(userId: Int, senderCompanyId: Int)(implicit connection: Connection) =
 	{
 		println("Which key you want to search with?")
 		ActionUtils.selectFrom(Vector(1 -> "Invoice index", 2 -> "Reference number", 3 -> "Customer name"),
@@ -182,7 +185,7 @@ object InvoiceActions
 										senderDetails)
 									val recipient = FullyDetailedCompany(
 										companiesById(recipientDetails.companyId), recipientDetails)
-									print(FullInvoice(invoice, sender, recipient, bank, items))
+									print(userId, FullInvoice(invoice, sender, recipient, bank, items))
 								}
 							}
 						case None => println("This invoice doesn't belong to your company")
@@ -197,66 +200,47 @@ object InvoiceActions
 	 * @param invoice Invoice to print - linked descriptions should in in invoice language
 	 * @param connection Implicit DB Connection
 	 */
-	def print(invoice: FullInvoice)(implicit connection: Connection): Unit =
+	def print(userId: Int, invoice: FullInvoice)(implicit connection: Connection): Unit =
 	{
-		println("Please type the path to the invoice form pdf file")
-		val root = Paths.get("")
-		println(s"Instructions: You can specify an absolute path or a path relative to ${root.toAbsolutePath}")
-		DbLanguageDescription(invoice.languageId).name.inLanguageWithId(invoice.languageId).foreach { langDesc =>
-			val langName = langDesc.description.text
-			println(s"The invoice is in $langName, so you may want to pick a $langName template")
-		}
-		val somePaths = root.allChildrenIterator.flatMap { _.toOption }.filter { _.fileType == "pdf" }.take(5)
-		if (somePaths.nonEmpty)
-		{
-			println("Some paths that were found:")
-			somePaths.foreach { p => println("- " + root.relativize(p)) }
-		}
-		StdIn.readNonEmptyLine() match
-		{
-			case Some(pathString) =>
-				val path: Path = pathString
-				if (path.isRegularFile && path.fileType == "pdf")
-				{
-					val defaultFileName = s"${invoice.date}-${invoice.recipientCompany.details.name
-						.replaceAll(" ", "-")}-${invoice.id}.pdf"
-					val rawOutputPath: Path = Paths.get(StdIn.readNonEmptyLine(
-						s"Please specify a path for the generated file (default = invoices/$defaultFileName)")
-						.getOrElse(s"invoices/$defaultFileName"))
-					val outputPath = {
-						if (rawOutputPath.isDirectory)
-							rawOutputPath/defaultFileName
-						else if (rawOutputPath.fileType != "pdf")
-							rawOutputPath.withMappedFileName { _.untilLast(".") + ".pdf" }
-						else
-							rawOutputPath
-					}
-					outputPath.createParentDirectories()
-					
-					println("Filling the invoice form...")
-					val printFields = PrintFields.from(invoice)
-					FillPdfForm(path, printFields, outputPath) match
-					{
-						case Success(failures) =>
-							println("Form filled!")
-							if (failures.nonEmpty)
-							{
-								failures.foreach { case (fieldName, error) =>
-									println(s"Failed to write field: $fieldName = ${printFields(fieldName)}")
-									error.printStackTrace()
-								}
-								println(s"Warning: ${failures.size} fields were not written correctly")
-							}
-							outputPath.openInDesktop()
-						case Failure(error) =>
-							error.printStackTrace()
-							println(s"Printing failed due to error: ${error.getMessage}")
-					}
+		val languageName = DbLanguageDescription(invoice.languageId).name.inLanguageWithId(invoice.languageId).text
+			.orElse(DbLanguage(invoice.languageId).isoCode).getOrElse("invoice language")
+		selectInvoiceForm(userId, invoice.senderCompany.id, SelectedLanguage(invoice.languageId, languageName))
+			.foreach { formPath =>
+				val defaultFileName = s"${invoice.date}-${invoice.recipientCompany.details.name
+					.replaceAll(" ", "-")}-${invoice.id}.pdf"
+				val rawOutputPath: Path = Paths.get(StdIn.readNonEmptyLine(
+					s"Please specify a path for the generated file (default = invoices/$defaultFileName)")
+					.getOrElse(s"invoices/$defaultFileName"))
+				val outputPath = {
+					if (rawOutputPath.isDirectory)
+						rawOutputPath/defaultFileName
+					else if (rawOutputPath.fileType != "pdf")
+						rawOutputPath.withMappedFileName { _.untilLast(".") + ".pdf" }
+					else
+						rawOutputPath
 				}
-				else
-					println(s"${path.toAbsolutePath} is not an existing pdf")
-			case None => println("Printing cancelled")
-		}
+				outputPath.createParentDirectories()
+				
+				println("Filling the invoice form...")
+				val printFields = PrintFields.from(invoice)
+				FillPdfForm(formPath.path, printFields, outputPath) match
+				{
+					case Success(failures) =>
+						println("Form filled!")
+						if (failures.nonEmpty)
+						{
+							failures.foreach { case (fieldName, error) =>
+								println(s"Failed to write field: $fieldName = ${printFields(fieldName)}")
+								error.printStackTrace()
+							}
+							println(s"Warning: ${failures.size} fields were not written correctly")
+						}
+						outputPath.openInDesktop()
+					case Failure(error) =>
+						error.printStackTrace()
+						println(s"Printing failed due to error: ${error.getMessage}")
+				}
+			}
 	}
 	
 	private def _create(userId: Int, senderCompany: DetailedCompany, recipientCompany: DetailedCompany,
@@ -316,12 +300,14 @@ object InvoiceActions
 					}
 				}
 			}
+			// [Product -> filled product] - separated because filled product may require user interaction
 			var existingProducts = DbCompany(senderCompany.id).products.described
+				.map { p => p -> Lazy { fillProduct(userId, p, invoiceLanguage, units) } }
 			
 			// Creates / prepares the invoice items
 			val lastProductPointer = new PointerWithEvents[Option[FullCompanyProduct]](None)
 			lastProductPointer.addListener { _.newValue.flatMap { _(Name) }
-				.foreach { n => println(s"Using product $n for the next invoice item") } }
+				.foreach { n => println(s"Using product $n for the this invoice item") } }
 			// Collected info: product id + description + amount + price per unit
 			val invoiceItemData = Iterator.iterate(1) { _ + 1 }.map { index =>
 				// Asks whether to stop iterating
@@ -334,72 +320,16 @@ object InvoiceActions
 							StdIn.ask(s"Is the next item of the same product (${
 								product(Name).getOrElse(s"Unnamed product #${product.id}") })?")
 						}
-						// Option B: Select from existing products
+						// Option B: Selects from existing products or creates a new product
 						.orElse {
-							if (existingProducts.nonEmpty)
-								ActionUtils.selectFrom(existingProducts.map { p =>
-									p -> p(Name).getOrElse(s"Unnamed product #${p.id}") },
-									"products", "refer to")
-									// Makes sure the product has a name in the correct language
-									.map { p =>
-										// Includes unit information also
-										// TODO: Read might technically fail (see get below)
-										// TODO: The selectable options should be FullCompanyProducts
-										val productUnit = units.find { _.id == p.wrapped.unitId }
-											.getOrElse { DbItemUnit(p.wrapped.unitId).described.get }
-										if (p.description(Name).exists { _.languageId == invoiceLanguage.id })
-											FullCompanyProduct(p, productUnit)
-										else
-											StdIn.readNonEmptyLine(s"What's the name of ${
-												p(Name).getOrElse("this product")} in ${invoiceLanguage.name}?") match
-											{
-												case Some(newName) =>
-													val newDescription = CoreDescriptionLinkModel.companyProduct
-														.insert(p.id, DescriptionData(Name.id, invoiceLanguage.id,
-															newName, Some(userId)))
-													val modifiedProduct = p.copy(descriptions =
-														p.descriptions.filter { _.description.roleId != Name.id } +
-															newDescription)
-													existingProducts = existingProducts
-														.filterNot { _.id == p.id } :+ modifiedProduct
-													FullCompanyProduct(modifiedProduct, productUnit)
-												case None => FullCompanyProduct(p, productUnit)
-											}
-									}
-							else
-								None
-						}
-						// Option C: Create a new product
-						.orElse {
-							if (StdIn.ask("Is it okay to create a new product? (no quits adding invoice items)",
-								default = true))
-								StdIn.readNonEmptyLine(s"What's the name of this new product in ${
-									invoiceLanguage.name}?").map { name =>
-									println("What's the unit in which this product is sold (select from below)")
-									val selectedUnit = ActionUtils.forceSelectFrom(
-										units.map { u => u -> u(Name).getOrElse(u(Abbreviation).getOrElse("?")) })
-									val defaultPrice = StdIn.read(
-										s"What's the default price (€) of this product for one ${
-											selectedUnit(Name).getOrElse(selectedUnit(Abbreviation).getOrElse("unit"))
-										}? (optional)").double
-									val taxModifier = StdIn.read(
-										"What's the tax percentage applied for this product? (default = 24%)")
-										.double.map { _ / 100.0 }.getOrElse(0.24)
-									
-									// Inserts the product and it's name to the database
-									val product = CompanyProductModel.insert(CompanyProductData(senderCompany.id,
-										selectedUnit.id, defaultPrice, taxModifier, Some(userId)))
-									val nameDescription = DbCompanyProductDescription.linkModel
-										.insert(product.id, DescriptionData(Name.id, invoiceLanguage.id, name,
-											Some(userId)))
-									val describedProduct = DescribedCompanyProduct(product, Set(nameDescription))
-									
-									// Adds this product to existing options
-									existingProducts :+= describedProduct
-									FullCompanyProduct(describedProduct, selectedUnit)
-								}
-							else
-								None
+							println("Please select or insert the product to use in this invoice item")
+							ActionUtils.selectOrInsert(existingProducts.map { case (p, fullP) =>
+								fullP -> p(Name).getOrElse(s"Unnamed product #${p.id}") }, "product") {
+								val newProduct = createProduct(userId, senderCompany.id, invoiceLanguage, units)
+								// Adds the product to selectable options
+								newProduct.foreach { p => existingProducts :+= (p.describedProduct, Lazy(p)) }
+								newProduct.map { Lazy(_) }
+							}.map { _.value }
 						}
 					
 					lastProductPointer.value = product
@@ -456,16 +386,123 @@ object InvoiceActions
 							}
 						} match
 						{
-							case Some(invoice) => print(invoice)
+							case Some(invoice) => print(userId, invoice)
 							case None => println("Some required data was missing (inform the developer of this problem)")
 						}
 					}
 					
-					Some(invoice -> invoiceItems)
+					invoice -> invoiceItems
 				}
 			}
 			else
 				None
+		}
+	}
+	
+	private def fillProduct(userId: Int, product: DescribedCompanyProduct, language: SelectedLanguage,
+	                        units: Iterable[DescribedItemUnit])
+	                       (implicit connection: Connection, languageIds: LanguageIds) =
+	{
+		// NB: Unit read may technically fail
+		val productUnit = units.find { _.id == product.wrapped.unitId }
+			.getOrElse { DbItemUnit(product.wrapped.unitId).described.get }
+		// Case: Product already has a name in the correct language => uses as is
+		if (product.description(Name).exists { _.languageId == language.id })
+			FullCompanyProduct(product, productUnit)
+		// Case: Product doesn't have a name in the correct language => asks for one
+		else
+			StdIn.readNonEmptyLine(s"What's the name of ${
+				product(Name).getOrElse("this product")} in ${language.name}?") match
+			{
+				case Some(newName) =>
+					val newDescription = CoreDescriptionLinkModel.companyProduct
+						.insert(product.id, DescriptionData(Name.id, language.id,
+							newName, Some(userId)))
+					val modifiedProduct = product.copy(descriptions =
+						product.descriptions.filter { _.description.roleId != Name.id } +
+							newDescription)
+					FullCompanyProduct(modifiedProduct, productUnit)
+				case None => FullCompanyProduct(product, productUnit)
+			}
+	}
+	
+	private def createProduct(userId: Int, senderCompanyId: Int, language: SelectedLanguage,
+	                          units: Seq[DescribedItemUnit])(implicit connection: Connection) =
+	{
+		val retryPrompt = "This information is required. Leaving empty will cancel invoice creation."
+		StdIn.readNonEmptyLine(s"What's the name of this new product in ${language.name}?", retryPrompt).flatMap { name =>
+			println("What's the unit in which this product is sold (select from below)")
+			ActionUtils.selectFrom(units.map { u => u -> u(Name).getOrElse(u(Abbreviation).getOrElse("?")) },
+				skipQuestion = true).map { selectedUnit =>
+				val defaultPrice = StdIn.read(
+					s"What's the default price (€) of this product for one ${
+						selectedUnit(Name).getOrElse(selectedUnit(Abbreviation).getOrElse("unit"))
+					}? (optional)").double
+				val taxModifier = StdIn.read(
+					"What's the tax percentage applied for this product? (default = 24%)")
+					.double.map { _ / 100.0 }.getOrElse(0.24)
+				
+				// Inserts the product and it's name to the database
+				val product = CompanyProductModel.insert(CompanyProductData(senderCompanyId,
+					selectedUnit.id, defaultPrice, taxModifier, Some(userId)))
+				val nameDescription = DbCompanyProductDescription.linkModel
+					.insert(product.id, DescriptionData(Name.id, language.id, name, Some(userId)))
+				val describedProduct = DescribedCompanyProduct(product, Set(nameDescription))
+				
+				FullCompanyProduct(describedProduct, selectedUnit)
+			}
+		}
+	}
+	
+	private def selectInvoiceForm(userId: Int, companyId: Int, language: SelectedLanguage)
+	                             (implicit connection: Connection) =
+	{
+		def _ask(path: Path) = StdIn.ask(s"Use invoice form $path", default = true)
+		
+		// Finds the existing form records
+		val storedForms = DbInvoiceForms.forUserWithId(userId).withLanguageId(language.id).pull
+		// Checks which of the forms still exists and removes the others
+		val (notExistingForms, existingForms) = storedForms.divideBy { _.path.exists }
+		if (notExistingForms.nonEmpty)
+			DbInvoiceForms(notExistingForms.map { _.id }).delete()
+		
+		val (notMyCompanyForms, myCompanyForms) = existingForms.divideBy { _.companyId.contains(companyId) }
+		// May offer an existing path if there is only one option available
+		if (myCompanyForms.size == 1 && _ask(myCompanyForms.head.path))
+			Some(myCompanyForms.head)
+		else
+		{
+			// Allows the user to select or create a new form path
+			val (generalForms, otherCompanyForms) = notMyCompanyForms.divideBy { _.companyId.isDefined }
+			val orderedForms = myCompanyForms.sortBy { _.path.toString } ++ generalForms.sortBy { _.path.toString } ++
+				otherCompanyForms.sortBy { _.path.toString }
+			val newForm = ActionUtils.selectOrInsert(orderedForms.map { f => f -> f.path.toString }, "form",
+				skipInsertQuestion = true) {
+				println(s"Please type the path to the invoice form to use (in ${language.name})")
+				val root: Path = ""
+				println(s"Hint: The path may be absolute or relative to ${root.toAbsolutePath}")
+				val somePaths = root.allChildrenIterator.flatMap { _.toOption }.filter { _.fileType == "pdf" }.take(5)
+				if (somePaths.nonEmpty)
+				{
+					println("Some paths that were found:")
+					somePaths.foreach { p => println("- " + root.relativize(p)) }
+				}
+				StdIn.readValidOrEmpty() { v =>
+					val path: Path = v.getString
+					if (path.exists)
+					{
+						if (path.fileType == "pdf")
+							Right(path)
+						else
+							Left("Specified path is not a pdf form. Please try again or leave empty to cancel.")
+					}
+					else
+						Left("There doesn't exist any file at the specified path. Please try again or leave empty to cancel.")
+				}.map { path => InvoiceFormModel.insert(InvoiceFormData(userId, language.id, Some(companyId), path)) }
+			}
+			// Generalizes the form if necessary
+			newForm.filter { _.companyId.exists { _ != companyId } }.foreach { _.access.generalize() }
+			newForm
 		}
 	}
 	

@@ -161,9 +161,8 @@ object ArbiterCommandsApp extends App
 		help = "Switches between owned companies") {
 		connectionPool { implicit c => CompanyActions.selectOneFromOwn(userId) }.foreach { company = _ }
 	}
-	def printInvoiceCommand(companyId: Int) = Command.withoutArguments("print", help = "Prints an invoice") {
-		connectionPool { implicit c => InvoiceActions.findAndPrint(companyId) }
-	}
+	def printInvoiceCommand(userId: Int, companyId: Int) = Command.withoutArguments("print",
+		help = "Prints an invoice") { connectionPool { implicit c => InvoiceActions.findAndPrint(userId, companyId) } }
 	def createInvoiceCommand(userId: Int, senderCompany: DetailedCompany) =
 		Command.withoutArguments("invoice", "send", "Creates a new invoice") {
 			connectionPool { implicit connection =>
@@ -178,11 +177,12 @@ object ArbiterCommandsApp extends App
 		{
 			case Some(user) =>
 				Vector(selectCompanyCommand(user.id)) ++
-					company.map { company => createInvoiceCommand(user.id, company) }
+					company.toVector.flatMap { company =>
+						Vector(createInvoiceCommand(user.id, company), printInvoiceCommand(user.id, company.id))
+					}
 			case None => Vector(loginCommand)
 		}
-		val companyStatefulCommands = company.map { company => printInvoiceCommand(company.id) }
-		Vector(registerCommand) ++ statefulCommands ++ companyStatefulCommands
+		Vector(registerCommand) ++ statefulCommands
 	}
 	
 	// Starts the console

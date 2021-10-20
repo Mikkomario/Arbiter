@@ -1,7 +1,9 @@
 package vf.arbiter.command.app
 
-import utopia.citadel.database.access.many.language.DbLanguageFamiliarities
+import utopia.citadel.database.access.many.description.DbLanguageDescriptions
+import utopia.citadel.database.access.many.language.{DbLanguageFamiliarities, DbLanguages}
 import utopia.citadel.database.access.many.user.DbManyUserSettings
+import utopia.citadel.database.access.single.description.DbLanguageDescription
 import utopia.citadel.database.access.single.language.DbLanguage
 import utopia.citadel.database.access.single.user.DbUser
 import utopia.citadel.database.model.description.DescriptionLinkModel
@@ -16,6 +18,7 @@ import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.metropolis.model.partial.user.{UserLanguageData, UserSettingsData}
 import utopia.metropolis.model.stored.user.User
 import utopia.vault.database.Connection
+import vf.arbiter.command.model.SelectedLanguage
 
 import scala.io.StdIn
 
@@ -69,6 +72,11 @@ object UserActions
 				None
 		}
 	
+	/**
+	 * @param userId Id of the targeted user
+	 * @param connection Implicit DB Connection
+	 * @return Language list used by that user
+	 */
 	def validLanguageIdListForUserWithId(userId: Int)(implicit connection: Connection) =
 	{
 		val existingList = DbUser(userId).languageIdsList
@@ -95,6 +103,118 @@ object UserActions
 				}
 			}.next()
 			setUserLanguages(userId, languageCodes)
+		}
+	}
+	
+	/**
+	 * @param userId Id of the user for whom the language is being selected
+	 * @param connection Implicit DB Connection
+	 * @param languageIds Selectable language ids
+	 * @return Selected language's id. None if no language ids were available or inserted or if user cancelled selection.
+	 */
+	def selectOrAddKnownLanguage(userId: Int)(implicit connection: Connection, languageIds: LanguageIds) =
+	{
+		// Reads language names
+		val names = DbLanguageDescriptions.forPreferredLanguages.withRoleIdInPreferredLanguages(Name.id)
+		// Asks for names for languages that don't have one
+		val options: Vector[SelectedLanguage] = {
+			if (names.size < languageIds.size)
+			{
+				def _nameForIdOrElse(id: Int)(backup: Int => String) = names.get(id) match
+				{
+					case Some(desc) => desc.description.text
+					case None => backup(id)
+				}
+				val missingLanguages = DbLanguages(languageIds.filterNot(names.contains).toSet).pull
+				def _missingLangCode(languageId: Int) = missingLanguages.find { _.id == languageId } match
+				{
+					case Some(language) => s"'${language.isoCode}'"
+					case None => s"Language #$languageId"
+				}
+				
+				println(s"There are ${languageIds.size - names.size} languages (${
+					missingLanguages.map { _.isoCode }.sorted.mkString(", ")
+				}) that don't have a name in any of your languages")
+				if (StdIn.ask("Would you provide a name for those?"))
+				{
+					val primaryLanguageName = _nameForIdOrElse(languageIds.mostPreferred)(_missingLangCode)
+					val newNames = missingLanguages.view.map { language =>
+						StdIn.readNonEmptyLine(s"What's the name of ${language.isoCode} in $primaryLanguageName?")
+							.map { language.id -> _ }
+					}.takeWhile { _.isDefined }.flatten.toMap
+					languageIds.map { id =>
+						SelectedLanguage(id, _nameForIdOrElse(id) { id => newNames.getOrElse(id, _missingLangCode(id)) })
+					}
+				}
+				else
+					languageIds.map { id => SelectedLanguage(id, _nameForIdOrElse(id)(_missingLangCode)) }
+			}
+			else
+				languageIds.map { id => SelectedLanguage(id, names(id).description.text) }
+		}
+		// Selects from the known languages (or inserts a new one)
+		ActionUtils.selectOrInsert(options.map { l => l -> l.name }, "language") {
+			StdIn.readNonEmptyLine("What's the 2 character ISO-code of your language (e.g. 'en')")
+				.flatMap { code =>
+					if (code.length != 2)
+					{
+						println(s"'$code' is not a valid language code (must be of length 2)")
+						None
+					}
+					else
+					{
+						val (newLanguageIds, languageName) = addUserLanguage(userId, code, languageIds)
+						languageName.map { SelectedLanguage(newLanguageIds.mostPreferred, _) }
+					}
+				}
+		}
+	}
+	
+	/**
+	 * Adds a language to the languages known by the user
+	 * @param userId Id of the user
+	 * @param languageCode Language code (2-characters)
+	 * @param existingLanguageIds Ids of the languages currently known by the user
+	 * @param connection Implicit DB Connection
+	 * @return Languages known to the user afterwards + name of the specified language
+	 *         (which is None if that language was not added after all)
+	 */
+	def addUserLanguage(userId: Int, languageCode: String, existingLanguageIds: LanguageIds)
+	                   (implicit connection: Connection): (LanguageIds, Option[String]) =
+	{
+		val language = DbLanguage.forIsoCode(languageCode).getOrInsert()
+		implicit val languageIds: LanguageIds = existingLanguageIds.preferringLanguageWithId(language.id)
+		// If this is already a user language, skips the rest
+		if (existingLanguageIds.contains(language.id))
+			existingLanguageIds ->
+				Some(DbLanguageDescription(language.id).name.inPreferredLanguage match {
+					case Some(nameDesc) => nameDesc.description.text
+					case None => language.isoCode
+				})
+		else
+		{
+			val languageName: String = language.access.description.name.inLanguageWithId(language.id).text.orElse {
+				// If the language didn't have a name yet, asks and inserts one
+				StdIn.readNonEmptyLine(
+					s"What's the name of '${language.isoCode}' in '${language.isoCode}'").map { name =>
+					DescriptionLinkModel.language.insert(language.id,
+						DescriptionData(Name.id, language.id, name, Some(userId)))
+					name
+				}
+			}.getOrElse(languageCode)
+			val proficiencyOptions = availableProficiencies(userId).sortBy { _.orderIndex }.map { p =>
+				p -> p(Name).getOrElse(p.orderIndex.toString)
+			}
+			println(s"How proficient are you in $languageName?")
+			ActionUtils.selectFrom(proficiencyOptions) match
+			{
+				case Some(proficiency) =>
+					UserLanguageModel.insert(UserLanguageData(userId, language.id, proficiency.id))
+					languageIds -> Some(languageName)
+				case None =>
+					println(s"$languageName won't be registered as one of your languages, then")
+					existingLanguageIds -> None
+			}
 		}
 	}
 	
@@ -144,8 +264,7 @@ object UserActions
 			language.id -> name
 		}.toMap
 		implicit val languageIds: LanguageIds = LanguageIds(languages.map { _.id })
-		val availableProficiencies = DbLanguageFamiliarities.described
-		val proficiencyOptions = availableProficiencies.sortBy { _.orderIndex }.map { p =>
+		val proficiencyOptions = availableProficiencies(userId).sortBy { _.orderIndex }.map { p =>
 			p -> p(Name).getOrElse(p.orderIndex.toString)
 		}
 		val newProficiencyData = languages.map { language =>
@@ -156,5 +275,66 @@ object UserActions
 		UserLanguageModel.insert(newProficiencyData
 			.map { case (language, proficiency) => UserLanguageData(userId, language.id, proficiency.id) })
 		LanguageIds(newProficiencyData.sortBy { _._2.wrapped.orderIndex }.map { _._1.id })
+	}
+	
+	private def availableProficiencies(userId: Int)(implicit connection: Connection, languageIds: LanguageIds) =
+	{
+		// Reads existing data
+		val existingProficiencies = DbLanguageFamiliarities.described
+		// Checks whether proficiency data can be named in the primary language
+		if (languageIds.nonEmpty)
+		{
+			val languageId = languageIds.mostPreferred
+			lazy val language = DbLanguage(languageId).withDescription(Name)
+			
+			// Reads proficiencies that are missing a name in the primary language
+			val missingProficiencies = existingProficiencies
+				.flatMap { p => p.description(Name).filter { _.languageId != languageId }.map { p -> _ } }
+				.groupMap { _._2.languageId } { case (proficiency, desc) => proficiency -> desc.text }
+			// Asks the user to provide translations for those proficiencies
+			// Proficiency id => new proficiency name
+			val newProficiencyNames = missingProficiencies.flatMap { case (languageId, proficiencies) =>
+				language.toVector.flatMap { toLanguage =>
+					val toLanguageName = toLanguage.descriptionOrCode(Name)
+					DbLanguage(languageId).withDescription(Name).toVector.flatMap { fromLanguage =>
+						val fromLanguageName = fromLanguage.descriptionOrCode(Name)
+						if (StdIn.ask(s"There are ${
+							proficiencies.size} language proficiencies in $fromLanguageName " +
+							s"without $toLanguageName translation. Would you be willing to translate them?"))
+							proficiencies.flatMap { case (proficiency, proficiencyName) =>
+								StdIn.readNonEmptyLine(s"What's $proficiencyName in $toLanguageName?")
+									.map { newName => proficiency.id -> newName }
+							}
+						else
+							Vector()
+					}
+				}
+			}
+			if (newProficiencyNames.nonEmpty)
+			{
+				// Inserts the new descriptions
+				// Proficiency id => new descriptions
+				val insertedDescriptions = DescriptionLinkModel.languageFamiliarity.insert(
+					newProficiencyNames.map { case (profId, name) =>
+						profId -> DescriptionData(Name.id, languageId, name, Some(userId))
+					}.toVector).groupBy { _.targetId }
+				// Returns updated proficiencies
+				existingProficiencies.map { proficiency =>
+					insertedDescriptions.get(proficiency.id) match
+					{
+						case Some(newDescriptions) =>
+							proficiency.copy(descriptions = proficiency.descriptions
+								.filterNot { d =>
+									newDescriptions.exists { _.description.roleId == d.description.roleId }
+								} ++ newDescriptions)
+						case None => proficiency
+					}
+				}
+			}
+			else
+				existingProficiencies
+		}
+		else
+			Vector()
 	}
 }

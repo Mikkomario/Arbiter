@@ -49,15 +49,10 @@ object CompanyActions
 		val existingOptions = DbDetailedCompanies.matchingName(nameSearch)
 		// Checks for an exact name match
 		existingOptions.find { _.details.name ~== nameSearch }
-			// If exact match was not found, but others were, allows to select from those
-			.orElse { if (existingOptions.isEmpty) None else
-				ActionUtils.selectFrom(existingOptions.map { c => c -> c.nameAndYCode }, "companies") }
-			// If not selected, allows to create a new company
+			// Allows to select from matches or to create a new company
 			.orElse {
-				if (StdIn.ask(s"Do you want to create '$nameSearch' as a new company (not owned)?"))
-					Some(newCompany(userId, nameSearch))
-				else
-					None
+				ActionUtils.selectOrInsert(existingOptions.map { c => c -> c.nameAndYCode }, "company") {
+					newCompany(userId, nameSearch) }
 			}
 	}
 	
@@ -117,7 +112,7 @@ object CompanyActions
 	{
 		val companyOptions = DbDetailedCompanies.matchingName(companyName)
 		if (companyOptions.isEmpty)
-			Some(newOwnCompany(ownerId, companyName))
+			newOwnCompany(ownerId, companyName)
 		else
 			companyOptions.find { _.details.name ~== companyName } match
 			{
@@ -128,8 +123,8 @@ object CompanyActions
 					{
 						case Some(selected) => join(ownerId, selected)
 						case None =>
-							if (StdIn.ask(s"Do you want to insert a new company '$companyName' instead?"))
-								Some(newOwnCompany(ownerId, companyName))
+							if (StdIn.ask(s"Do you want to add a new company '$companyName' instead?"))
+								newOwnCompany(ownerId, companyName)
 							else
 								None
 					}
@@ -153,9 +148,10 @@ object CompanyActions
 			if (organizationIds.isEmpty)
 			{
 				println(s"What language the company name (${company.details.name}) is in?")
-				val language = ActionUtils.forceSelectKnownLanguage()
-				linkCompanyToNewOrganization(userId, company, language.id)
-				Some(company)
+				UserActions.selectOrAddKnownLanguage(userId).map { language =>
+					linkCompanyToNewOrganization(userId, company, language.id)
+					company
+				}
 			}
 			else
 			{
@@ -190,33 +186,43 @@ object CompanyActions
 	                         (implicit connection: Connection, languageIds: LanguageIds) =
 	{
 		println("What language the company name is in?")
-		val language = ActionUtils.forceSelectKnownLanguage()
-		// Inserts company information
-		val company = newCompany(ownerId, companyName, isOwned = true)
-		// Inserts organization information
-		linkCompanyToNewOrganization(ownerId, company, language.id)
-		company
+		UserActions.selectOrAddKnownLanguage(ownerId).flatMap { language =>
+			// Inserts company information
+			newCompany(ownerId, companyName, isOwned = true).map { company =>
+				// Inserts organization information
+				linkCompanyToNewOrganization(ownerId, company, language.id)
+				company
+			}
+		}
 	}
 	
 	private def newCompany(userId: Int, companyName: String, isOwned: Boolean = false)
 	                      (implicit connection: Connection) =
 	{
-		val yCode = StdIn.readLineUntilNotEmpty("What's the identifier (Y-Tunnus) of the company?")
-		val countyName = StdIn.readLineUntilNotEmpty("County?").capitalize
-		val postalCodeInput = StdIn.readLineUntilNotEmpty("Postal code?")
-		val streetName = StdIn.readLineUntilNotEmpty("Street name (without number)?").capitalize
-		val houseNumber = StdIn.readLineUntilNotEmpty("Building number?")
-		val stair = StdIn.readNonEmptyLine("Stair? (optional)")
-		val roomNumber = StdIn.readNonEmptyLine("Room number? (optional)")
-		val taxCode = StdIn.readNonEmptyLine("Tax code? (optional)")
-		
-		// Inserts address information
-		val county = DbCounty.getOrInsert(countyName, Some(userId))
-		val postalCode = DbPostalCode.getOrInsert(county.id, postalCodeInput, Some(userId))
-		val address = DbStreetAddress.getOrInsert(
-			StreetAddressData(postalCode.id, streetName, houseNumber, stair, roomNumber, Some(userId)))
-		// Inserts company information
-		DbCompany.insert(yCode, companyName, address.id, taxCode, Some(userId), isOfficial = isOwned)
+		val retryPrompty = "Company creation can't be continued without this value. Write a value or leave empty to cancel company creation."
+		StdIn.readNonEmptyLine("What's the identifier (Y-Tunnus) of the company?", retryPrompty).flatMap { yCode =>
+			StdIn.readNonEmptyLine("County?", retryPrompty).map { _.capitalize }.flatMap { countyName =>
+				StdIn.readNonEmptyLine("Postal code?", retryPrompty).flatMap { postalCodeInput =>
+					StdIn.readNonEmptyLine("Street name (without number)?", retryPrompty).map { _.capitalize }
+						.flatMap { streetName =>
+							StdIn.readNonEmptyLine("Building number?", retryPrompty).map { houseNumber =>
+								val stair = StdIn.readNonEmptyLine("Stair? (optional)")
+								val roomNumber = StdIn.readNonEmptyLine("Room number? (optional)")
+								val taxCode = StdIn.readNonEmptyLine("Tax code? (optional)")
+								
+								// Inserts address information
+								val county = DbCounty.getOrInsert(countyName, Some(userId))
+								val postalCode = DbPostalCode.getOrInsert(county.id, postalCodeInput, Some(userId))
+								val address = DbStreetAddress.getOrInsert(StreetAddressData(postalCode.id, streetName,
+									houseNumber, stair, roomNumber, Some(userId)))
+								// Inserts company information
+								DbCompany.insert(yCode, companyName, address.id, taxCode, Some(userId),
+									isOfficial = isOwned)
+							}
+						}
+				}
+			}
+		}
 	}
 	
 	private def linkCompanyToNewOrganization(ownerId: Int, company: DetailedCompany, companyNameLanguageId: Int)

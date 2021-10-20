@@ -4,6 +4,8 @@ import utopia.flow.datastructure.immutable.Model
 import utopia.flow.generic.ModelConvertible
 import utopia.flow.generic.ValueConversions._
 
+import java.nio.file.Path
+
 /**
   * Stores information about invoice form locations
   * @param ownerId Id of the user who uses this form
@@ -13,13 +15,13 @@ import utopia.flow.generic.ValueConversions._
   * @author Mikko Hilpinen
   * @since 2021-10-20
   */
-case class InvoiceFormData(ownerId: Int, languageId: Int, companyId: Option[Int] = None, path: String) 
+case class InvoiceFormData(ownerId: Int, languageId: Int, companyId: Option[Int] = None, path: Path)
 	extends ModelConvertible
 {
 	// IMPLEMENTED	--------------------
 	
 	override def toModel = 
 		Model(Vector("owner_id" -> ownerId, "language_id" -> languageId, "company_id" -> companyId, 
-			"path" -> path))
+			"path" -> path.toString))
 }
 

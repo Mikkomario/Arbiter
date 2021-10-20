@@ -54,6 +54,7 @@ object ActionUtils
 	 * @param languageIds Ids of the languages known by the user (ordered) - Must not be empty
 	 * @return Selected language's id
 	 */
+	@deprecated("Please use UserActions.selectOrAddKnownLanguage(Int) instead", "0.2")
 	def forceSelectKnownLanguage()(implicit connection: Connection, languageIds: LanguageIds) =
 		selectKnownLanguage(force = true).get
 	/**
@@ -62,6 +63,7 @@ object ActionUtils
 	 * @param languageIds Selectable language ids
 	 * @return Selected language's id. None if no language ids were available or if user cancelled selection.
 	 */
+	@deprecated("Please use UserActions.selectOrAddKnownLanguage(Int) instead", "0.2")
 	def selectKnownLanguage(force: Boolean = false)(implicit connection: Connection, languageIds: LanguageIds) =
 	{
 		// Reads language names
@@ -114,6 +116,30 @@ object ActionUtils
 	}
 	
 	/**
+	 * Selects an existing item or allows the user to insert one
+	 * @param options Existing options [(item + description)]
+	 * @param target Singular name for the target item
+	 * @param skipInsertQuestion Whether question to insert should be skipped when there are 0 options to select from
+	 *                           (default = false)
+	 * @param insert A function for inserting a new item
+	 * @tparam A Type of selected item
+	 * @return The selected or inserted item
+	 */
+	def selectOrInsert[A](options: Seq[(A, String)], target: String = "item", skipInsertQuestion: Boolean = false)
+	                     (insert: => Option[A]) =
+	{
+		if (options.isEmpty)
+		{
+			if (skipInsertQuestion || StdIn.ask(s"Do you want to create a new $target?", default = true))
+				insert
+			else
+				None
+		}
+		else
+			_selectFrom(options, Some(() => insert))
+	}
+	
+	/**
 	 * Allows the user to select from 0-n options
 	 * @param options Options for the user to select from. Option descriptions are on the right side.
 	 * @param target word used for the selected items (plural) (default = items)
@@ -142,14 +168,14 @@ object ActionUtils
 		else
 		{
 			if (skipQuestion)
-				_selectFrom(options)
+				_selectFrom(options, None)
 			else
 			{
 				val bestNameMatches = options.map { _._2 }.sortBy { _.length }.take(3)
 				println(s"Found ${options.size} $target: ${bestNameMatches.mkString(", ")}${
 					if (options.size > bestNameMatches.size) "..." else ""}")
 				if (StdIn.ask(s"Do you want to $verb one of these $target?"))
-					_selectFrom(options)
+					_selectFrom(options, None)
 				else
 					None
 			}
@@ -218,7 +244,7 @@ object ActionUtils
 	
 	// This variant of select allows for cancelling
 	// Options mustn't be empty
-	private def _selectFrom[A](options: Seq[(A, String)]): Option[A] =
+	private def _selectFrom[A](options: Seq[(A, String)], insert: Option[() => Option[A]]): Option[A] =
 	{
 		def _narrow(filter: String): Option[A] =
 		{
@@ -226,36 +252,62 @@ object ActionUtils
 			if (narrowed.isEmpty)
 			{
 				println("No results could be found with that filter, please try again")
-				_selectFrom(options)
+				_selectFrom(options, insert)
 			}
 			else
-				narrowed.find { _._2 ~== filter }.map { _._1 }.orElse { _selectFrom(narrowed) }
+				narrowed.find { _._2 ~== filter }.map { _._1 }.orElse { _selectFrom(narrowed, insert) }
 		}
 		
 		if (options.size == 1)
 		{
 			val (result, resultName) = options.head
-			println(s"Found $resultName")
-			Some(result)
+			insert match
+			{
+				case Some(insert) =>
+					if (StdIn.ask(s"Do you want to select $resultName?", default = true))
+						Some(result)
+					else if (StdIn.ask("Do you want to insert a new item instead?"))
+						insert()
+					else
+						None
+				case None =>
+					println(s"Found $resultName")
+					Some(result)
+			}
 		}
 		else if (options.size > 10)
 		{
 			println(s"Found ${options.size} options")
-			StdIn.readNonEmptyLine(
-				"Please narrow the selection by specifying an additional filter (empty cancels)")
-				.flatMap { filter => _narrow(filter.toLowerCase) }
+			println("Please narrow the selection by specifying an additional filter (empty cancels)")
+			if (insert.nonEmpty)
+				println("Hint: you can also insert a new item by typing 'new'")
+			StdIn.readNonEmptyLine().flatMap { filter =>
+				insert match
+				{
+					case Some(insert) =>
+						if (filter.toLowerCase == "new")
+							insert()
+						else
+							_narrow(filter.toLowerCase)
+					case None => _narrow(filter.toLowerCase)
+				}
+			}
 		}
 		else
 		{
 			println(s"Found ${options.size} options")
 			options.indices.foreach { index => println(s"${index + 1}: ${options(index)._2}") }
+			if (insert.isDefined)
+				println("0: Create new")
 			println("Please select the correct index or narrow the selection by typing text (empty cancels)")
 			StdIn.readIterator.findMap { input =>
 				input.int match
 				{
 					// Case: User typed a row index => makes sure it is in range
 					case Some(index) =>
-						if (index > 0 && index <= options.size)
+						if (index == 0 && insert.isDefined)
+							Some(Some(Right(index)))
+						else if (index > 0 && index <= options.size)
 							Some(Some(Right(index)))
 						else
 						{
@@ -266,7 +318,11 @@ object ActionUtils
 					case None => Some(input.string.map { Left(_) })
 				}
 			}.get.flatMap {
-				case Right(index) => Some(options(index - 1)._1)
+				case Right(index) =>
+					if (index == 0)
+						insert.flatMap { _() }
+					else
+						Some(options(index - 1)._1)
 				case Left(filter) => _narrow(filter)
 			}
 		}

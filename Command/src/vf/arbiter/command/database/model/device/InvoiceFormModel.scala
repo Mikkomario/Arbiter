@@ -8,6 +8,8 @@ import vf.arbiter.command.database.factory.device.InvoiceFormFactory
 import vf.arbiter.command.model.partial.device.InvoiceFormData
 import vf.arbiter.command.model.stored.device.InvoiceForm
 
+import java.nio.file.Path
+
 /**
   * Used for constructing InvoiceFormModel instances and for inserting InvoiceForms to the database
   * @author Mikko Hilpinen
@@ -106,7 +108,7 @@ object InvoiceFormModel extends DataInserter[InvoiceFormModel, InvoiceForm, Invo
 	  * @param path Path to the form file in the local file system
 	  * @return A model containing only the specified path
 	  */
-	def withPath(path: String) = apply(path = Some(path))
+	def withPath(path: Path) = apply(path = Some(path))
 }
 
 /**
@@ -120,7 +122,7 @@ object InvoiceFormModel extends DataInserter[InvoiceFormModel, InvoiceForm, Invo
   * @since 2021-10-20
   */
 case class InvoiceFormModel(id: Option[Int] = None, ownerId: Option[Int] = None, 
-	languageId: Option[Int] = None, companyId: Option[Int] = None, path: Option[String] = None) 
+	languageId: Option[Int] = None, companyId: Option[Int] = None, path: Option[Path] = None)
 	extends StorableWithFactory[InvoiceForm]
 {
 	// IMPLEMENTED	--------------------
@@ -131,7 +133,7 @@ case class InvoiceFormModel(id: Option[Int] = None, ownerId: Option[Int] = None,
 	{
 		import InvoiceFormModel._
 		Vector("id" -> id, ownerIdAttName -> ownerId, languageIdAttName -> languageId, 
-			companyIdAttName -> companyId, pathAttName -> path)
+			companyIdAttName -> companyId, pathAttName -> path.map { _.toString })
 	}
 	
 	
@@ -159,6 +161,6 @@ case class InvoiceFormModel(id: Option[Int] = None, ownerId: Option[Int] = None,
 	  * @param path A new path
 	  * @return A new copy of this model with the specified path
 	  */
-	def withPath(path: String) = copy(path = Some(path))
+	def withPath(path: Path) = copy(path = Some(path))
 }
 

@@ -78,7 +78,7 @@ trait ManyInvoiceFormsAccess extends ManyRowModelAccess[InvoiceForm] with Indexe
 	 * @param languageId Id of the language used in the forms
 	 * @return An access point to forms using that language
 	 */
-	def forLanguageWithId(languageId: Int) = filter(model.withLanguageId(languageId).toCondition)
+	def withLanguageId(languageId: Int) = filter(model.withLanguageId(languageId).toCondition)
 	
 	/**
 	  * Updates the companyId of the targeted InvoiceForm instance(s)

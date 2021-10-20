@@ -1,6 +1,7 @@
 package vf.arbiter.command.database.factory.device
 
 import utopia.flow.datastructure.immutable.{Constant, Model}
+import utopia.flow.util.FileExtensions._
 import utopia.vault.nosql.factory.row.model.FromValidatedRowModelFactory
 import vf.arbiter.command.database.CommandTables
 import vf.arbiter.command.model.partial.device.InvoiceFormData
