@@ -488,6 +488,33 @@ object InvoiceActions
 		val totalTax = "tax-total"
 		val totalPriceTaxed = "payment-total-taxed"
 		
+		object Sender
+		{
+			val name = "sender-name"
+			val yCode = "sender-y-code"
+			val taxCode = "sender-tax-code"
+			val address = "sender-address"
+			val postalCode = "sender-postal-code"
+			val iban = "sender-bank"
+			val bic = "sender-bic"
+			
+			def from(senderCompany: FullyDetailedCompany, bankAccount: FullCompanyBankAccount) =
+			{
+				val senderName = senderCompany.details.name
+				
+				Map[String, String](
+					name -> senderName,
+					s"$name-2" -> senderName,
+					yCode -> senderCompany.yCode,
+					taxCode -> senderCompany.details.taxCode.getOrElse(""),
+					address -> senderCompany.details.address.address.toString,
+					postalCode -> senderCompany.details.address.postalCode.toString,
+					iban -> bankAccount.address,
+					bic -> bankAccount.bank.bic
+				)
+			}
+		}
+		
 		object Recipient
 		{
 			val name = "buyer-name"
@@ -495,6 +522,23 @@ object InvoiceActions
 			val id = "customer-code"
 			val address = "buyer-address"
 			val postalCode = "buyer-postal-code"
+			
+			def from(recipientCompany: FullyDetailedCompany) =
+			{
+				val recipientName = recipientCompany.details.name
+				val recipientAddress = recipientCompany.details.address.address.toString
+				val recipientPostal = recipientCompany.details.address.postalCode.toString
+				
+				Map[String, String](
+					name -> recipientName,
+					s"$name-2" -> recipientName,
+					yCode -> recipientCompany.yCode,
+					id -> recipientCompany.id.toString,
+					address -> recipientAddress,
+					s"$address-2" -> recipientAddress,
+					postalCode -> recipientPostal,
+					s"$postalCode-2" -> recipientPostal)
+			}
 		}
 		
 		object ItemRow
@@ -532,10 +576,6 @@ object InvoiceActions
 			val priceWithTax = round(price + tax) + " €"
 			val dl = dateFormat.format(invoice.paymentDeadline)
 			
-			val recipientName = invoice.recipientCompany.details.name
-			val recipientAddress = invoice.recipientCompany.details.address.address.toString
-			val recipientPostal = invoice.recipientCompany.details.address.postalCode.toString
-			
 			Map[String, String](
 				invoiceNumber -> invoice.id.toString,
 				referenceCode -> invoice.referenceCode,
@@ -545,19 +585,13 @@ object InvoiceActions
 				deadline -> dateFormat.format(invoice.paymentDeadline),
 				s"$deadline-2" -> dl,
 				delivery -> invoice.productDeliveryDate.map(dateFormat.format).getOrElse(""),
-				Recipient.name -> recipientName,
-				s"${Recipient.name}-2" -> recipientName,
-				Recipient.yCode -> invoice.recipientCompany.yCode,
-				Recipient.id -> invoice.recipientCompany.id.toString,
-				Recipient.address -> recipientAddress,
-				s"${Recipient.address}-2" -> recipientAddress,
-				Recipient.postalCode -> recipientPostal,
-				s"${Recipient.postalCode}-2" -> recipientPostal,
 				totalPrice -> (round(price) + " €"),
 				totalTax -> (round(tax) + " €"),
 				totalPriceTaxed -> priceWithTax,
 				s"$totalPriceTaxed-2" -> priceWithTax
-			) ++ invoice.items.zipWithIndex.flatMap { case (item, index) => ItemRow.from(item, index) }
+			) ++ Sender.from(invoice.senderCompany, invoice.senderBankAccount) ++
+				Recipient.from(invoice.recipientCompany) ++
+				invoice.items.zipWithIndex.flatMap { case (item, index) => ItemRow.from(item, index) }
 		}
 		
 		private def round(price: Double) = f"${(price * 100.0).round / 100.0}%1.2f"
