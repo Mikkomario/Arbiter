@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../Utopia/BunnyMunch/BunnyMunch.iml" filepath="$PROJECT_DIR$/../Utopia/BunnyMunch/BunnyMunch.iml" />
       <module fileurl="file://$PROJECT_DIR$/../Utopia/Citadel/Citadel.iml" filepath="$PROJECT_DIR$/../Utopia/Citadel/Citadel.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Utopia/Citadel-Description-Importer/Citadel-Description-Importer.iml" filepath="$PROJECT_DIR$/../Utopia/Citadel-Description-Importer/Citadel-Description-Importer.iml" />
       <module fileurl="file://$PROJECT_DIR$/Command/Command.iml" filepath="$PROJECT_DIR$/Command/Command.iml" />
       <module fileurl="file://$PROJECT_DIR$/Core/Core.iml" filepath="$PROJECT_DIR$/Core/Core.iml" />
       <module fileurl="file://$PROJECT_DIR$/../Utopia/Flow/Flow.iml" filepath="$PROJECT_DIR$/../Utopia/Flow/Flow.iml" />

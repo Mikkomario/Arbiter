@@ -19,7 +19,7 @@ import utopia.trove.controller.LocalDatabase
 import utopia.vault.database.Connection
 import utopia.vault.util.ErrorHandling
 import utopia.vault.util.ErrorHandlingPrinciple.Throw
-import vf.arbiter.command.controller.ArbiterDbSetupListener
+import vf.arbiter.command.controller.{ArbiterDbSetupListener, ImportDescriptions}
 import vf.arbiter.core.model.combined.company.DetailedCompany
 import vf.arbiter.core.util.Globals._
 
@@ -65,6 +65,23 @@ object ArbiterCommandsApp extends App
 		}
 		else
 		{
+			// Performs description updates
+			println("Updating description data...")
+			connectionPool.tryWith { implicit c =>
+				if (listener.updated)
+					ImportDescriptions.all()
+				else
+					ImportDescriptions.ifModified()
+			}.flatten match
+			{
+				case Success(_) => println("Descriptions imported successfully!")
+				case Failure(error) =>
+					error.printStackTrace()
+					println(s"Description importing failed due to an error: ${error.getMessage}")
+					println("Program continues but there may be some data-related problems")
+			}
+			
+			// Shuts down the database when jvm is being closed
 			CloseHook.maxShutdownTime = 20.seconds
 			CloseHook.registerAsyncAction { LocalDatabase.shutDownAsync().map {
 				case Success(_) => ()

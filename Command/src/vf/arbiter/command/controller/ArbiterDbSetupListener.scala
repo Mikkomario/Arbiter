@@ -11,11 +11,16 @@ import utopia.trove.event.{DatabaseSetupEvent, DatabaseSetupListener}
 class ArbiterDbSetupListener extends DatabaseSetupListener
 {
 	private var _failed = false
+	private var _updated = false
 	
 	/**
 	 * @return Whether the setup failed at some point
 	 */
 	def failed = _failed
+	/**
+	 * @return Whether the database structure was updated
+	 */
+	def updated = _updated
 	
 	override def onDatabaseSetupEvent(event: DatabaseSetupEvent) = event match
 	{
@@ -23,6 +28,7 @@ class ArbiterDbSetupListener extends DatabaseSetupListener
 		case DatabaseStarted => println("Database started!")
 		case UpdatesFound(filesToImport, _) => println(s"Found ${filesToImport.size} updates to apply...")
 		case UpdateApplied(appliedUpdate, remainingUpdates) =>
+			_updated = true
 			val remainingPart = if (remainingUpdates.isEmpty) "" else s" ${remainingUpdates.size} updates remaining..."
 			println(s"Updated to version ${appliedUpdate.targetVersion}.$remainingPart")
 		case SetupFailed(error) =>

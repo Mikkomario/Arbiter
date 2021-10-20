@@ -2,6 +2,24 @@
   "author": "Mikko Hilpinen",
   "package": "vf.arbiter.command",
   "classes": {
+    "environment": [
+      {
+        "name": "DescriptionImport",
+        "doc": "Lists times when different description files were last read",
+        "props": [
+          {
+            "name": "path",
+            "length": 255,
+            "doc": "Path to the read file"
+          },
+          {
+            "type": "creation",
+            "index": false,
+            "doc": "Time when this file was read"
+          }
+        ]
+      }
+    ],
     "device": [
       {
         "name": "InvoiceForm",

@@ -21,5 +21,6 @@
     <orderEntry type="module" module-name="BunnyMunch" />
     <orderEntry type="module" module-name="Trove" />
     <orderEntry type="library" name="ch.vorburger.mariaDB4j:mariaDB4j:2.4.0" level="project" />
+    <orderEntry type="module" module-name="Citadel-Description-Importer" />
   </component>
 </module>

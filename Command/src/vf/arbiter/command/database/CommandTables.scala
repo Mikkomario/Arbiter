@@ -13,6 +13,11 @@ object CommandTables
 	// COMPUTED	--------------------
 	
 	/**
+	 * Table that contains DescriptionImports (Lists times when different description files were last read)
+	 */
+	def descriptionImport = apply("description_import")
+	
+	/**
 	  * Table that contains InvoiceForms (Stores information about invoice form locations)
 	  */
 	def invoiceForm = apply("invoice_form")
