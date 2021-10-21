@@ -5,6 +5,7 @@ import utopia.flow.datastructure.immutable.Model
 import utopia.flow.generic.ModelConvertible
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.Now
+import vf.arbiter.core.database.access.single.invoice.DbItemUnit
 
 /**
   * Represents a type of product sold by an individual company
@@ -29,11 +30,15 @@ case class CompanyProductData(companyId: Int, unitId: Int, defaultUnitPrice: Opt
 	  * Whether this CompanyProduct has already been deprecated
 	  */
 	def isDeprecated = discontinuedAfter.isDefined
-	
 	/**
 	  * Whether this CompanyProduct is still valid (not deprecated)
 	  */
 	def isValid = !isDeprecated
+	
+	/**
+	 * @return An access point to this product's unit
+	 */
+	def unitAccess = DbItemUnit(unitId)
 	
 	
 	// IMPLEMENTED	--------------------

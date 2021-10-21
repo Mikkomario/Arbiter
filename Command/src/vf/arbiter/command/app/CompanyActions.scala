@@ -1,17 +1,26 @@
 package vf.arbiter.command.app
 
 import utopia.citadel.database.access.many.description.DbOrganizationDescriptions
+import utopia.citadel.database.access.single.language.DbLanguage
 import utopia.citadel.database.access.single.organization.DbOrganization
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.citadel.model.enumeration.StandardUserRole.Owner
+import utopia.flow.generic.ValueConversions._
+import utopia.flow.time.Now
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.StringExtensions._
 import utopia.metropolis.model.cached.LanguageIds
+import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.vault.database.Connection
 import vf.arbiter.core.database.access.many.company.DbDetailedCompanies
+import vf.arbiter.core.database.access.many.invoice.DbItemUnits
 import vf.arbiter.core.database.access.single.company.DbCompany
 import vf.arbiter.core.database.access.single.location.{DbCounty, DbPostalCode, DbStreetAddress}
+import vf.arbiter.core.database.model.CoreDescriptionLinkModel
+import vf.arbiter.core.database.model.company.CompanyProductModel
 import vf.arbiter.core.model.combined.company.DetailedCompany
+import vf.arbiter.core.model.enumeration.ArbiterDescriptionRoleId.Abbreviation
+import vf.arbiter.core.model.partial.company.CompanyProductData
 import vf.arbiter.core.model.partial.location.StreetAddressData
 
 import scala.io.StdIn
@@ -129,6 +138,131 @@ object CompanyActions
 								None
 					}
 			}
+	}
+	
+	/**
+	 * Chooses and edits an existing company product
+	 * @param userId Id of the user doing the editing
+	 * @param companyId Id of the company whose products are being edited
+	 * @param connection Implicit DB Connection
+	 * @param languageIds Implicit language ids
+	 */
+	def editProduct(userId: Int, companyId: Int)(implicit connection: Connection, languageIds: LanguageIds) =
+	{
+		// Finds the product to edit
+		val products = DbCompany(companyId).products.described
+		ActionUtils.selectFrom(products.map { p => p -> p(Name).getOrElse(s"Unnamed product #${p.id}") },
+			"products", "edit", skipQuestion = true).foreach { product =>
+			// Reads product unit data
+			val unit = product.wrapped.unitAccess.describedWith(Name, Abbreviation)
+			// May edit the product name
+			val newName = {
+				if (product.has(Name) && StdIn.ask("Do you want to edit this product's name?"))
+				{
+					val productNames = product.access.descriptions.withRole(Name).inAllPreferredLanguages.pull
+					println("Choose the product name to edit")
+					ActionUtils.selectFrom(productNames.map { link => link -> link.description.text })
+						.flatMap { nameToReplace =>
+							val language = DbLanguage(nameToReplace.description.languageId).withDescription(Name)
+							val languageName = language match
+							{
+								case Some(language) => language.descriptionOrCode(Name)
+								case None => "Language " + nameToReplace.description.languageId.toString
+							}
+							StdIn.readNonEmptyLine(s"What's the new name of this product in $languageName?")
+								.map { nameToReplace -> _ }
+						}
+				}
+				else
+					None
+			}
+			// May edit product unit
+			val currentUnitName = unit match
+			{
+				case Some(unit) => unit(Name, Abbreviation).getOrElse(s"Unnamed unit ${unit.id}")
+				case None => s"Unnamed unit ${product.wrapped.unitId}"
+			}
+			val newUnit = {
+				if (StdIn.ask(
+					s"Do you want to edit the unit in which this product is sold (currently $currentUnitName)?"))
+				{
+					val units = DbItemUnits.described.filter { u => u.has(Name) || u.has(Abbreviation) }
+					ActionUtils.selectFrom(units.map { u => u -> u(Name, Abbreviation).get }, "units",
+						skipQuestion = true)
+				}
+				else
+					None
+			}
+			// May edit default price per unit
+			val updatedUnitName = newUnit match
+			{
+				case Some(unit) => unit(Name, Abbreviation).get
+				case None => currentUnitName
+			}
+			val newDefaultPrice = StdIn.readValidOrEmpty(
+				s"What's the default price of this product (€/$updatedUnitName)? (default = ${
+					product.wrapped.defaultUnitPrice match {
+					case Some(price) => s"$price €/$updatedUnitName"
+					case None => "No default price"
+				}})") { _.double match
+			{
+				case Some(d) => Right(d)
+				case None => Left("Not a valid number. Please try again")
+			} }.filterNot { d => product.wrapped.defaultUnitPrice.contains(d) }
+			// May edit the tax modifier
+			val newTaxMod = StdIn.readValidOrEmpty(s"What's the tax % applied to this product? (default = ${
+				product.wrapped.taxModifier * 100})") { _.double match
+			{
+				case Some(d) => Right(d / 100.0)
+				case None => Left("Not a valid number. Please try again.")
+			} }
+			
+			// Case: Not modified
+			if (newName.isEmpty && newUnit.isEmpty && newDefaultPrice.isEmpty && newTaxMod.isEmpty)
+				println("Product not modified")
+			// Case: Requires a new product
+			else if (newUnit.isDefined || newTaxMod.isDefined)
+			{
+				if (StdIn.ask("Existing product will be discontinued and a new product created. Is this okay?",
+					default = true))
+				{
+					// Discontinues the existing product
+					product.access.discontinuedAfter = Now
+					// Inserts a new product
+					val newProduct = CompanyProductModel.insert(CompanyProductData(companyId,
+						newUnit.map { _.id }.getOrElse(product.wrapped.unitId),
+						newDefaultPrice.orElse(product.wrapped.defaultUnitPrice),
+						newTaxMod.getOrElse(product.wrapped.taxModifier), Some(userId)))
+					// Copies descriptions for the new product & inserts new name, if necessary
+					val oldProductDescriptions = product.access.descriptions.pull
+					val copiedDescriptions = newName match
+					{
+						case Some((linkToReplace, _)) => oldProductDescriptions.filter { _.id != linkToReplace.id }
+						case None => oldProductDescriptions
+					}
+					CoreDescriptionLinkModel.companyProduct
+						.insert(newProduct.id, copiedDescriptions.map { _.description.data })
+					newName.foreach { case (linkToReplace, newName) =>
+						CoreDescriptionLinkModel.companyProduct.insert(newProduct.id,
+							DescriptionData(Name.id, linkToReplace.description.languageId, newName, Some(userId)))
+					}
+					println("Product replaced")
+				}
+			}
+			// Case: May update the existing product
+			else
+			{
+				// Updates new default price if necessary
+				newDefaultPrice.foreach { newDefaultPrice => product.access.defaultUnitPrice = newDefaultPrice }
+				// Adds a new name if necessary
+				newName.foreach { case (linkToReplace, newName) =>
+					CoreDescriptionLinkModel.companyProduct.deprecateId(linkToReplace.id)
+					CoreDescriptionLinkModel.companyProduct.insert(product.id,
+						DescriptionData(Name.id, linkToReplace.description.languageId, newName, Some(userId)))
+				}
+				println("Product updated")
+			}
+		}
 	}
 	
 	private def join(userId: Int, company: DetailedCompany)

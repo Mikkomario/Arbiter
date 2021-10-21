@@ -6,7 +6,6 @@ import utopia.citadel.util.CitadelContext
 import utopia.flow.async.CloseHook
 import utopia.flow.datastructure.mutable.PointerWithEvents
 import utopia.flow.generic.ValueConversions._
-import utopia.flow.generic.DataType
 import utopia.flow.parse.JsonParser
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.util.console.{ArgumentSchema, Command, CommandArguments, Console}
@@ -52,7 +51,6 @@ object ArbiterCommandsApp extends App
 	{
 		val listener = new ArbiterDbSetupListener()
 		println("Configuring the database...")
-		// FIXME: CitadelContext must be setup before referring to Tables
 		LocalDatabase.setup("data/sql", "arbiter_db", "database_version",
 			Tables("arbiter_db", "database_version"), Some(listener))
 		if (listener.failed)
@@ -181,8 +179,31 @@ object ArbiterCommandsApp extends App
 		help = "Switches between owned companies") {
 		connectionPool { implicit c => CompanyActions.selectOneFromOwn(userId) }.foreach { company = _ }
 	}
+	def claimCompanyCommand(userId: Int) = Command("claim", help = "Claims an existing company as your own company")(
+		ArgumentSchema("company", help = "Name of the company to claim (or part of that company's name)")) { args =>
+		args("company").string.orElse(StdIn.readNonEmptyLine(
+			"What's the name of the company you want to claim? (part of company name is enough)"))
+			.foreach { companyName =>
+				connectionPool { implicit c =>
+					implicit val languageIds: LanguageIds = languageIdsPointer.value
+					CompanyActions.findAndJoinOne(userId, companyName)
+				}
+			}
+	}
 	def printInvoiceCommand(userId: Int, companyId: Int) = Command.withoutArguments("print",
 		help = "Prints an invoice") { connectionPool { implicit c => InvoiceActions.findAndPrint(userId, companyId) } }
+	def editCommand(userId: Int, companyId: Int) = Command("edit", help = "Edits a company product")(
+		ArgumentSchema("target", defaultValue = "product")) { args =>
+		args("target").getString.toLowerCase match
+		{
+			case "product" =>
+				connectionPool { implicit c =>
+					implicit val languageIds: LanguageIds = languageIdsPointer.value
+					CompanyActions.editProduct(userId, companyId)
+				}
+			case _ => println("Unrecognized target. Supported values are: product")
+		}
+	}
 	def createInvoiceCommand(userId: Int, senderCompany: DetailedCompany) =
 		Command.withoutArguments("invoice", "send", "Creates a new invoice") {
 			connectionPool { implicit connection =>
@@ -196,10 +217,12 @@ object ArbiterCommandsApp extends App
 		val statefulCommands = user match
 		{
 			case Some(user) =>
-				Vector(selectCompanyCommand(user.id)) ++
-					company.toVector.flatMap { company =>
-						Vector(createInvoiceCommand(user.id, company), printInvoiceCommand(user.id, company.id))
-					}
+				Vector(selectCompanyCommand(user.id), claimCompanyCommand(user.id)) ++
+					company.toVector.flatMap { company => Vector(
+						createInvoiceCommand(user.id, company),
+						printInvoiceCommand(user.id, company.id),
+						editCommand(user.id, company.id)
+					)}
 			case None => Vector(loginCommand)
 		}
 		Vector(registerCommand) ++ statefulCommands
