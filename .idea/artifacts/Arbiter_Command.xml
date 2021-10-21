@@ -1,0 +1,34 @@
+<component name="ArtifactManager">
+  <artifact name="Arbiter-Command">
+    <output-path>$PROJECT_DIR$/out/artifacts/Arbiter_Command</output-path>
+    <root id="root">
+      <element id="archive" name="Arbiter.jar">
+        <element id="directory" name="META-INF">
+          <element id="file-copy" path="$PROJECT_DIR$/Command/META-INF/MANIFEST.MF" />
+        </element>
+        <element id="module-output" name="Command" />
+        <element id="module-output" name="Citadel" />
+        <element id="module-output" name="Flow" />
+        <element id="module-output" name="Metropolis" />
+        <element id="module-output" name="Vault" />
+        <element id="module-output" name="Core" />
+        <element id="module-output" name="BunnyMunch" />
+        <element id="module-output" name="Trove" />
+        <element id="module-output" name="Citadel-Description-Importer" />
+      </element>
+      <element id="library" level="application" name="scala-sdk-2.13.3" />
+      <element id="library" level="project" name="ch.vorburger.mariaDB4j:mariaDB4j:2.4.0" />
+      <element id="library" level="project" name="mariadb-java-client-1" />
+      <element id="library" level="project" name="itext" />
+      <element id="directory" name="data">
+        <element id="directory" name="descriptions">
+          <element id="file-copy" path="$PROJECT_DIR$/../Utopia/Citadel/data/standard-descriptions.json" />
+          <element id="file-copy" path="$PROJECT_DIR$/Core/data/arbiter-descriptions.json" />
+        </element>
+        <element id="directory" name="sql">
+          <element id="file-copy" path="$PROJECT_DIR$/Command/data/sql/db-structure-v1.0.sql" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

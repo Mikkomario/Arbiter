@@ -4,6 +4,20 @@
 -- Type: Full
 --
 
+-- Trove DB Structure
+
+-- Creates a table that records database version updates
+CREATE TABLE database_version
+(
+    id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    version VARCHAR(16) NOT NULL,
+    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX dv_version_idx (version),
+    INDEX dv_creation_idx (created)
+
+)Engine=InnoDB DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+
 --
 -- DB Structure for Utopia Citadel features
 -- Intended to be inserted after database creation
@@ -529,8 +543,8 @@ CREATE TABLE company(
 	`creator_id` INT,
 	`created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	INDEX c_y_code_idx (`y_code`),
-	INDEX c_created_idx (`created`),
-	CONSTRAINT c_u_creator_ref_fk FOREIGN KEY c_u_creator_ref_idx (creator_id) REFERENCES `user`(id) ON DELETE SET NULL
+	INDEX cmp_created_idx (`created`),
+	CONSTRAINT cmp_u_starter_ref_fk FOREIGN KEY cmp_u_starter_ref_idx (creator_id) REFERENCES `user`(id) ON DELETE SET NULL
 )Engine=InnoDB DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
 
 -- Contains company information which may change and on which there may be varying views

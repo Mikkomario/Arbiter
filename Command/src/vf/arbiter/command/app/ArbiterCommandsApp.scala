@@ -9,7 +9,6 @@ import utopia.flow.generic.ValueConversions._
 import utopia.flow.generic.DataType
 import utopia.flow.parse.JsonParser
 import utopia.flow.time.TimeExtensions._
-import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.console.{ArgumentSchema, Command, CommandArguments, Console}
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.FileExtensions._
@@ -33,7 +32,8 @@ import scala.util.{Failure, Success}
  */
 object ArbiterCommandsApp extends App
 {
-	DataType.setup()
+	CitadelContext.setup(executionContext, connectionPool, "arbiter_db")
+	ErrorHandling.defaultPrinciple = Throw
 	implicit val jsonParser: JsonParser = JsonBunny
 	
 	val startArguments = CommandArguments(Vector(
@@ -52,14 +52,17 @@ object ArbiterCommandsApp extends App
 	{
 		val listener = new ArbiterDbSetupListener()
 		println("Configuring the database...")
-		LocalDatabase.setup("sql", "arbiter_db", "database_version",
+		// FIXME: CitadelContext must be setup before referring to Tables
+		LocalDatabase.setup("data/sql", "arbiter_db", "database_version",
 			Tables("arbiter_db", "database_version"), Some(listener))
 		if (listener.failed)
 		{
 			println("Shutting down the database and quitting...")
-			LocalDatabase.shutDown().failure.foreach { error =>
-				error.printStackTrace()
-				println(s"Failure while shutting down the database: ${error.getMessage}")
+			LocalDatabase.shutDown() match {
+				case Success(_) => println("Database shut down")
+				case Failure(error) =>
+					error.printStackTrace()
+					println(s"Failure while shutting down the database: ${error.getMessage}")
 			}
 			System.exit(1)
 		}
@@ -83,17 +86,17 @@ object ArbiterCommandsApp extends App
 			
 			// Shuts down the database when jvm is being closed
 			CloseHook.maxShutdownTime = 20.seconds
-			CloseHook.registerAsyncAction { LocalDatabase.shutDownAsync().map {
-				case Success(_) => ()
-				case Failure(error) =>
-					error.printStackTrace()
-					println("Failed to shut down the local database")
-			} }
+			CloseHook.registerAsyncAction {
+				println("Shutting down the database...")
+				LocalDatabase.shutDownAsync().map {
+					case Success(_) => println("Database shut down")
+					case Failure(error) =>
+						error.printStackTrace()
+						println("Failed to shut down the local database")
+				}
+			}
 		}
 	}
-	
-	CitadelContext.setup(executionContext, connectionPool, "arbiter_db")
-	ErrorHandling.defaultPrinciple = Throw
 	
 	val userPointer = new PointerWithEvents[Option[User]](None)
 	def user = userPointer.value
