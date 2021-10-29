@@ -18,7 +18,7 @@ import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.metropolis.model.partial.user.{UserLanguageData, UserSettingsData}
 import utopia.metropolis.model.stored.user.User
 import utopia.vault.database.Connection
-import vf.arbiter.command.model.SelectedLanguage
+import vf.arbiter.command.model.cached.SelectedLanguage
 
 import scala.io.StdIn
 

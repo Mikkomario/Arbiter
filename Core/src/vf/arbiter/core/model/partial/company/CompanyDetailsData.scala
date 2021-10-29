@@ -6,6 +6,7 @@ import utopia.flow.generic.ModelConvertible
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.Now
 import vf.arbiter.core.database.access.single.location.DbSingleStreetAddress
+import vf.arbiter.core.model.template.Exportable
 
 /**
   * Contains company information which may change and on which there may be varying views
@@ -24,7 +25,7 @@ import vf.arbiter.core.database.access.single.location.DbSingleStreetAddress
 case class CompanyDetailsData(companyId: Int, name: String, addressId: Int, taxCode: Option[String] = None, 
 	creatorId: Option[Int] = None, created: Instant = Now, deprecatedAfter: Option[Instant] = None, 
 	isOfficial: Boolean = false) 
-	extends ModelConvertible
+	extends ModelConvertible with Exportable
 {
 	// COMPUTED	--------------------
 	
@@ -49,5 +50,9 @@ case class CompanyDetailsData(companyId: Int, name: String, addressId: Int, taxC
 		Model(Vector("company_id" -> companyId, "name" -> name, "address_id" -> addressId, 
 			"tax_code" -> taxCode, "creator_id" -> creatorId, "created" -> created, 
 			"deprecated_after" -> deprecatedAfter, "is_official" -> isOfficial))
+	
+	override def toExportModel =
+		Model(Vector("name" -> name, "tax_code" -> taxCode, "is_official" -> isOfficial, "created" -> created,
+			"deprecated_after" -> deprecatedAfter))
 }
 

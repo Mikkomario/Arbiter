@@ -5,6 +5,7 @@ import utopia.flow.datastructure.immutable.Model
 import utopia.flow.generic.ModelConvertible
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.Now
+import vf.arbiter.core.model.template.Exportable
 
 /**
   * Used for listing which bank accounts belong to which company
@@ -21,7 +22,7 @@ import utopia.flow.time.Now
 case class CompanyBankAccountData(companyId: Int, bankId: Int, address: String, 
 	creatorId: Option[Int] = None, created: Instant = Now, deprecatedAfter: Option[Instant] = None, 
 	isOfficial: Boolean = false) 
-	extends ModelConvertible
+	extends ModelConvertible with Exportable
 {
 	// COMPUTED	--------------------
 	
@@ -41,6 +42,10 @@ case class CompanyBankAccountData(companyId: Int, bankId: Int, address: String,
 	override def toModel = 
 		Model(Vector("company_id" -> companyId, "bank_id" -> bankId, "address" -> address, 
 			"creator_id" -> creatorId, "created" -> created, "deprecated_after" -> deprecatedAfter, 
+			"is_official" -> isOfficial))
+	
+	override def toExportModel =
+		Model(Vector("iban" -> address, "created" -> created, "deprecated_after" -> deprecatedAfter,
 			"is_official" -> isOfficial))
 }
 

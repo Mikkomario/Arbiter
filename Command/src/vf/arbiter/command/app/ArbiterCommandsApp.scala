@@ -8,6 +8,7 @@ import utopia.flow.datastructure.mutable.PointerWithEvents
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.parse.JsonParser
 import utopia.flow.time.TimeExtensions._
+import utopia.flow.time.Today
 import utopia.flow.util.console.{ArgumentSchema, Command, CommandArguments, Console}
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.FileExtensions._
@@ -17,7 +18,7 @@ import utopia.trove.controller.LocalDatabase
 import utopia.vault.database.Connection
 import utopia.vault.util.ErrorHandling
 import utopia.vault.util.ErrorHandlingPrinciple.Throw
-import vf.arbiter.command.controller.{ArbiterDbSetupListener, ImportDescriptions}
+import vf.arbiter.command.controller.{ArbiterDbSetupListener, ExportData, ImportDescriptions}
 import vf.arbiter.core.model.combined.company.DetailedCompany
 import vf.arbiter.core.util.Globals._
 
@@ -174,6 +175,27 @@ object ArbiterCommandsApp extends App
 			}
 		}
 	}
+	val backupCommand = Command("backup", help = "Exports all available data to a json document")(
+		ArgumentSchema("path", "to", help = "Path to the json document to generate (optional)")) { args =>
+		val path = args("path").stringOr {
+			val defaultPath = s"backup/dump-${Today.toString}.json"
+			StdIn.readNonEmptyLine(
+				s"Please specify a relative or absolute path for the generated json file. Default = $defaultPath") match
+			{
+				case Some(answer) => if (answer.contains('.')) answer else answer + ".json"
+				case None => defaultPath
+			}
+		}
+		println(s"Exporting data to $path...")
+		connectionPool { implicit c =>
+			ExportData.toJson(path) match {
+				case Success(_) => println("Data successfully written!")
+				case Failure(error) =>
+					error.printStackTrace()
+					println(s"Data writing failed due to an error: ${error.getMessage}")
+			}
+		}
+	}
 	
 	def selectCompanyCommand(userId: Int) = Command.withoutArguments("use",
 		help = "Switches between owned companies") {
@@ -225,7 +247,7 @@ object ArbiterCommandsApp extends App
 					)}
 			case None => Vector(loginCommand)
 		}
-		Vector(registerCommand) ++ statefulCommands
+		Vector(registerCommand, backupCommand) ++ statefulCommands
 	}
 	
 	// Starts the console

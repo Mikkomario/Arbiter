@@ -8,7 +8,7 @@ import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.StringExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.vault.database.Connection
-import vf.arbiter.command.model.SelectedLanguage
+import vf.arbiter.command.model.cached.SelectedLanguage
 
 import java.time.LocalDate
 import scala.io.StdIn

@@ -3,6 +3,7 @@ package vf.arbiter.core.model.partial.invoice
 import utopia.flow.datastructure.immutable.Model
 import utopia.flow.generic.ModelConvertible
 import utopia.flow.generic.ValueConversions._
+import vf.arbiter.core.model.template.Exportable
 
 /**
   * Represents an individual sold item or service
@@ -16,7 +17,7 @@ import utopia.flow.generic.ValueConversions._
   */
 case class InvoiceItemData(invoiceId: Int, productId: Int, description: String, pricePerUnit: Double, 
 	unitsSold: Double = 1.0) 
-	extends ModelConvertible
+	extends ModelConvertible with Exportable
 {
 	// COMPUTED ------------------------
 	
@@ -31,5 +32,9 @@ case class InvoiceItemData(invoiceId: Int, productId: Int, description: String, 
 	override def toModel = 
 		Model(Vector("invoice_id" -> invoiceId, "product_id" -> productId, "description" -> description, 
 			"price_per_unit" -> pricePerUnit, "units_sold" -> unitsSold))
+	
+	override def toExportModel =
+		Model(Vector("product_id" -> productId, "description" -> description, "price_per_unit" -> pricePerUnit,
+			"units_sold" -> unitsSold))
 }
 

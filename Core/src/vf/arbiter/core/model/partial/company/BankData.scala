@@ -5,6 +5,7 @@ import utopia.flow.datastructure.immutable.Model
 import utopia.flow.generic.ModelConvertible
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.Now
+import vf.arbiter.core.model.template.Exportable
 
 /**
   * Represents a bank (used with bank addresses)
@@ -16,7 +17,7 @@ import utopia.flow.time.Now
   * @since 2021-10-14
   */
 case class BankData(name: String, bic: String, creatorId: Option[Int] = None, created: Instant = Now) 
-	extends ModelConvertible
+	extends ModelConvertible with Exportable
 {
 	// COMPUTED ------------------------
 	
@@ -30,5 +31,7 @@ case class BankData(name: String, bic: String, creatorId: Option[Int] = None, cr
 	
 	override def toModel = 
 		Model(Vector("name" -> name, "bic" -> bic, "creator_id" -> creatorId, "created" -> created))
+	
+	override def toExportModel = Model(Vector("name" -> name, "bic" -> bic))
 }
 

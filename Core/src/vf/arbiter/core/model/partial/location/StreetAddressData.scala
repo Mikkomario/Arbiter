@@ -5,6 +5,7 @@ import utopia.flow.datastructure.immutable.Model
 import utopia.flow.generic.ModelConvertible
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.Now
+import vf.arbiter.core.model.template.Exportable
 
 /**
   * Represents a specific street address
@@ -21,7 +22,7 @@ import utopia.flow.time.Now
 case class StreetAddressData(postalCodeId: Int, streetName: String, buildingNumber: String, 
 	stair: Option[String] = None, roomNumber: Option[String] = None, creatorId: Option[Int] = None, 
 	created: Instant = Now) 
-	extends ModelConvertible
+	extends ModelConvertible with Exportable
 {
 	// IMPLEMENTED	--------------------
 	
@@ -29,6 +30,10 @@ case class StreetAddressData(postalCodeId: Int, streetName: String, buildingNumb
 		Model(Vector("postal_code_id" -> postalCodeId, "street_name" -> streetName, 
 			"building_number" -> buildingNumber, "stair" -> stair, "room_number" -> roomNumber, 
 			"creator_id" -> creatorId, "created" -> created))
+	
+	override def toExportModel =
+		Model(Vector("street_name" -> streetName, "building_number" -> buildingNumber, "stair" -> stair,
+			"room_number" -> roomNumber))
 	
 	override def toString =
 	{

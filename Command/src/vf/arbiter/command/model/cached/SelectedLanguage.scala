@@ -1,4 +1,4 @@
-package vf.arbiter.command.model
+package vf.arbiter.command.model.cached
 
 /**
  * Used for storing selected language information

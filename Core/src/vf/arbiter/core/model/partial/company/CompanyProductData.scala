@@ -6,6 +6,7 @@ import utopia.flow.generic.ModelConvertible
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.Now
 import vf.arbiter.core.database.access.single.invoice.DbItemUnit
+import vf.arbiter.core.model.template.Exportable
 
 /**
   * Represents a type of product sold by an individual company
@@ -22,7 +23,7 @@ import vf.arbiter.core.database.access.single.invoice.DbItemUnit
 case class CompanyProductData(companyId: Int, unitId: Int, defaultUnitPrice: Option[Double] = None, 
 	taxModifier: Double = 0.24, creatorId: Option[Int] = None, created: Instant = Now, 
 	discontinuedAfter: Option[Instant] = None) 
-	extends ModelConvertible
+	extends ModelConvertible with Exportable
 {
 	// COMPUTED	--------------------
 	
@@ -47,5 +48,9 @@ case class CompanyProductData(companyId: Int, unitId: Int, defaultUnitPrice: Opt
 		Model(Vector("company_id" -> companyId, "unit_id" -> unitId, 
 			"default_unit_price" -> defaultUnitPrice, "tax_modifier" -> taxModifier, 
 			"creator_id" -> creatorId, "created" -> created, "discontinued_after" -> discontinuedAfter))
+	
+	override def toExportModel =
+		Model(Vector("unit_id" -> unitId, "default_unit_price" -> defaultUnitPrice, "tax_modifier" -> taxModifier,
+			"created" -> created, "discontinued_after" -> discontinuedAfter))
 }
 

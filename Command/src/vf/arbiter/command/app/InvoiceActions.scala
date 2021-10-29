@@ -16,7 +16,7 @@ import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.vault.database.Connection
 import vf.arbiter.command.database.access.many.device.DbInvoiceForms
 import vf.arbiter.command.database.model.device.InvoiceFormModel
-import vf.arbiter.command.model.SelectedLanguage
+import vf.arbiter.command.model.cached.SelectedLanguage
 import vf.arbiter.command.model.partial.device.InvoiceFormData
 import vf.arbiter.core.controller.pdf.FillPdfForm
 import vf.arbiter.core.database.access.many.company.{DbBanks, DbCompanies}
