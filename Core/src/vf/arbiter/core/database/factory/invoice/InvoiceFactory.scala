@@ -13,7 +13,7 @@ import vf.arbiter.core.model.stored.invoice.Invoice
 /**
   * Used for reading Invoice data from the DB
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object InvoiceFactory 
 	extends FromValidatedRowModelFactory[Invoice] with FromRowFactoryWithTimestamps[Invoice] with Deprecatable
@@ -26,11 +26,11 @@ object InvoiceFactory
 	
 	override def table = CoreTables.invoice
 	
-	override def fromValidatedModel(valid: Model[Constant]) = 
+	override def fromValidatedModel(valid: Model) =
 		Invoice(valid("id").getInt, InvoiceData(valid("senderCompanyDetailsId").getInt, 
 			valid("recipientCompanyDetailsId").getInt, valid("senderBankAccountId").getInt, 
 			valid("languageId").getInt, valid("referenceCode").getString, 
-			Days(valid("paymentDurationDays").getInt), valid("productDeliveryDate").localDate,
+			Days(valid("paymentDurationDays").getInt), valid("productDeliveryDate").localDate, 
 			valid("creatorId").int, valid("created").getInstant, valid("cancelledAfter").instant))
 }
 

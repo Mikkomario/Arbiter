@@ -9,7 +9,7 @@ import vf.arbiter.core.model.stored.invoice.UnitCategory
 /**
   * Used for reading UnitCategory data from the DB
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object UnitCategoryFactory extends FromValidatedRowModelFactory[UnitCategory]
 {
@@ -17,7 +17,7 @@ object UnitCategoryFactory extends FromValidatedRowModelFactory[UnitCategory]
 	
 	override def table = CoreTables.unitCategory
 	
-	override def fromValidatedModel(valid: Model[Constant]) = UnitCategory(valid("id").getInt, 
+	override def fromValidatedModel(valid: Model) = UnitCategory(valid("id").getInt,
 		UnitCategoryData())
 }
 

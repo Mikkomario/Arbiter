@@ -10,7 +10,7 @@ import utopia.flow.generic.ValueConversions._
   * @param multiplier A multiplier that, when applied to this unit, makes it comparable 
 	with the other units in the same category
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class ItemUnitData(categoryId: Int, multiplier: Double = 1.0) extends ModelConvertible
 {

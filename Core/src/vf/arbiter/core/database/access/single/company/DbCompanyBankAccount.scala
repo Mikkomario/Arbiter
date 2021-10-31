@@ -10,7 +10,7 @@ import vf.arbiter.core.model.stored.company.CompanyBankAccount
 /**
   * Used for accessing individual CompanyBankAccounts
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbCompanyBankAccount 
 	extends SingleRowModelAccess[CompanyBankAccount] with NonDeprecatedView[CompanyBankAccount] with Indexed

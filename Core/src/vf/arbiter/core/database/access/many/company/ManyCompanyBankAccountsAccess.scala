@@ -19,15 +19,15 @@ object ManyCompanyBankAccountsAccess
 /**
   * A common trait for access points which target multiple CompanyBankAccounts at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait ManyCompanyBankAccountsAccess extends ManyCompanyBankAccountsAccessLike[CompanyBankAccount]
 {
 	// COMPUTED	--------------------
 	
 	/**
-	  * Factory used for constructing database the interaction models
-	  */
+	 * Factory used for constructing database the interaction models
+	 */
 	protected def model = accountModel
 	
 	/**
@@ -47,7 +47,7 @@ trait ManyCompanyBankAccountsAccess extends ManyCompanyBankAccountsAccessLike[Co
 	
 	override protected def defaultOrdering = None
 	
-	override def filter(additionalCondition: Condition): ManyCompanyBankAccountsAccess = 
+	override def filter(additionalCondition: Condition): ManyCompanyBankAccountsAccess =
 		new ManyCompanyBankAccountsAccess.ManyCompanyBankAccountsSubView(this, additionalCondition)
 }
 

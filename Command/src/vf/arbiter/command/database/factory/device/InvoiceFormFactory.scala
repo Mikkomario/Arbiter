@@ -1,6 +1,6 @@
 package vf.arbiter.command.database.factory.device
 
-import utopia.flow.datastructure.immutable.{Constant, Model}
+import utopia.flow.datastructure.immutable.Model
 import utopia.flow.util.FileExtensions._
 import utopia.vault.nosql.factory.row.model.FromValidatedRowModelFactory
 import vf.arbiter.command.database.CommandTables
@@ -18,7 +18,7 @@ object InvoiceFormFactory extends FromValidatedRowModelFactory[InvoiceForm]
 	
 	override def table = CommandTables.invoiceForm
 	
-	override def fromValidatedModel(valid: Model[Constant]) = 
+	override def fromValidatedModel(valid: Model) =
 		InvoiceForm(valid("id").getInt, InvoiceFormData(valid("OwnerId").getInt, valid("LanguageId").getInt, 
 			valid("CompanyId").int, valid("Path").getString))
 }

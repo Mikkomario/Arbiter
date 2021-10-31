@@ -13,7 +13,7 @@ import vf.arbiter.core.model.template.Exportable
   * @param pricePerUnit Euro (€) price per each sold unit of this item, without taxes applied
   * @param unitsSold Amount of items sold in the product's unit
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class InvoiceItemData(invoiceId: Int, productId: Int, description: String, pricePerUnit: Double, 
 	unitsSold: Double = 1.0) 

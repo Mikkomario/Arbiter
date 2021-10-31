@@ -8,7 +8,7 @@ import vf.arbiter.core.model.stored.company.{Bank, CompanyBankAccount}
 /**
   * Used for reading FullCompanyBankAccounts from the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object FullCompanyBankAccountFactory 
 	extends CombiningFactory[FullCompanyBankAccount, CompanyBankAccount, Bank] with Deprecatable

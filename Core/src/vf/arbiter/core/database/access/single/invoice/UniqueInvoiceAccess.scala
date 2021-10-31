@@ -15,7 +15,7 @@ import vf.arbiter.core.model.stored.invoice.Invoice
 /**
   * A common trait for access points that return individual and distinct Invoices.
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait UniqueInvoiceAccess 
 	extends SingleRowModelAccess[Invoice] with DistinctModelAccess[Invoice, Option[Invoice], Value] 

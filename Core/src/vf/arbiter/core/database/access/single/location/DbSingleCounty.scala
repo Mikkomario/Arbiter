@@ -5,7 +5,8 @@ import vf.arbiter.core.model.stored.location.County
 
 /**
   * An access point to individual Counties, based on their id
-  * @since 2021-10-14
+  * @author Mikko Hilpinen
+  * @since 2021-10-31
   */
 case class DbSingleCounty(id: Int) extends UniqueCountyAccess with SingleIntIdModelAccess[County]
 

@@ -12,7 +12,7 @@ import vf.arbiter.core.model.stored.location.County
 /**
   * Used for constructing CountyModel instances and for inserting Countys to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object CountyModel extends DataInserter[CountyModel, County, CountyData]
 {
@@ -100,7 +100,7 @@ object CountyModel extends DataInserter[CountyModel, County, CountyData]
   * @param creatorId Id of the user who registered this county
   * @param created Time when this County was first created
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class CountyModel(id: Option[Int] = None, name: Option[String] = None, creatorId: Option[Int] = None, 
 	created: Option[Instant] = None) 

@@ -9,7 +9,7 @@ import vf.arbiter.core.model.partial.invoice.UnitCategoryData
   * @param id id of this UnitCategory in the database
   * @param data Wrapped UnitCategory data
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class UnitCategory(id: Int, data: UnitCategoryData) extends StoredModelConvertible[UnitCategoryData]
 {

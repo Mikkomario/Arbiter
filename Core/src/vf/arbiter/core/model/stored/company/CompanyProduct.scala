@@ -12,7 +12,7 @@ import vf.arbiter.core.model.template.Exportable
   * @param id id of this CompanyProduct in the database
   * @param data Wrapped CompanyProduct data
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class CompanyProduct(id: Int, data: CompanyProductData) 
 	extends StoredModelConvertible[CompanyProductData] with Exportable

@@ -10,7 +10,7 @@ import vf.arbiter.core.model.stored.invoice.UnitCategory
 /**
   * Used for accessing individual UnitCategories
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbUnitCategory extends SingleRowModelAccess[UnitCategory] with UnconditionalView with Indexed
 {

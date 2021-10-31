@@ -23,7 +23,7 @@ object ManyStreetAddressesAccess
 /**
   * A common trait for access points which target multiple StreetAddresses at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with Indexed
 {
@@ -66,9 +66,9 @@ trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with I
 		pullColumn(model.creatorIdColumn).flatMap { value => value.int }
 	
 	/**
-	  * createds of the accessible StreetAddresses
+	  * creationTimes of the accessible StreetAddresses
 	  */
-	def createds(implicit connection: Connection) = 
+	def creationTimes(implicit connection: Connection) = 
 		pullColumn(model.createdColumn).flatMap { value => value.instant }
 	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
@@ -96,7 +96,7 @@ trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with I
 	  * @param newBuildingNumber A new buildingNumber to assign
 	  * @return Whether any StreetAddress instance was affected
 	  */
-	def buildingNumber_=(newBuildingNumber: String)(implicit connection: Connection) = 
+	def buildingNumbers_=(newBuildingNumber: String)(implicit connection: Connection) = 
 		putColumn(model.buildingNumberColumn, newBuildingNumber)
 	
 	/**
@@ -104,7 +104,7 @@ trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with I
 	  * @param newCreated A new created to assign
 	  * @return Whether any StreetAddress instance was affected
 	  */
-	def created_=(newCreated: Instant)(implicit connection: Connection) = 
+	def creationTimes_=(newCreated: Instant)(implicit connection: Connection) = 
 		putColumn(model.createdColumn, newCreated)
 	
 	/**
@@ -112,7 +112,7 @@ trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with I
 	  * @param newCreatorId A new creatorId to assign
 	  * @return Whether any StreetAddress instance was affected
 	  */
-	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) = 
+	def creatorIds_=(newCreatorId: Int)(implicit connection: Connection) = 
 		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
@@ -120,7 +120,7 @@ trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with I
 	  * @param newPostalCodeId A new postalCodeId to assign
 	  * @return Whether any StreetAddress instance was affected
 	  */
-	def postalCodeId_=(newPostalCodeId: Int)(implicit connection: Connection) = 
+	def postalCodeIds_=(newPostalCodeId: Int)(implicit connection: Connection) = 
 		putColumn(model.postalCodeIdColumn, newPostalCodeId)
 	
 	/**
@@ -128,7 +128,7 @@ trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with I
 	  * @param newRoomNumber A new roomNumber to assign
 	  * @return Whether any StreetAddress instance was affected
 	  */
-	def roomNumber_=(newRoomNumber: String)(implicit connection: Connection) = 
+	def roomNumbers_=(newRoomNumber: String)(implicit connection: Connection) = 
 		putColumn(model.roomNumberColumn, newRoomNumber)
 	
 	/**
@@ -136,14 +136,14 @@ trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with I
 	  * @param newStair A new stair to assign
 	  * @return Whether any StreetAddress instance was affected
 	  */
-	def stair_=(newStair: String)(implicit connection: Connection) = putColumn(model.stairColumn, newStair)
+	def stairs_=(newStair: String)(implicit connection: Connection) = putColumn(model.stairColumn, newStair)
 	
 	/**
 	  * Updates the streetName of the targeted StreetAddress instance(s)
 	  * @param newStreetName A new streetName to assign
 	  * @return Whether any StreetAddress instance was affected
 	  */
-	def streetName_=(newStreetName: String)(implicit connection: Connection) = 
+	def streetNames_=(newStreetName: String)(implicit connection: Connection) = 
 		putColumn(model.streetNameColumn, newStreetName)
 }
 

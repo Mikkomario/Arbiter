@@ -17,51 +17,51 @@ object ManyInvoiceItemsAccess
 {
 	// NESTED	--------------------
 	
-	private class ManyInvoiceItemsSubView(override val parent: ManyRowModelAccess[InvoiceItem], 
-		override val filterCondition: Condition) 
+	private class ManyInvoiceItemsSubView(override val parent: ManyRowModelAccess[InvoiceItem],
+	                                      override val filterCondition: Condition)
 		extends ManyInvoiceItemsAccess with SubView
 }
 
 /**
-  * A common trait for access points which target multiple InvoiceItems at a time
-  * @author Mikko Hilpinen
-  * @since 2021-10-14
-  */
+ * A common trait for access points which target multiple InvoiceItems at a time
+ * @author Mikko Hilpinen
+ * @since 2021-10-14
+ */
 trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexed
 {
 	// COMPUTED	--------------------
 	
 	/**
-	  * invoiceIds of the accessible InvoiceItems
-	  */
-	def invoiceIds(implicit connection: Connection) = 
+	 * invoiceIds of the accessible InvoiceItems
+	 */
+	def invoiceIds(implicit connection: Connection) =
 		pullColumn(model.invoiceIdColumn).flatMap { value => value.int }
 	/**
-	  * productIds of the accessible InvoiceItems
-	  */
-	def productIds(implicit connection: Connection) = 
+	 * productIds of the accessible InvoiceItems
+	 */
+	def productIds(implicit connection: Connection) =
 		pullColumn(model.productIdColumn).flatMap { value => value.int }
 	/**
-	  * descriptions of the accessible InvoiceItems
-	  */
-	def descriptions(implicit connection: Connection) = 
+	 * descriptions of the accessible InvoiceItems
+	 */
+	def descriptions(implicit connection: Connection) =
 		pullColumn(model.descriptionColumn).flatMap { value => value.string }
 	/**
-	  * perUnitPrices of the accessible InvoiceItems
-	  */
-	def perUnitPrices(implicit connection: Connection) = 
+	 * perUnitPrices of the accessible InvoiceItems
+	 */
+	def perUnitPrices(implicit connection: Connection) =
 		pullColumn(model.pricePerUnitColumn).flatMap { value => value.double }
 	/**
-	  * unitsSold of the accessible InvoiceItems
-	  */
-	def unitsSold(implicit connection: Connection) = 
+	 * unitsSold of the accessible InvoiceItems
+	 */
+	def unitsSold(implicit connection: Connection) =
 		pullColumn(model.unitsSoldColumn).flatMap { value => value.double }
 	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
 	
 	/**
-	  * Factory used for constructing database the interaction models
-	  */
+	 * Factory used for constructing database the interaction models
+	 */
 	protected def model = InvoiceItemModel
 	
 	/**
@@ -94,7 +94,7 @@ trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexe
 	
 	override protected def defaultOrdering = None
 	
-	override def filter(additionalCondition: Condition): ManyInvoiceItemsAccess = 
+	override def filter(additionalCondition: Condition): ManyInvoiceItemsAccess =
 		new ManyInvoiceItemsAccess.ManyInvoiceItemsSubView(this, additionalCondition)
 	
 	
@@ -119,39 +119,39 @@ trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexe
 	}
 	
 	/**
-	  * Updates the description of the targeted InvoiceItem instance(s)
-	  * @param newDescription A new description to assign
-	  * @return Whether any InvoiceItem instance was affected
-	  */
-	def description_=(newDescription: String)(implicit connection: Connection) = 
+	 * Updates the description of the targeted InvoiceItem instance(s)
+	 * @param newDescription A new description to assign
+	 * @return Whether any InvoiceItem instance was affected
+	 */
+	def description_=(newDescription: String)(implicit connection: Connection) =
 		putColumn(model.descriptionColumn, newDescription)
 	/**
-	  * Updates the invoiceId of the targeted InvoiceItem instance(s)
-	  * @param newInvoiceId A new invoiceId to assign
-	  * @return Whether any InvoiceItem instance was affected
-	  */
-	def invoiceId_=(newInvoiceId: Int)(implicit connection: Connection) = 
+	 * Updates the invoiceId of the targeted InvoiceItem instance(s)
+	 * @param newInvoiceId A new invoiceId to assign
+	 * @return Whether any InvoiceItem instance was affected
+	 */
+	def invoiceId_=(newInvoiceId: Int)(implicit connection: Connection) =
 		putColumn(model.invoiceIdColumn, newInvoiceId)
 	/**
-	  * Updates the pricePerUnit of the targeted InvoiceItem instance(s)
-	  * @param newPricePerUnit A new pricePerUnit to assign
-	  * @return Whether any InvoiceItem instance was affected
-	  */
-	def pricePerUnit_=(newPricePerUnit: Double)(implicit connection: Connection) = 
+	 * Updates the pricePerUnit of the targeted InvoiceItem instance(s)
+	 * @param newPricePerUnit A new pricePerUnit to assign
+	 * @return Whether any InvoiceItem instance was affected
+	 */
+	def pricePerUnit_=(newPricePerUnit: Double)(implicit connection: Connection) =
 		putColumn(model.pricePerUnitColumn, newPricePerUnit)
 	/**
-	  * Updates the productId of the targeted InvoiceItem instance(s)
-	  * @param newProductId A new productId to assign
-	  * @return Whether any InvoiceItem instance was affected
-	  */
-	def productId_=(newProductId: Int)(implicit connection: Connection) = 
+	 * Updates the productId of the targeted InvoiceItem instance(s)
+	 * @param newProductId A new productId to assign
+	 * @return Whether any InvoiceItem instance was affected
+	 */
+	def productId_=(newProductId: Int)(implicit connection: Connection) =
 		putColumn(model.productIdColumn, newProductId)
 	/**
-	  * Updates the unitsSold of the targeted InvoiceItem instance(s)
-	  * @param newUnitsSold A new unitsSold to assign
-	  * @return Whether any InvoiceItem instance was affected
-	  */
-	def unitsSold_=(newUnitsSold: Double)(implicit connection: Connection) = 
+	 * Updates the unitsSold of the targeted InvoiceItem instance(s)
+	 * @param newUnitsSold A new unitsSold to assign
+	 * @return Whether any InvoiceItem instance was affected
+	 */
+	def unitsSold_=(newUnitsSold: Double)(implicit connection: Connection) =
 		putColumn(model.unitsSoldColumn, newUnitsSold)
 }
 

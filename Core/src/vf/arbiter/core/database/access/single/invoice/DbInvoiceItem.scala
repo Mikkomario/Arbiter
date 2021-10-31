@@ -10,7 +10,7 @@ import vf.arbiter.core.model.stored.invoice.InvoiceItem
 /**
   * Used for accessing individual InvoiceItems
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbInvoiceItem extends SingleRowModelAccess[InvoiceItem] with UnconditionalView with Indexed
 {

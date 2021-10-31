@@ -24,7 +24,7 @@ object ManyItemUnitsAccess
 /**
   * A common trait for access points which target multiple ItemUnits at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait ManyItemUnitsAccess 
 	extends ManyRowModelAccess[ItemUnit] with ManyDescribedAccess[ItemUnit, DescribedItemUnit]
@@ -74,7 +74,7 @@ trait ManyItemUnitsAccess
 	  * @param newCategoryId A new categoryId to assign
 	  * @return Whether any ItemUnit instance was affected
 	  */
-	def categoryId_=(newCategoryId: Int)(implicit connection: Connection) = 
+	def categoryIds_=(newCategoryId: Int)(implicit connection: Connection) = 
 		putColumn(model.categoryIdColumn, newCategoryId)
 	
 	/**
@@ -82,7 +82,7 @@ trait ManyItemUnitsAccess
 	  * @param newMultiplier A new multiplier to assign
 	  * @return Whether any ItemUnit instance was affected
 	  */
-	def multiplier_=(newMultiplier: Double)(implicit connection: Connection) = 
+	def multipliers_=(newMultiplier: Double)(implicit connection: Connection) = 
 		putColumn(model.multiplierColumn, newMultiplier)
 }
 

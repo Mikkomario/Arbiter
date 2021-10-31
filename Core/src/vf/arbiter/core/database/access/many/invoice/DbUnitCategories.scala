@@ -8,7 +8,7 @@ import vf.arbiter.core.model.stored.invoice.UnitCategory
 /**
   * The root access point when targeting multiple UnitCategories at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbUnitCategories extends ManyUnitCategoriesAccess with UnconditionalView
 {

@@ -9,7 +9,7 @@ import vf.arbiter.core.model.partial.company.OrganizationCompanyData
   * @param id id of this OrganizationCompany in the database
   * @param data Wrapped OrganizationCompany data
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class OrganizationCompany(id: Int, data: OrganizationCompanyData) 
 	extends StoredModelConvertible[OrganizationCompanyData]

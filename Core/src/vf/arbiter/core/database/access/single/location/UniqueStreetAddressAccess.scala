@@ -14,7 +14,7 @@ import vf.arbiter.core.model.stored.location.StreetAddress
 /**
   * A common trait for access points that return individual and distinct StreetAddresses.
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait UniqueStreetAddressAccess 
 	extends SingleRowModelAccess[StreetAddress] 

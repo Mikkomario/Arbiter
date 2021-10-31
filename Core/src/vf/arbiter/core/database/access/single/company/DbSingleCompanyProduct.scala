@@ -8,7 +8,8 @@ import vf.arbiter.core.model.stored.company.CompanyProduct
 
 /**
   * An access point to individual CompanyProducts, based on their id
-  * @since 2021-10-14
+  * @author Mikko Hilpinen
+  * @since 2021-10-31
   */
 case class DbSingleCompanyProduct(id: Int) 
 	extends UniqueCompanyProductAccess with SingleIdDescribedAccess[CompanyProduct, DescribedCompanyProduct]

@@ -8,7 +8,7 @@ import vf.arbiter.core.model.stored.invoice.{Invoice, InvoiceItem}
 /**
   * Used for reading InvoiceWithItemss from the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object InvoiceWithItemsFactory 
 	extends MultiCombiningFactory[InvoiceWithItems, Invoice, InvoiceItem] with Deprecatable

@@ -23,7 +23,7 @@ object ManyBanksAccess
 /**
   * A common trait for access points which target multiple Banks at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait ManyBanksAccess extends ManyRowModelAccess[Bank] with Indexed
 {
@@ -47,9 +47,9 @@ trait ManyBanksAccess extends ManyRowModelAccess[Bank] with Indexed
 		pullColumn(model.creatorIdColumn).flatMap { value => value.int }
 	
 	/**
-	  * createds of the accessible Banks
+	  * creationTimes of the accessible Banks
 	  */
-	def createds(implicit connection: Connection) = 
+	def creationTimes(implicit connection: Connection) = 
 		pullColumn(model.createdColumn).flatMap { value => value.instant }
 	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
@@ -77,14 +77,14 @@ trait ManyBanksAccess extends ManyRowModelAccess[Bank] with Indexed
 	  * @param newBic A new bic to assign
 	  * @return Whether any Bank instance was affected
 	  */
-	def bic_=(newBic: String)(implicit connection: Connection) = putColumn(model.bicColumn, newBic)
+	def bics_=(newBic: String)(implicit connection: Connection) = putColumn(model.bicColumn, newBic)
 	
 	/**
 	  * Updates the created of the targeted Bank instance(s)
 	  * @param newCreated A new created to assign
 	  * @return Whether any Bank instance was affected
 	  */
-	def created_=(newCreated: Instant)(implicit connection: Connection) = 
+	def creationTimes_=(newCreated: Instant)(implicit connection: Connection) = 
 		putColumn(model.createdColumn, newCreated)
 	
 	/**
@@ -92,7 +92,7 @@ trait ManyBanksAccess extends ManyRowModelAccess[Bank] with Indexed
 	  * @param newCreatorId A new creatorId to assign
 	  * @return Whether any Bank instance was affected
 	  */
-	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) = 
+	def creatorIds_=(newCreatorId: Int)(implicit connection: Connection) = 
 		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
@@ -100,6 +100,6 @@ trait ManyBanksAccess extends ManyRowModelAccess[Bank] with Indexed
 	  * @param newName A new name to assign
 	  * @return Whether any Bank instance was affected
 	  */
-	def name_=(newName: String)(implicit connection: Connection) = putColumn(model.nameColumn, newName)
+	def names_=(newName: String)(implicit connection: Connection) = putColumn(model.nameColumn, newName)
 }
 

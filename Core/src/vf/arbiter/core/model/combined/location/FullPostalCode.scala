@@ -10,7 +10,7 @@ import vf.arbiter.core.model.template.Exportable
 /**
   * Combines code with County data
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class FullPostalCode(code: PostalCode, county: County) extends Extender[PostalCodeData] with Exportable
 {

@@ -3,14 +3,14 @@ package vf.arbiter.command.controller
 import utopia.citadel.database.access.id.many.DbOrganizationIds
 import utopia.citadel.database.access.many.description.{DbDescriptionRoles, DbOrganizationDescriptions}
 import utopia.citadel.database.access.many.language.{DbLanguageFamiliarities, DbLanguages}
-import utopia.citadel.database.access.many.user.DbUsers
+import utopia.citadel.database.access.many.user.{DbManyUserSettings, DbUserLanguageLinks}
 import utopia.citadel.database.factory.organization.MembershipWithRolesFactory
-import utopia.citadel.database.factory.user.UserLanguageFactory
 import utopia.flow.datastructure.immutable.{Constant, Model, Value}
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.FileExtensions._
-import utopia.metropolis.model.stored.description.{DescriptionLink, DescriptionRole}
+import utopia.metropolis.model.combined.description.LinkedDescription
+import utopia.metropolis.model.stored.description.DescriptionRole
 import utopia.vault.database.Connection
 import vf.arbiter.core.database.access.many.company.{DbBanks, DbCompanies, DbOrganizationCompanies}
 import vf.arbiter.core.database.access.many.description.DbCompanyProductDescriptions
@@ -38,20 +38,20 @@ object ExportData
 	def toJson(targetPath: Path)(implicit connection: Connection) =
 	{
 		val languages = DbLanguages.fullyDescribed
-		val languageCodePerId = languages.map { l => l.id -> l.isoCode }.toMap
+		val languageCodePerId = languages.map { l => l.id -> l.wrapped.isoCode }.toMap
 		val descriptionRolePerId = DbDescriptionRoles.pull.map { r => r.id -> r }.toMap
 		val companies = DbCompanies.pull
 		val companyBankAccounts = FullCompanyBankAccountFactory.getAll()
 		
 		// Writes all data in groups
 		val data = Model(Vector(
-			"languages" -> languages.sortBy { _.isoCode }.map { language => Model(Vector(
-				"code" -> language.isoCode,
+			"languages" -> languages.sortBy { _.wrapped.isoCode }.map { language => Model(Vector(
+				"code" -> language.wrapped.isoCode,
 				"descriptions" -> descriptionModelsFrom(language.descriptions, languageCodePerId, descriptionRolePerId)
 			)) },
 			"languageFamiliarities" -> DbLanguageFamiliarities.fullyDescribed.map { f => Model(Vector(
 				"id" -> f.id,
-				"order_index" -> f.orderIndex,
+				"order_index" -> f.wrapped.orderIndex,
 				"descriptions" -> descriptionModelsFrom(f.descriptions, languageCodePerId, descriptionRolePerId)
 			)) },
 			"users" -> userModels(languageCodePerId),
@@ -71,9 +71,9 @@ object ExportData
 	
 	private def userModels(languageCodePerId: Map[Int, String])(implicit connection: Connection) =
 	{
-		val languageLinksPerUserId = UserLanguageFactory.getAll().groupBy { _.userId }
-		DbUsers.pull.map { u =>
-			Model(Vector("id" -> u.userId, "name" -> u.settings.name,
+		val languageLinksPerUserId = DbUserLanguageLinks.pull.groupBy { _.userId }
+		DbManyUserSettings.pull.map { u =>
+			Model(Vector("id" -> u.userId, "name" -> u.name,
 				"languages" -> languageLinksPerUserId.getOrElse(u.id, Vector()).map { link =>
 					Model(Vector("code" -> languageCodePerId(link.languageId), "familiarity_id" -> link.familiarityId))
 				}))
@@ -162,12 +162,12 @@ object ExportData
 		}
 	}
 	
-	private def descriptionModelsFrom(descriptions: Iterable[DescriptionLink], languageCodePerId: Map[Int, String],
+	private def descriptionModelsFrom(descriptions: Iterable[LinkedDescription], languageCodePerId: Map[Int, String],
 	                                  descriptionRolePerId: Map[Int, DescriptionRole]) =
-		descriptions.groupBy { _.description.languageId }.toVector.sortBy { _._1 }.map { case (languageId, links) =>
+		descriptions.groupBy { _.languageId }.toVector.sortBy { _._1 }.map { case (languageId, descriptions) =>
 			Model(Vector("language" -> languageCodePerId(languageId),
-				"descriptions" -> Model(links.toVector.sortBy { _.description.roleId }.map { l =>
-					descriptionRolePerId(l.description.roleId).jsonKeySingular -> (l.description.text: Value)
+				"descriptions" -> Model(descriptions.toVector.sortBy { _.roleId }.map { d =>
+					descriptionRolePerId(d.roleId).jsonKeySingular -> (d.text: Value)
 				})))
 		}
 }

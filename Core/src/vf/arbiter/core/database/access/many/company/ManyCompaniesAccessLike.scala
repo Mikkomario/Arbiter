@@ -1,6 +1,6 @@
 package vf.arbiter.core.database.access.many.company
 
-import utopia.citadel.database.Tables
+import utopia.citadel.database.CitadelTables
 import utopia.citadel.database.model.organization.MembershipModel
 import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
@@ -61,7 +61,7 @@ trait ManyCompaniesAccessLike[+A] extends ManyRowModelAccess[A] with Indexed
 		val membershipModel = MembershipModel
 		// Joins to organization link -> organization -> membership
 		factory(connection(
-			Select.tables(target join organizationLinkModel.table join Tables.organization join membershipModel.table,
+			Select.tables(target join organizationLinkModel.table join CitadelTables.organization join membershipModel.table,
 				factory.tables) + Where(mergeCondition(membershipModel.nonDeprecatedCondition &&
 				membershipModel.withUserId(userId).toCondition))))
 	}

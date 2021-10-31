@@ -18,15 +18,15 @@ object ManyCompaniesAccess
 /**
   * A common trait for access points which target multiple Companies at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait ManyCompaniesAccess extends ManyCompaniesAccessLike[Company]
 {
 	// COMPUTED	--------------------
 	
 	/**
-	  * Factory used for constructing database the interaction models
-	  */
+	 * Factory used for constructing database the interaction models
+	 */
 	protected def model = companyModel
 	
 	
@@ -36,7 +36,7 @@ trait ManyCompaniesAccess extends ManyCompaniesAccessLike[Company]
 	
 	override protected def defaultOrdering = Some(factory.defaultOrdering)
 	
-	override def filter(additionalCondition: Condition): ManyCompaniesAccess = 
+	override def filter(additionalCondition: Condition): ManyCompaniesAccess =
 		new ManyCompaniesAccess.ManyCompaniesSubView(this, additionalCondition)
 }
 

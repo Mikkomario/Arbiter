@@ -13,7 +13,7 @@ import vf.arbiter.core.model.stored.company.CompanyBankAccount
 /**
   * Used for constructing CompanyBankAccountModel instances and for inserting CompanyBankAccounts to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object CompanyBankAccountModel 
 	extends DataInserter[CompanyBankAccountModel, CompanyBankAccount, CompanyBankAccountData] 
@@ -173,7 +173,7 @@ object CompanyBankAccountModel
   * @param deprecatedAfter Time when this CompanyBankAccount became deprecated. None while this CompanyBankAccount is still valid.
   * @param isOfficial Whether this bank account information was written by the company authorities
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class CompanyBankAccountModel(id: Option[Int] = None, companyId: Option[Int] = None, 
 	bankId: Option[Int] = None, address: Option[String] = None, creatorId: Option[Int] = None, 

@@ -7,7 +7,7 @@ import vf.arbiter.core.model.stored.invoice.{Invoice, InvoiceItem}
 /**
   * Combines Invoice with items data
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class InvoiceWithItems(invoice: Invoice, items: Vector[InvoiceItem]) extends Extender[InvoiceData]
 {

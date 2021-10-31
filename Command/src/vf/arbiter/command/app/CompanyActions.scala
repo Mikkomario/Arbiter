@@ -3,6 +3,7 @@ package vf.arbiter.command.app
 import utopia.citadel.database.access.many.description.DbOrganizationDescriptions
 import utopia.citadel.database.access.single.language.DbLanguage
 import utopia.citadel.database.access.single.organization.DbOrganization
+import utopia.citadel.database.model.description.DescriptionModel
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.citadel.model.enumeration.StandardUserRole.Owner
 import utopia.flow.generic.ValueConversions._
@@ -255,10 +256,10 @@ object CompanyActions
 				// Updates new default price if necessary
 				newDefaultPrice.foreach { newDefaultPrice => product.access.defaultUnitPrice = newDefaultPrice }
 				// Adds a new name if necessary
-				newName.foreach { case (linkToReplace, newName) =>
-					CoreDescriptionLinkModel.companyProduct.deprecateId(linkToReplace.id)
+				newName.foreach { case (descriptionToReplace, newName) =>
+					DescriptionModel.deprecateId(descriptionToReplace.id)
 					CoreDescriptionLinkModel.companyProduct.insert(product.id,
-						DescriptionData(Name.id, linkToReplace.description.languageId, newName, Some(userId)))
+						DescriptionData(Name.id, descriptionToReplace.languageId, newName, Some(userId)))
 				}
 				println("Product updated")
 			}
@@ -309,7 +310,7 @@ object CompanyActions
 				}
 				// Adds the user to that organization
 				selectedOrganizationId.map { organizationId =>
-					DbOrganization(organizationId).memberships.insert(userId, Owner.id, userId)
+					DbOrganization(organizationId).addMember(userId, Owner.id, userId)
 					company
 				}
 			}
@@ -362,11 +363,9 @@ object CompanyActions
 	private def linkCompanyToNewOrganization(ownerId: Int, company: DetailedCompany, companyNameLanguageId: Int)
 	                                        (implicit connection: Connection) =
 	{
-		// Inserts organization information
-		val organizationId = DbOrganization.insert(company.details.name, companyNameLanguageId, ownerId)
-		// Inserts the user as an owner of that organization
-		DbOrganization(organizationId).memberships.insert(ownerId, Owner.id, ownerId)
+		// Creates a new organization
+		val (organization, _) = DbOrganization.found(company.details.name, companyNameLanguageId, ownerId)
 		// Registers a link between the company and the organization
-		company.company.access.linkToOrganizationWithId(organizationId)
+		company.company.access.linkToOrganizationWithId(organization.id)
 	}
 }

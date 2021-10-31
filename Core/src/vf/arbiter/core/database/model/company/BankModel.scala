@@ -12,7 +12,7 @@ import vf.arbiter.core.model.stored.company.Bank
 /**
   * Used for constructing BankModel instances and for inserting Banks to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object BankModel extends DataInserter[BankModel, Bank, BankData]
 {
@@ -118,7 +118,7 @@ object BankModel extends DataInserter[BankModel, Bank, BankData]
   * @param creatorId Id of the user who registered this address
   * @param created Time when this Bank was first created
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class BankModel(id: Option[Int] = None, name: Option[String] = None, bic: Option[String] = None, 
 	creatorId: Option[Int] = None, created: Option[Instant] = None) 

@@ -1,6 +1,6 @@
 package vf.arbiter.core.database.access.many.company
 
-import utopia.citadel.database.Tables
+import utopia.citadel.database.CitadelTables
 import utopia.citadel.database.factory.organization.MembershipFactory
 
 import java.time.Instant
@@ -26,7 +26,7 @@ object ManyOrganizationCompaniesAccess
 /**
   * A common trait for access points which target multiple OrganizationCompanies at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait ManyOrganizationCompaniesAccess extends ManyRowModelAccess[OrganizationCompany] with Indexed
 {
@@ -38,10 +38,10 @@ trait ManyOrganizationCompaniesAccess extends ManyRowModelAccess[OrganizationCom
 	 */
 	def memberships(implicit connection: Connection) =
 	{
-		val membershipTable = Tables.organizationMembership
+		val membershipTable = CitadelTables.membership
 		// Joins to organization to membership
 		// Only selects active memberships
-		MembershipFactory(connection(Select(membershipTable join Tables.organization join table, membershipTable) +
+		MembershipFactory(connection(Select(membershipTable join CitadelTables.organization join table, membershipTable) +
 			Where(mergeCondition(MembershipFactory.nonDeprecatedCondition))))
 	}
 	
@@ -64,9 +64,9 @@ trait ManyOrganizationCompaniesAccess extends ManyRowModelAccess[OrganizationCom
 		pullColumn(model.creatorIdColumn).flatMap { value => value.int }
 	
 	/**
-	  * createds of the accessible OrganizationCompanies
+	  * creationTimes of the accessible OrganizationCompanies
 	  */
-	def createds(implicit connection: Connection) = 
+	def creationTimes(implicit connection: Connection) = 
 		pullColumn(model.createdColumn).flatMap { value => value.instant }
 	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
@@ -101,7 +101,7 @@ trait ManyOrganizationCompaniesAccess extends ManyRowModelAccess[OrganizationCom
 	  * @param newCompanyId A new companyId to assign
 	  * @return Whether any OrganizationCompany instance was affected
 	  */
-	def companyId_=(newCompanyId: Int)(implicit connection: Connection) = 
+	def companyIds_=(newCompanyId: Int)(implicit connection: Connection) = 
 		putColumn(model.companyIdColumn, newCompanyId)
 	
 	/**
@@ -109,7 +109,7 @@ trait ManyOrganizationCompaniesAccess extends ManyRowModelAccess[OrganizationCom
 	  * @param newCreated A new created to assign
 	  * @return Whether any OrganizationCompany instance was affected
 	  */
-	def created_=(newCreated: Instant)(implicit connection: Connection) = 
+	def creationTimes_=(newCreated: Instant)(implicit connection: Connection) = 
 		putColumn(model.createdColumn, newCreated)
 	
 	/**
@@ -117,7 +117,7 @@ trait ManyOrganizationCompaniesAccess extends ManyRowModelAccess[OrganizationCom
 	  * @param newCreatorId A new creatorId to assign
 	  * @return Whether any OrganizationCompany instance was affected
 	  */
-	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) = 
+	def creatorIds_=(newCreatorId: Int)(implicit connection: Connection) = 
 		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
@@ -125,7 +125,7 @@ trait ManyOrganizationCompaniesAccess extends ManyRowModelAccess[OrganizationCom
 	  * @param newOrganizationId A new organizationId to assign
 	  * @return Whether any OrganizationCompany instance was affected
 	  */
-	def organizationId_=(newOrganizationId: Int)(implicit connection: Connection) = 
+	def organizationIds_=(newOrganizationId: Int)(implicit connection: Connection) = 
 		putColumn(model.organizationIdColumn, newOrganizationId)
 }
 

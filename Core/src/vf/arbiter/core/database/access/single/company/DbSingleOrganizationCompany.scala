@@ -5,7 +5,8 @@ import vf.arbiter.core.model.stored.company.OrganizationCompany
 
 /**
   * An access point to individual OrganizationCompanies, based on their id
-  * @since 2021-10-14
+  * @author Mikko Hilpinen
+  * @since 2021-10-31
   */
 case class DbSingleOrganizationCompany(id: Int) 
 	extends UniqueOrganizationCompanyAccess with SingleIntIdModelAccess[OrganizationCompany]

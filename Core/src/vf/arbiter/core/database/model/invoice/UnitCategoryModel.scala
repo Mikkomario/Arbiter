@@ -11,7 +11,7 @@ import vf.arbiter.core.model.stored.invoice.UnitCategory
 /**
   * Used for constructing UnitCategoryModel instances and for inserting UnitCategorys to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object UnitCategoryModel extends DataInserter[UnitCategoryModel, UnitCategory, UnitCategoryData]
 {
@@ -45,7 +45,7 @@ object UnitCategoryModel extends DataInserter[UnitCategoryModel, UnitCategory, U
   * Used for interacting with UnitCategories in the database
   * @param id UnitCategory database id
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class UnitCategoryModel(id: Option[Int] = None) extends StorableWithFactory[UnitCategory]
 {

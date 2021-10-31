@@ -23,7 +23,7 @@ object ManyCompanyDetailsAccess
 /**
   * A common trait for access points which target multiple CompanyDetails at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait ManyCompanyDetailsAccess extends ManyRowModelAccess[CompanyDetails] with Indexed
 {
@@ -60,15 +60,15 @@ trait ManyCompanyDetailsAccess extends ManyRowModelAccess[CompanyDetails] with I
 		pullColumn(model.creatorIdColumn).flatMap { value => value.int }
 	
 	/**
-	  * createds of the accessible CompanyDetails
+	  * creationTimes of the accessible CompanyDetails
 	  */
-	def createds(implicit connection: Connection) = 
+	def creationTimes(implicit connection: Connection) = 
 		pullColumn(model.createdColumn).flatMap { value => value.instant }
 	
 	/**
-	  * deprecatedAfters of the accessible CompanyDetails
+	  * deprecationTimes of the accessible CompanyDetails
 	  */
-	def deprecatedAfters(implicit connection: Connection) = 
+	def deprecationTimes(implicit connection: Connection) = 
 		pullColumn(model.deprecatedAfterColumn).flatMap { value => value.instant }
 	
 	/**
@@ -97,12 +97,11 @@ trait ManyCompanyDetailsAccess extends ManyRowModelAccess[CompanyDetails] with I
 	
 	// OTHER	--------------------
 	
-	/**
-	 * Finds companies within this group that contain the specified string in their name
+	/** Finds companies within this group that contain the specified string in their name
 	 * @param companyNamePart String that must be contained within a company name
-	 * @param connection Implicit DB Connection
-	 * @return Companies that have the specified string in their name
-	 */
+	* @param connection Implicit DB Connection
+	* @return Companies that have the specified string in their name
+	*/
 	def matchingName(companyNamePart: String)(implicit connection: Connection) =
 		find(model.nameMatchCondition(companyNamePart))
 	
@@ -111,15 +110,23 @@ trait ManyCompanyDetailsAccess extends ManyRowModelAccess[CompanyDetails] with I
 	  * @param newAddressId A new addressId to assign
 	  * @return Whether any CompanyDetails instance was affected
 	  */
-	def addressId_=(newAddressId: Int)(implicit connection: Connection) = 
+	def addressIds_=(newAddressId: Int)(implicit connection: Connection) = 
 		putColumn(model.addressIdColumn, newAddressId)
+	
+	/**
+	  * Updates the isOfficial of the targeted CompanyDetails instance(s)
+	  * @param newIsOfficial A new isOfficial to assign
+	  * @return Whether any CompanyDetails instance was affected
+	  */
+	def areOfficial_=(newIsOfficial: Boolean)(implicit connection: Connection) = 
+		putColumn(model.isOfficialColumn, newIsOfficial)
 	
 	/**
 	  * Updates the companyId of the targeted CompanyDetails instance(s)
 	  * @param newCompanyId A new companyId to assign
 	  * @return Whether any CompanyDetails instance was affected
 	  */
-	def companyId_=(newCompanyId: Int)(implicit connection: Connection) = 
+	def companyIds_=(newCompanyId: Int)(implicit connection: Connection) = 
 		putColumn(model.companyIdColumn, newCompanyId)
 	
 	/**
@@ -127,7 +134,7 @@ trait ManyCompanyDetailsAccess extends ManyRowModelAccess[CompanyDetails] with I
 	  * @param newCreated A new created to assign
 	  * @return Whether any CompanyDetails instance was affected
 	  */
-	def created_=(newCreated: Instant)(implicit connection: Connection) = 
+	def creationTimes_=(newCreated: Instant)(implicit connection: Connection) = 
 		putColumn(model.createdColumn, newCreated)
 	
 	/**
@@ -135,7 +142,7 @@ trait ManyCompanyDetailsAccess extends ManyRowModelAccess[CompanyDetails] with I
 	  * @param newCreatorId A new creatorId to assign
 	  * @return Whether any CompanyDetails instance was affected
 	  */
-	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) = 
+	def creatorIds_=(newCreatorId: Int)(implicit connection: Connection) = 
 		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
@@ -143,30 +150,22 @@ trait ManyCompanyDetailsAccess extends ManyRowModelAccess[CompanyDetails] with I
 	  * @param newDeprecatedAfter A new deprecatedAfter to assign
 	  * @return Whether any CompanyDetails instance was affected
 	  */
-	def deprecatedAfter_=(newDeprecatedAfter: Instant)(implicit connection: Connection) = 
+	def deprecationTimes_=(newDeprecatedAfter: Instant)(implicit connection: Connection) = 
 		putColumn(model.deprecatedAfterColumn, newDeprecatedAfter)
-	
-	/**
-	  * Updates the isOfficial of the targeted CompanyDetails instance(s)
-	  * @param newIsOfficial A new isOfficial to assign
-	  * @return Whether any CompanyDetails instance was affected
-	  */
-	def isOfficial_=(newIsOfficial: Boolean)(implicit connection: Connection) = 
-		putColumn(model.isOfficialColumn, newIsOfficial)
 	
 	/**
 	  * Updates the name of the targeted CompanyDetails instance(s)
 	  * @param newName A new name to assign
 	  * @return Whether any CompanyDetails instance was affected
 	  */
-	def name_=(newName: String)(implicit connection: Connection) = putColumn(model.nameColumn, newName)
+	def names_=(newName: String)(implicit connection: Connection) = putColumn(model.nameColumn, newName)
 	
 	/**
 	  * Updates the taxCode of the targeted CompanyDetails instance(s)
 	  * @param newTaxCode A new taxCode to assign
 	  * @return Whether any CompanyDetails instance was affected
 	  */
-	def taxCode_=(newTaxCode: String)(implicit connection: Connection) = 
+	def taxCodes_=(newTaxCode: String)(implicit connection: Connection) = 
 		putColumn(model.taxCodeColumn, newTaxCode)
 }
 

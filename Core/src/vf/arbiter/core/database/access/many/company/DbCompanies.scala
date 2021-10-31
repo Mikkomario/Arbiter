@@ -1,13 +1,13 @@
 package vf.arbiter.core.database.access.many.company
 
 import utopia.flow.generic.ValueConversions._
-import utopia.vault.nosql.view.{SubView, UnconditionalView}
+import utopia.vault.nosql.view.UnconditionalView
 import utopia.vault.sql.SqlExtensions._
 
 /**
   * The root access point when targeting multiple Companies at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbCompanies extends ManyCompaniesAccess with UnconditionalView
 {
@@ -19,21 +19,22 @@ object DbCompanies extends ManyCompaniesAccess with UnconditionalView
 	def detailed = DbDetailedCompanies
 	
 	
-	// OTHER    ---------------------------------
+	// OTHER	--------------------
 	
 	/**
-	 * @param ids Targeted company ids
-	 * @return An access point to those companies
-	 */
-	def apply(ids: Iterable[Int]) = new DbCompaniesByIds(ids)
+	  * @param ids Ids of the targeted Companies
+	  * @return An access point to Companies with the specified ids
+	  */
+	def apply(ids: Set[Int]) = new DbCompaniesSubset(ids)
 	
 	
-	// NESTED   ---------------------------------
+	// NESTED	--------------------
 	
-	class DbCompaniesByIds(targetIds: Iterable[Int]) extends ManyCompaniesAccess with SubView
+	class DbCompaniesSubset(targetIds: Set[Int]) extends ManyCompaniesAccess
 	{
-		override protected def parent = DbCompanies
+		// IMPLEMENTED	--------------------
 		
-		override def filterCondition = index in targetIds
+		override def globalCondition = Some(index in targetIds)
 	}
 }
+

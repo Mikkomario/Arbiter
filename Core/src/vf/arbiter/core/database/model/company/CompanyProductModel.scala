@@ -13,7 +13,7 @@ import vf.arbiter.core.model.stored.company.CompanyProduct
 /**
   * Used for constructing CompanyProductModel instances and for inserting CompanyProducts to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object CompanyProductModel 
 	extends DataInserter[CompanyProductModel, CompanyProduct, CompanyProductData] 
@@ -177,7 +177,7 @@ object CompanyProductModel
   * @param created Time when this product was registered
   * @param discontinuedAfter Time when this product was discontinued (no longer sold)
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class CompanyProductModel(id: Option[Int] = None, companyId: Option[Int] = None, 
 	unitId: Option[Int] = None, defaultUnitPrice: Option[Double] = None, taxModifier: Option[Double] = None, 

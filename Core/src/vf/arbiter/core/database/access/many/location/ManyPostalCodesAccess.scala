@@ -23,7 +23,7 @@ object ManyPostalCodesAccess
 /**
   * A common trait for access points which target multiple PostalCodes at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait ManyPostalCodesAccess extends ManyRowModelAccess[PostalCode] with Indexed
 {
@@ -48,9 +48,9 @@ trait ManyPostalCodesAccess extends ManyRowModelAccess[PostalCode] with Indexed
 		pullColumn(model.creatorIdColumn).flatMap { value => value.int }
 	
 	/**
-	  * createds of the accessible PostalCodes
+	  * creationTimes of the accessible PostalCodes
 	  */
-	def createds(implicit connection: Connection) = 
+	def creationTimes(implicit connection: Connection) = 
 		pullColumn(model.createdColumn).flatMap { value => value.instant }
 	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
@@ -78,7 +78,7 @@ trait ManyPostalCodesAccess extends ManyRowModelAccess[PostalCode] with Indexed
 	  * @param newCountyId A new countyId to assign
 	  * @return Whether any PostalCode instance was affected
 	  */
-	def countyId_=(newCountyId: Int)(implicit connection: Connection) = 
+	def countyIds_=(newCountyId: Int)(implicit connection: Connection) = 
 		putColumn(model.countyIdColumn, newCountyId)
 	
 	/**
@@ -86,7 +86,7 @@ trait ManyPostalCodesAccess extends ManyRowModelAccess[PostalCode] with Indexed
 	  * @param newCreated A new created to assign
 	  * @return Whether any PostalCode instance was affected
 	  */
-	def created_=(newCreated: Instant)(implicit connection: Connection) = 
+	def creationTimes_=(newCreated: Instant)(implicit connection: Connection) = 
 		putColumn(model.createdColumn, newCreated)
 	
 	/**
@@ -94,7 +94,7 @@ trait ManyPostalCodesAccess extends ManyRowModelAccess[PostalCode] with Indexed
 	  * @param newCreatorId A new creatorId to assign
 	  * @return Whether any PostalCode instance was affected
 	  */
-	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) = 
+	def creatorIds_=(newCreatorId: Int)(implicit connection: Connection) = 
 		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
@@ -102,7 +102,7 @@ trait ManyPostalCodesAccess extends ManyRowModelAccess[PostalCode] with Indexed
 	  * @param newNumber A new number to assign
 	  * @return Whether any PostalCode instance was affected
 	  */
-	def number_=(newNumber: String)(implicit connection: Connection) = putColumn(model.numberColumn, 
+	def numbers_=(newNumber: String)(implicit connection: Connection) = putColumn(model.numberColumn, 
 		newNumber)
 }
 

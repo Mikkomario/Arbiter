@@ -9,7 +9,7 @@ import vf.arbiter.core.model.partial.location.StreetAddressData
   * @param id id of this StreetAddress in the database
   * @param data Wrapped StreetAddress data
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class StreetAddress(id: Int, data: StreetAddressData) extends StoredModelConvertible[StreetAddressData]
 {

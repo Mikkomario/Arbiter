@@ -11,7 +11,7 @@ import vf.arbiter.core.model.stored.invoice.Invoice
 /**
   * Used for accessing individual Invoices
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbInvoice extends SingleRowModelAccess[Invoice] with NonDeprecatedView[Invoice] with Indexed
 {

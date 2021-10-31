@@ -8,7 +8,8 @@ import vf.arbiter.core.model.stored.invoice.ItemUnit
 
 /**
   * An access point to individual ItemUnits, based on their id
-  * @since 2021-10-14
+  * @author Mikko Hilpinen
+  * @since 2021-10-31
   */
 case class DbSingleItemUnit(id: Int) 
 	extends UniqueItemUnitAccess with SingleIdDescribedAccess[ItemUnit, DescribedItemUnit]

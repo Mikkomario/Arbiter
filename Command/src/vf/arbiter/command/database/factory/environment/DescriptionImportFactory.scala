@@ -1,6 +1,6 @@
 package vf.arbiter.command.database.factory.environment
 
-import utopia.flow.datastructure.immutable.{Constant, Model}
+import utopia.flow.datastructure.immutable.Model
 import utopia.flow.util.FileExtensions._
 import utopia.vault.nosql.factory.row.model.FromValidatedRowModelFactory
 import vf.arbiter.command.database.CommandTables
@@ -18,7 +18,7 @@ object DescriptionImportFactory extends FromValidatedRowModelFactory[Description
 	
 	override def table = CommandTables.descriptionImport
 	
-	override def fromValidatedModel(valid: Model[Constant]) = 
+	override def fromValidatedModel(valid: Model) =
 		DescriptionImport(valid("id").getInt, DescriptionImportData(valid("Path").getString, 
 			valid("Created").getInstant))
 }

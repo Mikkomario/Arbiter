@@ -14,7 +14,7 @@ import vf.arbiter.core.model.stored.company.Company
 /**
   * A common trait for access points that return individual and distinct Companies.
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait UniqueCompanyAccess 
 	extends SingleRowModelAccess[Company] with DistinctModelAccess[Company, Option[Company], Value] 

@@ -17,7 +17,7 @@ import vf.arbiter.core.model.template.Exportable
   * @param deprecatedAfter Time when this CompanyBankAccount became deprecated. None while this CompanyBankAccount is still valid.
   * @param isOfficial Whether this bank account information was written by the company authorities
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class CompanyBankAccountData(companyId: Int, bankId: Int, address: String, 
 	creatorId: Option[Int] = None, created: Instant = Now, deprecatedAfter: Option[Instant] = None, 

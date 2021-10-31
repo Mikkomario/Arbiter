@@ -12,7 +12,7 @@ import vf.arbiter.core.model.stored.location.County
 /**
   * Used for accessing individual Counties
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbCounty extends SingleRowModelAccess[County] with UnconditionalView with Indexed
 {

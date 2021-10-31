@@ -10,7 +10,7 @@ import vf.arbiter.core.model.stored.company.Bank
 /**
   * Used for accessing individual Banks
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbBank extends SingleRowModelAccess[Bank] with UnconditionalView with Indexed
 {

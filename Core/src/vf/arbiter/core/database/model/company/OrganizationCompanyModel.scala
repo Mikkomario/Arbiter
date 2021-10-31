@@ -12,7 +12,7 @@ import vf.arbiter.core.model.stored.company.OrganizationCompany
 /**
   * Used for constructing OrganizationCompanyModel instances and for inserting OrganizationCompanys to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object OrganizationCompanyModel 
 	extends DataInserter[OrganizationCompanyModel, OrganizationCompany, OrganizationCompanyData]
@@ -119,7 +119,7 @@ object OrganizationCompanyModel
   * @param creatorId Id of the user who created this link
   * @param created Time when this OrganizationCompany was first created
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class OrganizationCompanyModel(id: Option[Int] = None, organizationId: Option[Int] = None, 
 	companyId: Option[Int] = None, creatorId: Option[Int] = None, created: Option[Instant] = None) 

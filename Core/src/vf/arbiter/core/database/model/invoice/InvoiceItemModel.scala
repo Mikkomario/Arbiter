@@ -11,7 +11,7 @@ import vf.arbiter.core.model.stored.invoice.InvoiceItem
 /**
   * Used for constructing InvoiceItemModel instances and for inserting InvoiceItems to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, InvoiceItemData]
 {
@@ -135,7 +135,7 @@ object InvoiceItemModel extends DataInserter[InvoiceItemModel, InvoiceItem, Invo
   * @param pricePerUnit Euro (€) price per each sold unit of this item, without taxes applied
   * @param unitsSold Amount of items sold in the product's unit
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class InvoiceItemModel(id: Option[Int] = None, invoiceId: Option[Int] = None, 
 	productId: Option[Int] = None, description: Option[String] = None, pricePerUnit: Option[Double] = None, 

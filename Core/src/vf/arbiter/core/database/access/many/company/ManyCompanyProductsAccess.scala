@@ -25,7 +25,7 @@ object ManyCompanyProductsAccess
 /**
   * A common trait for access points which target multiple CompanyProducts at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait ManyCompanyProductsAccess 
 	extends ManyRowModelAccess[CompanyProduct] 
@@ -64,9 +64,9 @@ trait ManyCompanyProductsAccess
 		pullColumn(model.creatorIdColumn).flatMap { value => value.int }
 	
 	/**
-	  * createds of the accessible CompanyProducts
+	  * creationTimes of the accessible CompanyProducts
 	  */
-	def createds(implicit connection: Connection) = 
+	def creationTimes(implicit connection: Connection) = 
 		pullColumn(model.createdColumn).flatMap { value => value.instant }
 	
 	/**
@@ -112,7 +112,7 @@ trait ManyCompanyProductsAccess
 	  * @param newCompanyId A new companyId to assign
 	  * @return Whether any CompanyProduct instance was affected
 	  */
-	def companyId_=(newCompanyId: Int)(implicit connection: Connection) = 
+	def companyIds_=(newCompanyId: Int)(implicit connection: Connection) = 
 		putColumn(model.companyIdColumn, newCompanyId)
 	
 	/**
@@ -120,7 +120,7 @@ trait ManyCompanyProductsAccess
 	  * @param newCreated A new created to assign
 	  * @return Whether any CompanyProduct instance was affected
 	  */
-	def created_=(newCreated: Instant)(implicit connection: Connection) = 
+	def creationTimes_=(newCreated: Instant)(implicit connection: Connection) = 
 		putColumn(model.createdColumn, newCreated)
 	
 	/**
@@ -128,7 +128,7 @@ trait ManyCompanyProductsAccess
 	  * @param newCreatorId A new creatorId to assign
 	  * @return Whether any CompanyProduct instance was affected
 	  */
-	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) = 
+	def creatorIds_=(newCreatorId: Int)(implicit connection: Connection) = 
 		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
@@ -136,7 +136,7 @@ trait ManyCompanyProductsAccess
 	  * @param newDefaultUnitPrice A new defaultUnitPrice to assign
 	  * @return Whether any CompanyProduct instance was affected
 	  */
-	def defaultUnitPrice_=(newDefaultUnitPrice: Double)(implicit connection: Connection) = 
+	def defaultUnitPrices_=(newDefaultUnitPrice: Double)(implicit connection: Connection) = 
 		putColumn(model.defaultUnitPriceColumn, newDefaultUnitPrice)
 	
 	/**
@@ -144,7 +144,7 @@ trait ManyCompanyProductsAccess
 	  * @param newDiscontinuedAfter A new discontinuedAfter to assign
 	  * @return Whether any CompanyProduct instance was affected
 	  */
-	def discontinuedAfter_=(newDiscontinuedAfter: Instant)(implicit connection: Connection) = 
+	def discontinuedAfters_=(newDiscontinuedAfter: Instant)(implicit connection: Connection) = 
 		putColumn(model.discontinuedAfterColumn, newDiscontinuedAfter)
 	
 	/**
@@ -152,7 +152,7 @@ trait ManyCompanyProductsAccess
 	  * @param newTaxModifier A new taxModifier to assign
 	  * @return Whether any CompanyProduct instance was affected
 	  */
-	def taxModifier_=(newTaxModifier: Double)(implicit connection: Connection) = 
+	def taxModifiers_=(newTaxModifier: Double)(implicit connection: Connection) = 
 		putColumn(model.taxModifierColumn, newTaxModifier)
 	
 	/**
@@ -160,6 +160,6 @@ trait ManyCompanyProductsAccess
 	  * @param newUnitId A new unitId to assign
 	  * @return Whether any CompanyProduct instance was affected
 	  */
-	def unitId_=(newUnitId: Int)(implicit connection: Connection) = putColumn(model.unitIdColumn, newUnitId)
+	def unitIds_=(newUnitId: Int)(implicit connection: Connection) = putColumn(model.unitIdColumn, newUnitId)
 }
 

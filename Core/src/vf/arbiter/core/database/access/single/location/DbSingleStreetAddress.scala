@@ -7,7 +7,8 @@ import vf.arbiter.core.model.stored.location.StreetAddress
 
 /**
   * An access point to individual StreetAddresses, based on their id
-  * @since 2021-10-14
+  * @author Mikko Hilpinen
+  * @since 2021-10-31
   */
 case class DbSingleStreetAddress(id: Int) 
 	extends UniqueStreetAddressAccess with SingleIntIdModelAccess[StreetAddress]

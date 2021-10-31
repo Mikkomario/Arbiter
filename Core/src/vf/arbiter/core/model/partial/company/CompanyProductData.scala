@@ -18,7 +18,7 @@ import vf.arbiter.core.model.template.Exportable
   * @param created Time when this product was registered
   * @param discontinuedAfter Time when this product was discontinued (no longer sold)
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class CompanyProductData(companyId: Int, unitId: Int, defaultUnitPrice: Option[Double] = None, 
 	taxModifier: Double = 0.24, creatorId: Option[Int] = None, created: Instant = Now, 

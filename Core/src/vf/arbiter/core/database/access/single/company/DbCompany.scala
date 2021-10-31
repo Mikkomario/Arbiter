@@ -12,7 +12,7 @@ import vf.arbiter.core.model.stored.company.Company
 /**
   * Used for accessing individual Companies
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbCompany extends SingleRowModelAccess[Company] with UnconditionalView with Indexed
 {

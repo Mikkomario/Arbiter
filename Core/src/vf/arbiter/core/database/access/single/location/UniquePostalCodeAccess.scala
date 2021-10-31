@@ -14,7 +14,7 @@ import vf.arbiter.core.model.stored.location.PostalCode
 /**
   * A common trait for access points that return individual and distinct PostalCodes.
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait UniquePostalCodeAccess 
 	extends SingleRowModelAccess[PostalCode] with DistinctModelAccess[PostalCode, Option[PostalCode], Value] 

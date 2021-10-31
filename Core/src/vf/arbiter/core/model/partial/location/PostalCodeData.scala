@@ -13,7 +13,7 @@ import utopia.flow.time.Now
   * @param creatorId Id of the user linked with this PostalCode
   * @param created Time when this PostalCode was first created
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class PostalCodeData(number: String, countyId: Int, creatorId: Option[Int] = None, 
 	created: Instant = Now) 

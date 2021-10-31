@@ -14,7 +14,7 @@ import vf.arbiter.core.model.stored.invoice.Invoice
 /**
   * Used for constructing InvoiceModel instances and for inserting Invoices to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object InvoiceModel 
 	extends DataInserter[InvoiceModel, Invoice, InvoiceData] with NullDeprecatable[InvoiceModel]
@@ -25,38 +25,47 @@ object InvoiceModel
 	  * Name of the property that contains Invoice senderCompanyDetailsId
 	  */
 	val senderCompanyDetailsIdAttName = "senderCompanyDetailsId"
+	
 	/**
 	  * Name of the property that contains Invoice recipientCompanyDetailsId
 	  */
 	val recipientCompanyDetailsIdAttName = "recipientCompanyDetailsId"
+	
 	/**
 	  * Name of the property that contains Invoice senderBankAccountId
 	  */
 	val senderBankAccountIdAttName = "senderBankAccountId"
+	
 	/**
 	  * Name of the property that contains Invoice languageId
 	  */
 	val languageIdAttName = "languageId"
+	
 	/**
 	  * Name of the property that contains Invoice referenceCode
 	  */
 	val referenceCodeAttName = "referenceCode"
+	
 	/**
 	  * Name of the property that contains Invoice paymentDuration
 	  */
 	val paymentDurationAttName = "paymentDurationDays"
+	
 	/**
 	  * Name of the property that contains Invoice productDeliveryDate
 	  */
 	val productDeliveryDateAttName = "productDeliveryDate"
+	
 	/**
 	  * Name of the property that contains Invoice creatorId
 	  */
 	val creatorIdAttName = "creatorId"
+	
 	/**
 	  * Name of the property that contains Invoice created
 	  */
 	val createdAttName = "created"
+	
 	/**
 	  * Name of the property that contains Invoice cancelledAfter
 	  */
@@ -224,7 +233,7 @@ object InvoiceModel
   * @param created Time when this Invoice was first created
   * @param cancelledAfter Time when this Invoice became deprecated. None while this Invoice is still valid.
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class InvoiceModel(id: Option[Int] = None, senderCompanyDetailsId: Option[Int] = None, 
 	recipientCompanyDetailsId: Option[Int] = None, senderBankAccountId: Option[Int] = None, 

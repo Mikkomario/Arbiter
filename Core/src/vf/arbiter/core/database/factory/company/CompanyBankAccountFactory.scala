@@ -11,7 +11,7 @@ import vf.arbiter.core.model.stored.company.CompanyBankAccount
 /**
   * Used for reading CompanyBankAccount data from the DB
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object CompanyBankAccountFactory extends FromValidatedRowModelFactory[CompanyBankAccount] with Deprecatable
 {
@@ -21,7 +21,7 @@ object CompanyBankAccountFactory extends FromValidatedRowModelFactory[CompanyBan
 	
 	override def table = CoreTables.companyBankAccount
 	
-	override def fromValidatedModel(valid: Model[Constant]) = 
+	override def fromValidatedModel(valid: Model) =
 		CompanyBankAccount(valid("id").getInt, CompanyBankAccountData(valid("companyId").getInt, 
 			valid("bankId").getInt, valid("address").getString, valid("creatorId").int, 
 			valid("created").getInstant, valid("deprecatedAfter").instant, valid("isOfficial").getBoolean))

@@ -21,7 +21,7 @@ import vf.arbiter.core.database.access.single.company.{DbCompanyBankAccount, DbC
   * @param created Time when this Invoice was first created
   * @param cancelledAfter Time when this Invoice became deprecated. None while this Invoice is still valid.
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class InvoiceData(senderCompanyDetailsId: Int, recipientCompanyDetailsId: Int, senderBankAccountId: Int, 
 	languageId: Int, referenceCode: String, paymentDuration: Days = Days(30), 

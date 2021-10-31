@@ -11,7 +11,7 @@ import vf.arbiter.core.model.stored.company.CompanyDetails
 /**
   * Used for reading CompanyDetails data from the DB
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object CompanyDetailsFactory extends FromValidatedRowModelFactory[CompanyDetails] with Deprecatable
 {
@@ -21,7 +21,7 @@ object CompanyDetailsFactory extends FromValidatedRowModelFactory[CompanyDetails
 	
 	override def table = CoreTables.companyDetails
 	
-	override def fromValidatedModel(valid: Model[Constant]) = 
+	override def fromValidatedModel(valid: Model) =
 		CompanyDetails(valid("id").getInt, CompanyDetailsData(valid("companyId").getInt, 
 			valid("name").getString, valid("addressId").getInt, valid("taxCode").string, 
 			valid("creatorId").int, valid("created").getInstant, valid("deprecatedAfter").instant, 

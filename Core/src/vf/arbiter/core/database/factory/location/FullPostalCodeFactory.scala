@@ -7,7 +7,7 @@ import vf.arbiter.core.model.stored.location.{County, PostalCode}
 /**
   * Used for reading FullPostalCodes from the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object FullPostalCodeFactory extends CombiningFactory[FullPostalCode, PostalCode, County]
 {

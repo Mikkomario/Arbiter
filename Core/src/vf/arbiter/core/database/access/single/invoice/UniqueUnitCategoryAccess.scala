@@ -12,7 +12,7 @@ import vf.arbiter.core.model.stored.invoice.UnitCategory
 /**
   * A common trait for access points that return individual and distinct UnitCategories.
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait UniqueUnitCategoryAccess 
 	extends SingleRowModelAccess[UnitCategory] 

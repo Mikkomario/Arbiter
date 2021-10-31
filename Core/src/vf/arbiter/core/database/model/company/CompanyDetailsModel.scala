@@ -13,7 +13,7 @@ import vf.arbiter.core.model.stored.company.CompanyDetails
 /**
   * Used for constructing CompanyDetailsModel instances and for inserting CompanyDetailss to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object CompanyDetailsModel 
 	extends DataInserter[CompanyDetailsModel, CompanyDetails, CompanyDetailsData] 
@@ -25,30 +25,37 @@ object CompanyDetailsModel
 	  * Name of the property that contains CompanyDetails companyId
 	  */
 	val companyIdAttName = "companyId"
+	
 	/**
 	  * Name of the property that contains CompanyDetails name
 	  */
 	val nameAttName = "name"
+	
 	/**
 	  * Name of the property that contains CompanyDetails addressId
 	  */
 	val addressIdAttName = "addressId"
+	
 	/**
 	  * Name of the property that contains CompanyDetails taxCode
 	  */
 	val taxCodeAttName = "taxCode"
+	
 	/**
 	  * Name of the property that contains CompanyDetails creatorId
 	  */
 	val creatorIdAttName = "creatorId"
+	
 	/**
 	  * Name of the property that contains CompanyDetails created
 	  */
 	val createdAttName = "created"
+	
 	/**
 	  * Name of the property that contains CompanyDetails deprecatedAfter
 	  */
 	val deprecatedAfterAttName = "deprecatedAfter"
+	
 	/**
 	  * Name of the property that contains CompanyDetails isOfficial
 	  */
@@ -61,30 +68,37 @@ object CompanyDetailsModel
 	  * Column that contains CompanyDetails companyId
 	  */
 	def companyIdColumn = table(companyIdAttName)
+	
 	/**
 	  * Column that contains CompanyDetails name
 	  */
 	def nameColumn = table(nameAttName)
+	
 	/**
 	  * Column that contains CompanyDetails addressId
 	  */
 	def addressIdColumn = table(addressIdAttName)
+	
 	/**
 	  * Column that contains CompanyDetails taxCode
 	  */
 	def taxCodeColumn = table(taxCodeAttName)
+	
 	/**
 	  * Column that contains CompanyDetails creatorId
 	  */
 	def creatorIdColumn = table(creatorIdAttName)
+	
 	/**
 	  * Column that contains CompanyDetails created
 	  */
 	def createdColumn = table(createdAttName)
+	
 	/**
 	  * Column that contains CompanyDetails deprecatedAfter
 	  */
 	def deprecatedAfterColumn = table(deprecatedAfterAttName)
+	
 	/**
 	  * Column that contains CompanyDetails isOfficial
 	  */
@@ -109,6 +123,7 @@ object CompanyDetailsModel
 	
 	// OTHER	--------------------
 	
+	
 	/**
 	 * @param namePart Part of a company's name
 	 * @return A condition that returns company details where their name contains that string
@@ -120,42 +135,50 @@ object CompanyDetailsModel
 	  * @return A model containing only the specified addressId
 	  */
 	def withAddressId(addressId: Int) = apply(addressId = Some(addressId))
+	
 	/**
 	  * @param companyId Id of the company which this describes
 	  * @return A model containing only the specified companyId
 	  */
 	def withCompanyId(companyId: Int) = apply(companyId = Some(companyId))
+	
 	/**
 	  * @param created Time when this CompanyDetails was first created
 	  * @return A model containing only the specified created
 	  */
 	def withCreated(created: Instant) = apply(created = Some(created))
+	
 	/**
 	  * @param creatorId Id of the user who wrote this description
 	  * @return A model containing only the specified creatorId
 	  */
 	def withCreatorId(creatorId: Int) = apply(creatorId = Some(creatorId))
+	
 	/**
 	  * @param deprecatedAfter Time when this CompanyDetails became deprecated. None while this CompanyDetails is still valid.
 	  * @return A model containing only the specified deprecatedAfter
 	  */
 	def withDeprecatedAfter(deprecatedAfter: Instant) = apply(deprecatedAfter = Some(deprecatedAfter))
+	
 	/**
 	  * @param id A CompanyDetails id
 	  * @return A model with that id
 	  */
 	def withId(id: Int) = apply(Some(id))
+	
 	/**
 	  * @param isOfficial Whether this information is by the company which is being described, 
 		having a more authority
 	  * @return A model containing only the specified isOfficial
 	  */
 	def withIsOfficial(isOfficial: Boolean) = apply(isOfficial = Some(isOfficial))
+	
 	/**
 	  * @param name Name of this company
 	  * @return A model containing only the specified name
 	  */
 	def withName(name: String) = apply(name = Some(name))
+	
 	/**
 	  * @param taxCode Tax-related identifier code for this company
 	  * @return A model containing only the specified taxCode
@@ -176,7 +199,7 @@ object CompanyDetailsModel
   * @param isOfficial Whether this information is by the company which is being described, 
 	having a more authority
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class CompanyDetailsModel(id: Option[Int] = None, companyId: Option[Int] = None, 
 	name: Option[String] = None, addressId: Option[Int] = None, taxCode: Option[String] = None, 

@@ -12,7 +12,7 @@ import vf.arbiter.core.model.stored.location.PostalCode
 /**
   * Used for constructing PostalCodeModel instances and for inserting PostalCodes to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object PostalCodeModel extends DataInserter[PostalCodeModel, PostalCode, PostalCodeData]
 {
@@ -118,7 +118,7 @@ object PostalCodeModel extends DataInserter[PostalCodeModel, PostalCode, PostalC
   * @param creatorId Id of the user linked with this PostalCode
   * @param created Time when this PostalCode was first created
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class PostalCodeModel(id: Option[Int] = None, number: Option[String] = None, 
 	countyId: Option[Int] = None, creatorId: Option[Int] = None, created: Option[Instant] = None) 

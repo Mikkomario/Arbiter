@@ -6,8 +6,8 @@ import utopia.citadel.database.access.many.user.DbManyUserSettings
 import utopia.citadel.database.access.single.description.DbLanguageDescription
 import utopia.citadel.database.access.single.language.DbLanguage
 import utopia.citadel.database.access.single.user.DbUser
-import utopia.citadel.database.model.description.DescriptionLinkModel
-import utopia.citadel.database.model.user.{UserLanguageModel, UserModel}
+import utopia.citadel.database.model.description.CitadelDescriptionLinkModel
+import utopia.citadel.database.model.user.{UserLanguageLinkModel, UserModel, UserSettingsModel}
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.citadel.util.MetropolisAccessExtensions._
 import utopia.flow.parse.Regex
@@ -15,8 +15,7 @@ import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.partial.description.DescriptionData
-import utopia.metropolis.model.partial.user.{UserLanguageData, UserSettingsData}
-import utopia.metropolis.model.stored.user.User
+import utopia.metropolis.model.partial.user.{UserLanguageLinkData, UserSettingsData}
 import utopia.vault.database.Connection
 import vf.arbiter.command.model.cached.SelectedLanguage
 
@@ -79,7 +78,7 @@ object UserActions
 	 */
 	def validLanguageIdListForUserWithId(userId: Int)(implicit connection: Connection) =
 	{
-		val existingList = DbUser(userId).languageIdsList
+		val existingList = DbUser(userId).languageIds
 		if (existingList.nonEmpty)
 			existingList
 		else
@@ -197,19 +196,19 @@ object UserActions
 				// If the language didn't have a name yet, asks and inserts one
 				StdIn.readNonEmptyLine(
 					s"What's the name of '${language.isoCode}' in '${language.isoCode}'").map { name =>
-					DescriptionLinkModel.language.insert(language.id,
+					CitadelDescriptionLinkModel.language.insert(language.id,
 						DescriptionData(Name.id, language.id, name, Some(userId)))
 					name
 				}
 			}.getOrElse(languageCode)
-			val proficiencyOptions = availableProficiencies(userId).sortBy { _.orderIndex }.map { p =>
-				p -> p(Name).getOrElse(p.orderIndex.toString)
+			val proficiencyOptions = availableProficiencies(userId).sortBy { _.wrapped.orderIndex }.map { p =>
+				p -> p(Name).getOrElse(p.wrapped.orderIndex.toString)
 			}
 			println(s"How proficient are you in $languageName?")
 			ActionUtils.selectFrom(proficiencyOptions) match
 			{
 				case Some(proficiency) =>
-					UserLanguageModel.insert(UserLanguageData(userId, language.id, proficiency.id))
+					UserLanguageLinkModel.insert(UserLanguageLinkData(userId, language.id, proficiency.id))
 					languageIds -> Some(languageName)
 				case None =>
 					println(s"$languageName won't be registered as one of your languages, then")
@@ -234,20 +233,21 @@ object UserActions
 		else
 		{
 			// Registers the user and the language data
-			val user = UserModel.insert(UserSettingsData(userName))
+			val user = UserModel.insert()
+			val settings = UserSettingsModel.insert(UserSettingsData(user.id, userName))
 			implicit val languageIds: LanguageIds = setUserLanguages(user.id, languageCodes)
 			
 			// Creates a new company for that user (or joins an existing company)
 			println(s"What's the name of your company?")
 			println("Hint: If you wish to join an existing company, you can write part of that company's name")
 			val company = StdIn.readNonEmptyLine().flatMap { CompanyActions.startOrJoin(user.id, _) }
-			Some(user -> company)
+			Some(settings -> company)
 		}
 	}
 	
 	private def findUserForName(userName: String)(implicit connection: Connection) =
-		DbManyUserSettings.withName(userName).bestMatch(Vector(_.email.isEmpty))
-			.headOption.map { s => User(s.userId, s) }
+		DbManyUserSettings.withName(userName).pull.bestMatch(Vector(_.email.isEmpty))
+			.headOption
 	
 	private def setUserLanguages(userId: Int, languageCodes: Vector[String])(implicit connection: Connection) =
 	{
@@ -257,23 +257,23 @@ object UserActions
 				// If the language didn't have a name yet, asks and inserts one
 				val name = StdIn.readLineUntilNotEmpty(
 					s"What's the name of '${language.isoCode}' in '${language.isoCode}'")
-				DescriptionLinkModel.language.insert(language.id,
+				CitadelDescriptionLinkModel.language.insert(language.id,
 					DescriptionData(Name.id, language.id, name, Some(userId)))
 				name
 			}
 			language.id -> name
 		}.toMap
 		implicit val languageIds: LanguageIds = LanguageIds(languages.map { _.id })
-		val proficiencyOptions = availableProficiencies(userId).sortBy { _.orderIndex }.map { p =>
-			p -> p(Name).getOrElse(p.orderIndex.toString)
+		val proficiencyOptions = availableProficiencies(userId).sortBy { _.wrapped.orderIndex }.map { p =>
+			p -> p(Name).getOrElse(p.wrapped.orderIndex.toString)
 		}
 		val newProficiencyData = languages.map { language =>
 			println(s"How proficient are you in ${languageNames(language.id)} (${language.isoCode})?")
 			val proficiency = ActionUtils.forceSelectFrom(proficiencyOptions)
 			language -> proficiency
 		}
-		UserLanguageModel.insert(newProficiencyData
-			.map { case (language, proficiency) => UserLanguageData(userId, language.id, proficiency.id) })
+		UserLanguageLinkModel.insert(newProficiencyData
+			.map { case (language, proficiency) => UserLanguageLinkData(userId, language.id, proficiency.id) })
 		LanguageIds(newProficiencyData.sortBy { _._2.wrapped.orderIndex }.map { _._1.id })
 	}
 	
@@ -314,7 +314,7 @@ object UserActions
 			{
 				// Inserts the new descriptions
 				// Proficiency id => new descriptions
-				val insertedDescriptions = DescriptionLinkModel.languageFamiliarity.insert(
+				val insertedDescriptions = CitadelDescriptionLinkModel.languageFamiliarity.insertDescriptions(
 					newProficiencyNames.map { case (profId, name) =>
 						profId -> DescriptionData(Name.id, languageId, name, Some(userId))
 					}.toVector).groupBy { _.targetId }

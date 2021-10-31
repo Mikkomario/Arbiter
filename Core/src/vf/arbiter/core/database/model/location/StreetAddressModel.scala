@@ -12,7 +12,7 @@ import vf.arbiter.core.model.stored.location.StreetAddress
 /**
   * Used for constructing StreetAddressModel instances and for inserting StreetAddresss to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object StreetAddressModel extends DataInserter[StreetAddressModel, StreetAddress, StreetAddressData]
 {
@@ -170,7 +170,7 @@ object StreetAddressModel extends DataInserter[StreetAddressModel, StreetAddress
   * @param creatorId Id of the user who registered this address
   * @param created Time when this StreetAddress was first created
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class StreetAddressModel(id: Option[Int] = None, postalCodeId: Option[Int] = None, 
 	streetName: Option[String] = None, buildingNumber: Option[String] = None, stair: Option[String] = None, 

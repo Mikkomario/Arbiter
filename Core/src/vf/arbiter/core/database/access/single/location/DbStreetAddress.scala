@@ -12,7 +12,7 @@ import vf.arbiter.core.model.stored.location.StreetAddress
 /**
   * Used for accessing individual StreetAddresses
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbStreetAddress extends SingleRowModelAccess[StreetAddress] with UnconditionalView with Indexed
 {

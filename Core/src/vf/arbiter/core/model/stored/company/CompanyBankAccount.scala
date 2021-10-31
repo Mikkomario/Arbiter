@@ -9,7 +9,7 @@ import vf.arbiter.core.model.partial.company.CompanyBankAccountData
   * @param id id of this CompanyBankAccount in the database
   * @param data Wrapped CompanyBankAccount data
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class CompanyBankAccount(id: Int, data: CompanyBankAccountData) 
 	extends StoredModelConvertible[CompanyBankAccountData]

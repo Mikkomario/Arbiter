@@ -9,7 +9,7 @@ import vf.arbiter.core.model.partial.invoice.ItemUnitData
   * @param id id of this ItemUnit in the database
   * @param data Wrapped ItemUnit data
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class ItemUnit(id: Int, data: ItemUnitData) extends StoredModelConvertible[ItemUnitData]
 {

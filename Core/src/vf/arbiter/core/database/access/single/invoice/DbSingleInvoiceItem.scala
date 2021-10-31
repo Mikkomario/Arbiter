@@ -5,7 +5,8 @@ import vf.arbiter.core.model.stored.invoice.InvoiceItem
 
 /**
   * An access point to individual InvoiceItems, based on their id
-  * @since 2021-10-14
+  * @author Mikko Hilpinen
+  * @since 2021-10-31
   */
 case class DbSingleInvoiceItem(id: Int) 
 	extends UniqueInvoiceItemAccess with SingleIntIdModelAccess[InvoiceItem]

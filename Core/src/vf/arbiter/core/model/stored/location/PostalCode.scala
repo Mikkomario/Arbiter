@@ -9,7 +9,7 @@ import vf.arbiter.core.model.partial.location.PostalCodeData
   * @param id id of this PostalCode in the database
   * @param data Wrapped PostalCode data
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class PostalCode(id: Int, data: PostalCodeData) extends StoredModelConvertible[PostalCodeData]
 {

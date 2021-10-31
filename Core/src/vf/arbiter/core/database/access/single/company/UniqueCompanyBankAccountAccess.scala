@@ -14,7 +14,7 @@ import vf.arbiter.core.model.stored.company.CompanyBankAccount
 /**
   * A common trait for access points that return individual and distinct CompanyBankAccounts.
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait UniqueCompanyBankAccountAccess 
 	extends SingleRowModelAccess[CompanyBankAccount] 

@@ -8,7 +8,7 @@ import vf.arbiter.core.model.stored.company.{Company, CompanyDetails}
 /**
   * Used for reading DetailedCompanys from the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DetailedCompanyFactory 
 	extends CombiningFactory[DetailedCompany, Company, CompanyDetails] with Deprecatable

@@ -8,7 +8,7 @@ import vf.arbiter.core.model.stored.invoice.ItemUnit
 /**
   * The root access point when targeting multiple ItemUnits at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbItemUnits extends ManyItemUnitsAccess with UnconditionalView
 {

@@ -9,7 +9,8 @@ import vf.arbiter.core.model.stored.company.Company
 
 /**
   * An access point to individual Companies, based on their id
-  * @since 2021-10-14
+  * @author Mikko Hilpinen
+  * @since 2021-10-31
   */
 case class DbSingleCompany(id: Int) extends UniqueCompanyAccess with SingleIntIdModelAccess[Company]
 {

@@ -17,7 +17,7 @@ import vf.arbiter.core.model.template.Exportable
   * @param creatorId Id of the user who registered this address
   * @param created Time when this StreetAddress was first created
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class StreetAddressData(postalCodeId: Int, streetName: String, buildingNumber: String, 
 	stair: Option[String] = None, roomNumber: Option[String] = None, creatorId: Option[Int] = None, 

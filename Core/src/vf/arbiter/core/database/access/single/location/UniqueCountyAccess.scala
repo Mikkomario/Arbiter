@@ -14,7 +14,7 @@ import vf.arbiter.core.model.stored.location.County
 /**
   * A common trait for access points that return individual and distinct Counties.
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait UniqueCountyAccess 
 	extends SingleRowModelAccess[County] with DistinctModelAccess[County, Option[County], Value] with Indexed

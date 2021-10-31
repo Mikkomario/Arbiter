@@ -12,7 +12,7 @@ import vf.arbiter.core.model.stored.company.CompanyDetails
 /**
   * Used for accessing individual CompanyDetails
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbCompanyDetails 
 	extends SingleRowModelAccess[CompanyDetails] with NonDeprecatedView[CompanyDetails] with Indexed

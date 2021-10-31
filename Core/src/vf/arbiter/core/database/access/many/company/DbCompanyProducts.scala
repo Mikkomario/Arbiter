@@ -8,7 +8,7 @@ import vf.arbiter.core.model.stored.company.CompanyProduct
 /**
   * The root access point when targeting multiple CompanyProducts at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbCompanyProducts extends ManyCompanyProductsAccess with NonDeprecatedView[CompanyProduct]
 {

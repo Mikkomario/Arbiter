@@ -12,7 +12,7 @@ import vf.arbiter.core.model.stored.company.CompanyProduct
 /**
   * Used for reading CompanyProduct data from the DB
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object CompanyProductFactory 
 	extends FromValidatedRowModelFactory[CompanyProduct] with FromRowFactoryWithTimestamps[CompanyProduct] 
@@ -26,7 +26,7 @@ object CompanyProductFactory
 	
 	override def table = CoreTables.companyProduct
 	
-	override def fromValidatedModel(valid: Model[Constant]) = 
+	override def fromValidatedModel(valid: Model) =
 		CompanyProduct(valid("id").getInt, CompanyProductData(valid("companyId").getInt, 
 			valid("unitId").getInt, valid("defaultUnitPrice").double, valid("taxModifier").getDouble, 
 			valid("creatorId").int, valid("created").getInstant, valid("discontinuedAfter").instant))

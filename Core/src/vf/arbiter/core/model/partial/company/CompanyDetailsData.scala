@@ -20,7 +20,7 @@ import vf.arbiter.core.model.template.Exportable
   * @param isOfficial Whether this information is by the company which is being described, 
 	having a more authority
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class CompanyDetailsData(companyId: Int, name: String, addressId: Int, taxCode: Option[String] = None, 
 	creatorId: Option[Int] = None, created: Instant = Now, deprecatedAfter: Option[Instant] = None, 

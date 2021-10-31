@@ -13,7 +13,7 @@ import utopia.flow.util.console.{ArgumentSchema, Command, CommandArguments, Cons
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.FileExtensions._
 import utopia.metropolis.model.cached.LanguageIds
-import utopia.metropolis.model.stored.user.User
+import utopia.metropolis.model.stored.user.UserSettings
 import utopia.trove.controller.LocalDatabase
 import utopia.vault.database.Connection
 import utopia.vault.util.ErrorHandling
@@ -97,15 +97,15 @@ object ArbiterCommandsApp extends App
 		}
 	}
 	
-	val userPointer = new PointerWithEvents[Option[User]](None)
-	def user = userPointer.value
-	def user_=(newUser: User) = userPointer.value = Some(newUser)
-	userPointer.addListener { _.newValue.foreach { u => println(s"Welcome, ${u.settings.name}") } }
+	val userSettingsPointer = new PointerWithEvents[Option[UserSettings]](None)
+	def userSettings = userSettingsPointer.value
+	def userSettings_=(newUser: UserSettings) = userSettingsPointer.value = Some(newUser)
+	userSettingsPointer.addListener { _.newValue.foreach { u => println(s"Welcome, ${u.name}") } }
 	
-	def loggedIn = user.nonEmpty
+	def loggedIn = userSettings.nonEmpty
 	
-	val languageIdsPointer = userPointer.lazyMap {
-		case Some(user) => connectionPool { implicit c => UserActions.validLanguageIdListForUserWithId(user.id) }
+	val languageIdsPointer = userSettingsPointer.lazyMap {
+		case Some(user) => connectionPool { implicit c => UserActions.validLanguageIdListForUserWithId(user.userId) }
 		case None => LanguageIds(Vector())
 	}
 	
@@ -114,7 +114,7 @@ object ArbiterCommandsApp extends App
 	def company_=(newCompany: Option[DetailedCompany]) = companyPointer.value = newCompany
 	def company_=(newCompany: DetailedCompany) = companyPointer.value = Some(newCompany)
 	companyPointer.addListener { _.newValue.foreach { c => println(s"Using company ${c.details.name}") } }
-	userPointer.addAnyChangeListener { company = None }
+	userSettingsPointer.addAnyChangeListener { company = None }
 	
 	val loginCommand = Command("login", help = "Logs you in as a specific user, enabling other actions")(
 		ArgumentSchema("username", "name", help = "Your username")) { args =>
@@ -124,12 +124,12 @@ object ArbiterCommandsApp extends App
 			.flatMap { name => connectionPool { implicit c => UserActions.loginAs(name) } }
 			// Updates logged user and company afterwards
 			.foreach { case (newUser, newCompany) =>
-				user = newUser
+				userSettings = newUser
 				company = newCompany
 				
 				// Prompts company selection next
 				if (newCompany.isEmpty)
-					connectionPool { implicit c => CompanyActions.selectOneFromOwn(newUser.id) }
+					connectionPool { implicit c => CompanyActions.selectOneFromOwn(newUser.userId) }
 						.foreach { company = _ }
 			}
 	}
@@ -147,26 +147,26 @@ object ArbiterCommandsApp extends App
 			target match
 			{
 				case "user" =>
-					if (user.forall { u => StdIn.ask(s"You're already logged in as ${
-						u.settings.name}. Do you still want to register a new user?") })
+					if (userSettings.forall { u => StdIn.ask(s"You're already logged in as ${
+						u.name}. Do you still want to register a new user?") })
 					{
 						val (newUser, newCompany) = UserActions.register(name)
-						newUser.foreach { user = _ }
+						newUser.foreach { userSettings = _ }
 						company = newCompany
 					}
 				case "company" =>
-					user match
+					userSettings match
 					{
 						case Some(user) =>
 							implicit val languageIds: LanguageIds = languageIdsPointer.value
-							CompanyActions.startOrSelectFromOwn(user.id, name).foreach { company = _ }
+							CompanyActions.startOrSelectFromOwn(user.userId, name).foreach { company = _ }
 						case None => println("You must be logged in to register a new company")
 					}
 				case "customer" =>
-					user match
+					userSettings match
 					{
 						case Some(user) =>
-							CompanyActions.findOrCreateOne(user.id, name)
+							CompanyActions.findOrCreateOne(user.userId, name)
 								.foreach { c => println(
 									s"${c.nameAndYCode} is now registered and can be used as a customer") }
 						case None => println("You should be logged in to register a new customer")
@@ -235,15 +235,15 @@ object ArbiterCommandsApp extends App
 		}
 	
 	// Updates the available commands when the user logs in / selects a company
-	val commandsPointer = userPointer.lazyMergeWith(companyPointer) { (user, company) =>
+	val commandsPointer = userSettingsPointer.lazyMergeWith(companyPointer) { (user, company) =>
 		val statefulCommands = user match
 		{
 			case Some(user) =>
-				Vector(selectCompanyCommand(user.id), claimCompanyCommand(user.id)) ++
+				Vector(selectCompanyCommand(user.userId), claimCompanyCommand(user.userId)) ++
 					company.toVector.flatMap { company => Vector(
-						createInvoiceCommand(user.id, company),
-						printInvoiceCommand(user.id, company.id),
-						editCommand(user.id, company.id)
+						createInvoiceCommand(user.userId, company),
+						printInvoiceCommand(user.userId, company.id),
+						editCommand(user.userId, company.id)
 					)}
 			case None => Vector(loginCommand)
 		}

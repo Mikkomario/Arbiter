@@ -8,7 +8,7 @@ import vf.arbiter.core.model.stored.company.{Company, CompanyDetails}
 /**
   * Combines Company with details data
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class DetailedCompany(company: Company, details: CompanyDetails) extends Extender[CompanyData]
 {

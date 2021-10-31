@@ -11,7 +11,7 @@ import vf.arbiter.core.model.stored.invoice.ItemUnit
 /**
   * Used for constructing ItemUnitModel instances and for inserting ItemUnits to the database
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object ItemUnitModel extends DataInserter[ItemUnitModel, ItemUnit, ItemUnitData]
 {
@@ -84,7 +84,7 @@ object ItemUnitModel extends DataInserter[ItemUnitModel, ItemUnit, ItemUnitData]
   * @param multiplier A multiplier that, when applied to this unit, makes it comparable 
 	with the other units in the same category
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class ItemUnitModel(id: Option[Int] = None, categoryId: Option[Int] = None, 
 	multiplier: Option[Double] = None) 

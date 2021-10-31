@@ -9,7 +9,7 @@ import vf.arbiter.core.model.partial.location.CountyData
   * @param id id of this County in the database
   * @param data Wrapped County data
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 case class County(id: Int, data: CountyData) extends StoredModelConvertible[CountyData]
 {

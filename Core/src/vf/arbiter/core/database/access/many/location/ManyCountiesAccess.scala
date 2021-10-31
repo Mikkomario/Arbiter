@@ -23,7 +23,7 @@ object ManyCountiesAccess
 /**
   * A common trait for access points which target multiple Counties at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 trait ManyCountiesAccess extends ManyRowModelAccess[County] with Indexed
 {
@@ -42,9 +42,9 @@ trait ManyCountiesAccess extends ManyRowModelAccess[County] with Indexed
 		pullColumn(model.creatorIdColumn).flatMap { value => value.int }
 	
 	/**
-	  * createds of the accessible Counties
+	  * creationTimes of the accessible Counties
 	  */
-	def createds(implicit connection: Connection) = 
+	def creationTimes(implicit connection: Connection) = 
 		pullColumn(model.createdColumn).flatMap { value => value.instant }
 	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
@@ -72,7 +72,7 @@ trait ManyCountiesAccess extends ManyRowModelAccess[County] with Indexed
 	  * @param newCreated A new created to assign
 	  * @return Whether any County instance was affected
 	  */
-	def created_=(newCreated: Instant)(implicit connection: Connection) = 
+	def creationTimes_=(newCreated: Instant)(implicit connection: Connection) = 
 		putColumn(model.createdColumn, newCreated)
 	
 	/**
@@ -80,7 +80,7 @@ trait ManyCountiesAccess extends ManyRowModelAccess[County] with Indexed
 	  * @param newCreatorId A new creatorId to assign
 	  * @return Whether any County instance was affected
 	  */
-	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) = 
+	def creatorIds_=(newCreatorId: Int)(implicit connection: Connection) = 
 		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
@@ -88,6 +88,6 @@ trait ManyCountiesAccess extends ManyRowModelAccess[County] with Indexed
 	  * @param newName A new name to assign
 	  * @return Whether any County instance was affected
 	  */
-	def name_=(newName: String)(implicit connection: Connection) = putColumn(model.nameColumn, newName)
+	def names_=(newName: String)(implicit connection: Connection) = putColumn(model.nameColumn, newName)
 }
 

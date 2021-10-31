@@ -7,7 +7,8 @@ import vf.arbiter.core.model.stored.company.CompanyBankAccount
 
 /**
   * An access point to individual CompanyBankAccounts, based on their id
-  * @since 2021-10-14
+  * @author Mikko Hilpinen
+  * @since 2021-10-31
   */
 case class DbSingleCompanyBankAccount(id: Int) 
 	extends UniqueCompanyBankAccountAccess with SingleIntIdModelAccess[CompanyBankAccount]

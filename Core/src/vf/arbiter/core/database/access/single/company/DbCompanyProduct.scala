@@ -10,7 +10,7 @@ import vf.arbiter.core.model.stored.company.CompanyProduct
 /**
   * Used for accessing individual CompanyProducts
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object DbCompanyProduct 
 	extends SingleRowModelAccess[CompanyProduct] with NonDeprecatedView[CompanyProduct] with Indexed

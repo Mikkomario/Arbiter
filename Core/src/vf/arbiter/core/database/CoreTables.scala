@@ -1,15 +1,36 @@
 package vf.arbiter.core.database
 
 import utopia.citadel.database.Tables
+import utopia.citadel.model.cached.DescriptionLinkTable
 import utopia.vault.model.immutable.Table
 
 /**
   * Used for accessing the database tables introduced in this project
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 2021-10-31
   */
 object CoreTables
 {
+	// ATTRIBUTES	--------------------
+	
+	/**
+	  * Table that contains CompanyProductDescriptions (Links CompanyProducts with their descriptions)
+	  */
+	lazy val companyProductDescription = DescriptionLinkTable(apply("company_product_description"), 
+		"productId")
+	
+	/**
+	  * Table that contains ItemUnitDescriptions (Links ItemUnits with their descriptions)
+	  */
+	lazy val itemUnitDescription = DescriptionLinkTable(apply("item_unit_description"), "unitId")
+	
+	/**
+	  * Table that contains UnitCategoryDescriptions (Links UnitCategories with their descriptions)
+	  */
+	lazy val unitCategoryDescription = DescriptionLinkTable(apply("unit_category_description"), 
+		"unitCategoryId")
+	
+	
 	// COMPUTED	--------------------
 	
 	/**
@@ -38,11 +59,6 @@ object CoreTables
 	def companyProduct = apply("company_product")
 	
 	/**
-	  * Table that contains CompanyProductDescriptions (Links CompanyProducts with their descriptions)
-	  */
-	def companyProductDescription = apply("company_product_description")
-	
-	/**
 	  * Table that contains Counties (Represents a county within a country)
 	  */
 	def county = apply("county")
@@ -58,14 +74,14 @@ object CoreTables
 	def invoiceItem = apply("invoice_item")
 	
 	/**
+	  * Table that contains InvoicePayments (Represents a payment event concerning an invoice you have sent)
+	  */
+	def invoicePayment = apply("invoice_payment")
+	
+	/**
 	  * Table that contains ItemUnits (Represents a unit in which items can be counted)
 	  */
 	def itemUnit = apply("item_unit")
-	
-	/**
-	  * Table that contains ItemUnitDescriptions (Links ItemUnits with their descriptions)
-	  */
-	def itemUnitDescription = apply("item_unit_description")
 	
 	/**
 	  * Table that contains OrganizationCompanies (Connects organizations with their owned companies)
@@ -86,11 +102,6 @@ object CoreTables
 	  * Table that contains UnitCategories (Represents different categories a unit can belong to. Units within a category can be compared.)
 	  */
 	def unitCategory = apply("unit_category")
-	
-	/**
-	  * Table that contains UnitCategoryDescriptions (Links UnitCategories with their descriptions)
-	  */
-	def unitCategoryDescription = apply("unit_category_description")
 	
 	
 	// OTHER	--------------------

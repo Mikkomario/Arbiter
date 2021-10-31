@@ -10,16 +10,16 @@ object CoreDescriptionLinkModel
 	/**
 	  * Database interaction model factory for CompanyProduct description links
 	  */
-	val companyProduct = DescriptionLinkModelFactory(CoreTables.companyProductDescription, "productId")
+	val companyProduct = DescriptionLinkModelFactory(CoreTables.companyProductDescription)
 	
 	/**
 	  * Database interaction model factory for ItemUnit description links
 	  */
-	val itemUnit = DescriptionLinkModelFactory(CoreTables.itemUnitDescription, "unitId")
+	val itemUnit = DescriptionLinkModelFactory(CoreTables.itemUnitDescription)
 	
 	/**
 	  * Database interaction model factory for UnitCategory description links
 	  */
-	val unitCategory = DescriptionLinkModelFactory(CoreTables.unitCategoryDescription, "unitCategoryId")
+	val unitCategory = DescriptionLinkModelFactory(CoreTables.unitCategoryDescription)
 }
 

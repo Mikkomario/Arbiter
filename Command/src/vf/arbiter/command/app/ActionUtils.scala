@@ -1,14 +1,8 @@
 package vf.arbiter.command.app
 
-import utopia.citadel.database.access.many.description.DbLanguageDescriptions
-import utopia.citadel.database.access.many.language.DbLanguages
-import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.StringExtensions._
-import utopia.metropolis.model.cached.LanguageIds
-import utopia.vault.database.Connection
-import vf.arbiter.command.model.cached.SelectedLanguage
 
 import java.time.LocalDate
 import scala.io.StdIn
@@ -46,73 +40,6 @@ object ActionUtils
 							Some(None)
 				}
 		}.get
-	}
-	
-	/**
-	 * Forces the user to select one of their known language
-	 * @param connection Implicit connection
-	 * @param languageIds Ids of the languages known by the user (ordered) - Must not be empty
-	 * @return Selected language's id
-	 */
-	@deprecated("Please use UserActions.selectOrAddKnownLanguage(Int) instead", "0.2")
-	def forceSelectKnownLanguage()(implicit connection: Connection, languageIds: LanguageIds) =
-		selectKnownLanguage(force = true).get
-	/**
-	 * @param force Whether selection should be forced (default = false)
-	 * @param connection Implicit DB Connection
-	 * @param languageIds Selectable language ids
-	 * @return Selected language's id. None if no language ids were available or if user cancelled selection.
-	 */
-	@deprecated("Please use UserActions.selectOrAddKnownLanguage(Int) instead", "0.2")
-	def selectKnownLanguage(force: Boolean = false)(implicit connection: Connection, languageIds: LanguageIds) =
-	{
-		// Reads language names
-		val names = DbLanguageDescriptions.forPreferredLanguages.withRoleIdInPreferredLanguages(Name.id)
-		// Asks for names for languages that don't have one
-		val options: Vector[(Int, String)] = {
-			if (names.size < languageIds.size)
-			{
-				def _nameForIdOrElse(id: Int)(backup: Int => String) = names.get(id) match
-				{
-					case Some(desc) => desc.description.text
-					case None => backup(id)
-				}
-				val missingLanguages = DbLanguages(languageIds.filterNot(names.contains).toSet).pull
-				def _missingLangCode(languageId: Int) = missingLanguages.find { _.id == languageId } match
-				{
-					case Some(language) => s"'${language.isoCode}'"
-					case None => s"Language #$languageId"
-				}
-				
-				println(s"There are ${languageIds.size - names.size} languages (${
-					missingLanguages.map { _.isoCode }.sorted.mkString(", ")
-				}) that don't have a name in any of your languages")
-				if (StdIn.ask("Would you provide a name for those?"))
-				{
-					val primaryLanguageName = _nameForIdOrElse(languageIds.mostPreferred)(_missingLangCode)
-					val newNames = missingLanguages.view.map { language =>
-						StdIn.readNonEmptyLine(s"What's the name of ${language.isoCode} in $primaryLanguageName?")
-							.map { language.id -> _ }
-					}.takeWhile { _.isDefined }.flatten.toMap
-					languageIds.map { id =>
-						id -> _nameForIdOrElse(id) { id => newNames.getOrElse(id, _missingLangCode(id)) }
-					}
-				}
-				else
-					languageIds.map { id => id -> _nameForIdOrElse(id)(_missingLangCode) }
-			}
-			else
-				languageIds.map { id => id -> names(id).description.text }
-		}
-		// Selects from the known languages
-		val selectedId = {
-			if (force && languageIds.nonEmpty)
-				Some(forceSelectFrom(options))
-			else
-				selectFrom(options, "languages")
-		}
-		// Attaches language name to the result
-		selectedId.flatMap { id => options.find { _._1 == id }.map { case (_, name) => SelectedLanguage(id, name) } }
 	}
 	
 	/**
