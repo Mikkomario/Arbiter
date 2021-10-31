@@ -2,9 +2,10 @@ package vf.arbiter.command.controller
 
 import utopia.citadel.database.access.id.many.DbOrganizationIds
 import utopia.citadel.database.access.many.description.{DbDescriptionRoles, DbOrganizationDescriptions}
-import utopia.citadel.database.access.many.language.DbLanguages
+import utopia.citadel.database.access.many.language.{DbLanguageFamiliarities, DbLanguages}
 import utopia.citadel.database.access.many.user.DbUsers
 import utopia.citadel.database.factory.organization.MembershipWithRolesFactory
+import utopia.citadel.database.factory.user.UserLanguageFactory
 import utopia.flow.datastructure.immutable.{Constant, Model, Value}
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.util.CollectionExtensions._
@@ -36,14 +37,24 @@ object ExportData
 	 */
 	def toJson(targetPath: Path)(implicit connection: Connection) =
 	{
-		val languageCodePerId = DbLanguages.pull.map { l => l.id -> l.isoCode }.toMap
+		val languages = DbLanguages.fullyDescribed
+		val languageCodePerId = languages.map { l => l.id -> l.isoCode }.toMap
 		val descriptionRolePerId = DbDescriptionRoles.pull.map { r => r.id -> r }.toMap
 		val companies = DbCompanies.pull
 		val companyBankAccounts = FullCompanyBankAccountFactory.getAll()
 		
 		// Writes all data in groups
 		val data = Model(Vector(
-			"users" -> userModels,
+			"languages" -> languages.sortBy { _.isoCode }.map { language => Model(Vector(
+				"code" -> language.isoCode,
+				"descriptions" -> descriptionModelsFrom(language.descriptions, languageCodePerId, descriptionRolePerId)
+			)) },
+			"languageFamiliarities" -> DbLanguageFamiliarities.fullyDescribed.map { f => Model(Vector(
+				"id" -> f.id,
+				"order_index" -> f.orderIndex,
+				"descriptions" -> descriptionModelsFrom(f.descriptions, languageCodePerId, descriptionRolePerId)
+			)) },
+			"users" -> userModels(languageCodePerId),
 			"units" -> unitModels(languageCodePerId, descriptionRolePerId),
 			"banks" -> bankModels,
 			"companies" -> companyModelsFrom(companies, companyBankAccounts.groupBy { _.companyId },
@@ -58,8 +69,15 @@ object ExportData
 	private def bankModels(implicit connection: Connection) =
 		DbBanks.pull.sortBy { _.name }.map { _.toExportModel }
 	
-	private def userModels(implicit connection: Connection) = DbUsers.pull.map { u =>
-		Model(Vector("id" -> u.userId, "name" -> u.settings.name))
+	private def userModels(languageCodePerId: Map[Int, String])(implicit connection: Connection) =
+	{
+		val languageLinksPerUserId = UserLanguageFactory.getAll().groupBy { _.userId }
+		DbUsers.pull.map { u =>
+			Model(Vector("id" -> u.userId, "name" -> u.settings.name,
+				"languages" -> languageLinksPerUserId.getOrElse(u.id, Vector()).map { link =>
+					Model(Vector("code" -> languageCodePerId(link.languageId), "familiarity_id" -> link.familiarityId))
+				}))
+		}
 	}
 	
 	private def unitModels(languageCodePerId: Map[Int, String],
