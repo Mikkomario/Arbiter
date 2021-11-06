@@ -1,0 +1,434 @@
+{
+  "package": "vf.arbiter.time",
+  "author": "Mikko Hilpinen",
+  "enums": {
+    "Level": ["Zero", "Low", "Medium", "High", "Very High"],
+    "FocusTarget": ["Internal", "External"]
+  },
+  "classes": {
+    "management": [
+      {
+        "name": "ProjectGroup",
+        "description_link": "group_id",
+        "doc": "Represents a group of projects that forms a business segment. May be hierarchical.",
+        "props": [
+          {
+            "ref": "company",
+            "doc": "Id of the company that owns this group / grouping system"
+          },
+          {
+            "type": "Enum[FocusTarget]",
+            "doc": "Whether these projects are internal or made for an external client"
+          },
+          {
+            "name": "timePressure",
+            "type": "Enum[Level]",
+            "doc": "How much pressure there is to complete this project within a limited period of time."
+          },
+          {
+            "name": "shortTermValue",
+            "type": "Enum[Level]",
+            "doc": "How much value this project produces short-term (i.e. now or in next three months) (relative)"
+          },
+          {
+            "name": "longTermValue",
+            "type": "Enum[Level]",
+            "doc": "How much value this project produces long-term (i.e. cumulatively or in the years to come) (relative)"
+          },
+          {
+            "name": "parentId",
+            "ref": "project_group",
+            "type": "Option[Int]",
+            "doc": "Id of the group that contains this group"
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who created this group, if still known"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      }
+    ],
+    "clockify": [
+      {
+        "name": "ClockifyWorkspace",
+        "doc": "Represents a workspace (collection of data) in Clockify",
+        "props": [
+          {
+            "name": "clockifyId",
+            "length": 64,
+            "index": true,
+            "doc": "Id of this workspace in the Clockify system"
+          },
+          {
+            "name": "name",
+            "length": 64,
+            "doc": "Name of this workspace in Clockify"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyUser",
+        "doc": "Represents a user registered to Clockify",
+        "props": [
+          {
+            "name": "clockifyId",
+            "length": 64,
+            "index": true,
+            "doc": "Id of this user in Clockify"
+          },
+          {
+            "name": "name",
+            "length": 64,
+            "doc": "Name of this user in Clockify"
+          },
+          {
+            "name": "email",
+            "length": 64,
+            "doc": "Email address of this user"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyWorkspaceMembership",
+        "doc": "Links Clockify users with the workspaces they belong to",
+        "props": [
+          {
+            "name": "clockifyUserId",
+            "ref": "clockify_user",
+            "doc": "Id of the user who is a workspace member"
+          },
+          {
+            "name": "workspaceId",
+            "ref": "clockify_workspace",
+            "doc": "Id of the workspace the linked user is a member of"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyApiKey",
+        "doc": "Stores API keys used for authenticating Clockify requests",
+        "props": [
+          {
+            "name": "userId",
+            "ref": "user",
+            "doc": "Id of the user who owns this API key / access to workspace"
+          },
+          {
+            "name": "clockifyUserId",
+            "ref": "clockify_user",
+            "doc": "Id of the clockify user who owns this API key"
+          },
+          {
+            "name": "token",
+            "length": 255,
+            "doc": "The key / token of this API key"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyApiKeyAccess",
+        "doc": "Links Clockify API keys with the workspaces they provide access to",
+        "props": [
+          {
+            "name": "apiKeyId",
+            "ref": "clockify_api_key",
+            "doc": "Id of the API key that has access to the linked workspace"
+          },
+          {
+            "name": "workspaceId",
+            "ref": "clockify_workspace",
+            "doc": "Id of the workspace to which the user / api key has access"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyClient",
+        "doc": "Represents a client registered to Clockify",
+        "props": [
+          {
+            "name": "workspaceId",
+            "ref": "clockify_workspace",
+            "doc": "Id of the workspace to which this client belongs"
+          },
+          {
+            "name": "clockifyId",
+            "type": "String",
+            "length": 64,
+            "index": true,
+            "doc": "Id of this client in Clockify"
+          },
+          {
+            "name": "name",
+            "type": "String",
+            "length": 64,
+            "doc": "Name of this client in Clockify"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyProject",
+        "doc": "Represents a project registered to Clockify",
+        "props": [
+          {
+            "name": "clientId",
+            "ref": "clockify_client",
+            "doc": "Id of the client this project is for"
+          },
+          {
+            "name": "clockifyId",
+            "length": 64,
+            "index": true,
+            "doc": "Id of this project in Clockify"
+          },
+          {
+            "name": "name",
+            "length": 64,
+            "doc": "Name of this project in Clockify"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyTask",
+        "doc": "Represents a task (a smaller part of a project) registered to Clockify",
+        "props": [
+          {
+            "name": "projectId",
+            "ref": "clockify_project",
+            "doc": "Id of the project where this task belongs"
+          },
+          {
+            "name": "clockifyId",
+            "length": 64,
+            "index": true,
+            "doc": "Id of this task in Clockify"
+          },
+          {
+            "name": "name",
+            "length": 64,
+            "doc": "Name of this task in Clockify"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyTag",
+        "doc": "Represents a tag registered to Clockify",
+        "props": [
+          {
+            "name": "workspaceId",
+            "ref": "clockify_workspace",
+            "doc": "Id of the workspace where this tag is used"
+          },
+          {
+            "name": "clockifyId",
+            "length": 64,
+            "index": true,
+            "doc": "Id of this tag in Clockify"
+          },
+          {
+            "name": "name",
+            "length": 32,
+            "doc": "Name of this tag in Clockify"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyTimeEntry",
+        "name_plural": "ClockifyTimeEntries",
+        "combo_index": ["started", "ended"],
+        "doc": "Represents a time entry recorded on Clockify",
+        "props": [
+          {
+            "name": "clockifyUserId",
+            "ref": "clockify_user",
+            "doc": "Id of the Clockify user who recorded this time entry"
+          },
+          {
+            "name": "workspaceId",
+            "ref": "clockify_workspace",
+            "doc": "Id of the workspace where this entry is recorded"
+          },
+          {
+            "name": "clockifyId",
+            "length": 64,
+            "index": true,
+            "doc": "Id of this time entry in Clockify"
+          },
+          {
+            "name": "started",
+            "name_plural": "startTimes",
+            "type": "datetime",
+            "doc": "Timestamp when timer was started"
+          },
+          {
+            "name": "ended",
+            "name_plural": "endTimes",
+            "type": "datetime",
+            "doc": "Timestamp when timer was stopped"
+          },
+          {
+            "name": "projectId",
+            "ref": "clockify_project",
+            "type": "Option[Int]",
+            "doc": "Id of the project this entry is linked to"
+          },
+          {
+            "name": "taskId",
+            "ref": "clockify_task",
+            "type": "Option[Int]",
+            "doc": "Id of the task this entry is linked to"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyTimeEntryTagLink",
+        "doc": "Links time entries with the tags that were used to describe them",
+        "props": [
+          {
+            "name": "timeEntryId",
+            "ref": "clockify_time_entry",
+            "doc": "Id of the time entry linked with the referred tag"
+          },
+          {
+            "name": "tagId",
+            "ref": "clockify_tag",
+            "doc": "Id of the tag assigned to the linked time entry"
+          }
+        ]
+      }
+    ],
+    "linking": [
+      {
+        "name": "ClockifyClientCompanyLink",
+        "doc": "Links Clockify clients with matching companies",
+        "props": [
+          {
+            "name": "clientId",
+            "ref": "Clockify_client",
+            "doc": "Id of the client representing the linked company"
+          },
+          {
+            "name": "companyId",
+            "ref": "company",
+            "doc": "Id of the company represented by the linked client"
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who created this link (if still known)"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyClientGroupRule",
+        "doc": "Represents a rule used for assigning client-specific time entries to project groups",
+        "props": [
+          {
+            "name": "clientId",
+            "ref": "clockify_client",
+            "doc": "Id of the client assigned to the project group"
+          },
+          {
+            "name": "groupId",
+            "ref": "project_group",
+            "doc": "Id of the project group the linked client is assigned to"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyProjectGroupRule",
+        "doc": "Represents a rule used for assigning project time entries to a project group",
+        "props": [
+          {
+            "name": "projectId",
+            "ref": "clockify_project",
+            "doc": "Id of the project assigned to the project group"
+          },
+          {
+            "name": "groupId",
+            "ref": "project_group",
+            "doc": "Id of the project group the linked project is assigned to"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "ClockifyTaskGroupRule",
+        "doc": "Represents a rule used for assigning task time entries to a project group",
+        "props": [
+          {
+            "name": "taskId",
+            "ref": "clockify_task",
+            "doc": "Id of the task assigned to the project group"
+          },
+          {
+            "name": "groupId",
+            "ref": "project_group",
+            "doc": "Id of the project group the linked task is assigned to"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      }
+    ]
+  }
+}
