@@ -53,7 +53,7 @@ object ArbiterCommandsApp extends App
 		val listener = new ArbiterDbSetupListener()
 		println("Configuring the database...")
 		LocalDatabase.setup("data/sql", "arbiter_db", "database_version",
-			Tables("arbiter_db", "database_version"), Some(listener))
+			Tables("arbiter_db", "database_version"), Some(listener), Some("UTF-8"), Some("utf8_general_ci"))
 		if (listener.failed)
 		{
 			println("Shutting down the database and quitting...")

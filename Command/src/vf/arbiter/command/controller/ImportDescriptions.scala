@@ -45,9 +45,9 @@ object ImportDescriptions
 			// Imports the descriptions from those files
 			.flatMap { pathsToRead =>
 				val results = pathsToRead.map { p => ReadDescriptions(p).map { _ => p } }
-				val (failures, successes) = results.dividedWith { _.toEither }
+				val (failures, successes) = results.divideWith { _.toEither }
 				// Records the successful reads
-				val (newInserts, idsToUpdate) = successes.dividedWith { path => lastReads.find { _.path == path } match
+				val (newInserts, idsToUpdate) = successes.divideWith { path => lastReads.find { _.path == path } match
 				{
 					case Some(previousRead) => Right(previousRead.id)
 					case None => Left(path)
@@ -84,7 +84,7 @@ object ImportDescriptions
 			{
 				// Imports the descriptions
 				val results = pathsToRead.map { p => ReadDescriptions(p).map { _ => p } }
-				val (failures, successes) = results.dividedWith { _.toEither }
+				val (failures, successes) = results.divided
 				// Stores new status
 				DbDescriptionImports.delete()
 				if (successes.nonEmpty)
