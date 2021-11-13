@@ -7,6 +7,7 @@ import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.sql.{Select, Where}
+import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.model.company.{CompanyModel, OrganizationCompanyModel}
 
 import java.time.Instant
@@ -50,6 +51,12 @@ trait ManyCompaniesAccessLike[+A] extends ManyRowModelAccess[A] with Indexed
 	
 	
 	// OTHER	--------------------
+	
+	/**
+	 * @param yCodes A set of y-codes to target
+	 * @return A copy of this access point that only targets companies with those codes
+	 */
+	def withAnyOfYCodes(yCodes: Iterable[String]) = filter(companyModel.yCodeColumn in yCodes)
 	
 	/**
 	 * @param userId A user id

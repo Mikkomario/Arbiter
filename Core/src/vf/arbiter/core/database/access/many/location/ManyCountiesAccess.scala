@@ -7,6 +7,7 @@ import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.SubView
 import utopia.vault.sql.Condition
+import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.factory.location.CountyFactory
 import vf.arbiter.core.database.model.location.CountyModel
 import vf.arbiter.core.model.stored.location.County
@@ -66,6 +67,12 @@ trait ManyCountiesAccess extends ManyRowModelAccess[County] with Indexed
 	
 	
 	// OTHER	--------------------
+	
+	/**
+	 * @param names County names
+	 * @return An access point to counties with those names (might not include all of them)
+	 */
+	def withAnyOfNames(names: Iterable[String]) = filter(model.nameColumn in names)
 	
 	/**
 	  * Updates the created of the targeted County instance(s)

@@ -7,6 +7,7 @@ import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.SubView
 import utopia.vault.sql.Condition
+import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.factory.location.PostalCodeFactory
 import vf.arbiter.core.database.model.location.PostalCodeModel
 import vf.arbiter.core.model.stored.location.PostalCode
@@ -72,6 +73,19 @@ trait ManyPostalCodesAccess extends ManyRowModelAccess[PostalCode] with Indexed
 	
 	
 	// OTHER	--------------------
+	
+	/**
+	 * @param countyIds Ids of targeted counties
+	 * @return A copy of this access point, limited to those counties
+	 */
+	def inCountiesWithIds(countyIds: Iterable[Int]) =
+		filter(model.countyIdColumn in countyIds)
+	
+	/**
+	 * @param postalCodes Targeted postal codes / numbers
+	 * @return A copy of this access point limited to those codes (but not necessarily containing all of them)
+	 */
+	def withAnyOfCodes(postalCodes: Iterable[String]) = filter(model.numberColumn in postalCodes)
 	
 	/**
 	  * Updates the countyId of the targeted PostalCode instance(s)

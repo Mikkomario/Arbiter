@@ -54,5 +54,15 @@ case class CompanyDetailsData(companyId: Int, name: String, addressId: Int, taxC
 	override def toExportModel =
 		Model(Vector("name" -> name, "tax_code" -> taxCode, "is_official" -> isOfficial, "created" -> created,
 			"deprecated_after" -> deprecatedAfter))
+	
+	
+	// OTHER    -------------------------
+	
+	/**
+	 * @param other Another set of company data
+	 * @return Whether these two pieces of data contain similar content
+	 */
+	def ~==(other: CompanyDetailsData) = companyId == other.companyId && name == other.name &&
+		addressId == other.addressId && taxCode == other.taxCode
 }
 

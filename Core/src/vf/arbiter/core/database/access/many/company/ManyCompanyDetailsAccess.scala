@@ -2,6 +2,7 @@ package vf.arbiter.core.database.access.many.company
 
 import java.time.Instant
 import utopia.flow.generic.ValueConversions._
+import utopia.flow.time.Now
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
@@ -104,6 +105,13 @@ trait ManyCompanyDetailsAccess extends ManyRowModelAccess[CompanyDetails] with I
 	*/
 	def matchingName(companyNamePart: String)(implicit connection: Connection) =
 		find(model.nameMatchCondition(companyNamePart))
+	
+	/**
+	 * Deprecates all accessible company details
+	 * @param connection Implicit Db Connection
+	 * @return Whether any row was targeted
+	 */
+	def deprecate()(implicit connection: Connection) = deprecationTimes = Now
 	
 	/**
 	  * Updates the addressId of the targeted CompanyDetails instance(s)

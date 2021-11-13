@@ -49,7 +49,7 @@ object ExportData
 				"code" -> language.wrapped.isoCode,
 				"descriptions" -> descriptionModelsFrom(language.descriptions, languageCodePerId, descriptionRolePerId)
 			)) },
-			"languageFamiliarities" -> DbLanguageFamiliarities.fullyDescribed.map { f => Model(Vector(
+			"language_familiarities" -> DbLanguageFamiliarities.fullyDescribed.map { f => Model(Vector(
 				"id" -> f.id,
 				"order_index" -> f.wrapped.orderIndex,
 				"descriptions" -> descriptionModelsFrom(f.descriptions, languageCodePerId, descriptionRolePerId)
