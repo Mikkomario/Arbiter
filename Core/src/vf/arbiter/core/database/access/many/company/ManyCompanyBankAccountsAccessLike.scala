@@ -2,8 +2,10 @@ package vf.arbiter.core.database.access.many.company
 
 import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
-import utopia.vault.nosql.access.many.model.ManyRowModelAccess
+import utopia.vault.nosql.access.many.model.{ManyModelAccess, ManyRowModelAccess}
 import utopia.vault.nosql.template.Indexed
+import utopia.vault.sql.Condition
+import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.model.company.CompanyBankAccountModel
 
 import java.time.Instant
@@ -13,8 +15,13 @@ import java.time.Instant
   * @author Mikko Hilpinen
   * @since 2021-10-14
   */
-trait ManyCompanyBankAccountsAccessLike[+A] extends ManyRowModelAccess[A] with Indexed
+trait ManyCompanyBankAccountsAccessLike[+A, +Repr <: ManyModelAccess[A]] extends ManyRowModelAccess[A] with Indexed
 {
+	// ABSTRACT --------------------
+	
+	protected def _filter(condition: Condition): Repr
+	
+	
 	// COMPUTED	--------------------
 	
 	/**
@@ -61,15 +68,34 @@ trait ManyCompanyBankAccountsAccessLike[+A] extends ManyRowModelAccess[A] with I
 	protected def accountModel = CompanyBankAccountModel
 	
 	
+	// IMPLEMENTED  ----------------
+	
+	override def filter(additionalCondition: Condition) = _filter(additionalCondition)
+	
+	
 	// OTHER	--------------------
 	
 	/**
 	 * @param companyId Id of the targeted company
-	 * @param connection Implicit DB Connection
 	 * @return Accounts belonging to that company
 	 */
-	def belongingToCompanyWithId(companyId: Int)(implicit connection: Connection) =
-		find(accountModel.withCompanyId(companyId).toCondition)
+	def belongingToCompanyWithId(companyId: Int) = filter(accountModel.withCompanyId(companyId).toCondition)
+	/**
+	 * @param companyIds Ids of targeted companies
+	 * @return An access point to bank accounts belonging to those companies
+	 */
+	def belongingToAnyOfCompanies(companyIds: Iterable[Int]) = filter(accountModel.companyIdColumn in companyIds)
+	/**
+	 * @param bankIds Ids of the targeted banks
+	 * @return An access point to accounts in those banks
+	 */
+	def inAnyOfBanks(bankIds: Iterable[Int]) = filter(accountModel.bankIdColumn in bankIds)
+	/**
+	 * @param accountAddresses A collection of bank account addresses (IBANs)
+	 * @return An access point to those addresses (in any bank)
+	 */
+	def withAnyOfAddresses(accountAddresses: Iterable[String]) =
+		filter(accountModel.addressColumn in accountAddresses)
 	
 	/**
 	  * Updates the address of the targeted CompanyBankAccount instance(s)

@@ -16,14 +16,14 @@ import utopia.metropolis.model.partial.language.LanguageData
 import utopia.metropolis.model.partial.user.{UserData, UserSettingsData}
 import utopia.metropolis.model.stored.description.DescriptionRole
 import utopia.vault.database.Connection
-import vf.arbiter.core.database.access.many.company.{DbBanks, DbCompanies, DbDetailedCompanies, DbManyCompanyDetails}
-import vf.arbiter.core.database.access.many.description.DbItemUnitDescriptions
+import vf.arbiter.core.database.access.many.company.{DbBanks, DbCompanies, DbCompanyBankAccounts, DbDetailedCompanies, DbManyCompanyDetails}
+import vf.arbiter.core.database.access.many.description.{DbCompanyProductDescriptions, DbItemUnitDescriptions}
 import vf.arbiter.core.database.access.many.location.{DbCounties, DbPostalCodes}
 import vf.arbiter.core.database.access.single.location.DbStreetAddress
-import vf.arbiter.core.database.model.company.{BankModel, CompanyDetailsModel, CompanyModel}
+import vf.arbiter.core.database.model.company.{BankModel, CompanyBankAccountModel, CompanyDetailsModel, CompanyModel, CompanyProductModel}
 import vf.arbiter.core.database.model.location.{CountyModel, PostalCodeModel}
 import vf.arbiter.core.model.combined.company.DetailedCompany
-import vf.arbiter.core.model.partial.company.{BankData, CompanyData, CompanyDetailsData}
+import vf.arbiter.core.model.partial.company.{BankData, CompanyBankAccountData, CompanyData, CompanyDetailsData, CompanyProductData}
 import vf.arbiter.core.model.partial.location.{CountyData, PostalCodeData, StreetAddressData}
 import vf.arbiter.core.model.stored.location.PostalCode
 
@@ -45,6 +45,8 @@ object ImportData
 	private val companyDetailsSchema = idSchema.withChild("address", ModelDeclaration(
 		"street_name" -> StringType, "building_number" -> StringType)
 		.withChild("postal_code", ModelDeclaration("county" -> StringType, "code" -> StringType)))
+	private val productSchema = ModelDeclaration("id" -> IntType, "unit_id" -> IntType)
+	private val bankAccountSchema = ModelDeclaration("bic" -> StringType, "iban" -> StringType)
 	
 	def fromJson(path: Path)(implicit connection: Connection) = JsonBunny.munchPath(path).map { root =>
 		val descriptionRoles = DbDescriptionRoles.pull
@@ -61,7 +63,9 @@ object ImportData
 		val unitFailures = importUnits(root("units").getVector.flatMap { _.model })
 		// Imports banks
 		val (bankIdPerBic, bankFailures) = importBanks(root("banks").getVector.flatMap { _.model })
-		
+		// Imports companies and related information
+		val (companyIdPerYCode, companyDetailIdMap, productIdMap, companyFailures) = importCompanies(
+			root("companies").getVector.flatMap { _.model }, bankIdPerBic)
 		// TODO: Import other data
 	}
 	
@@ -166,7 +170,14 @@ object ImportData
 		// Handles company details next
 		val (newDetailsIdPerOldId, detailFailures) = importCompanyDetails(modelPerYCode, updates.map { _._1 },
 			newCompanyIdPerYCode.keys, companyIdPerYCode)
-		// TODO: Import products and bank accounts
+		// Next imports company products
+		val (productIdMap, productFailures) = importCompanyProducts(modelPerYCode, companyIdPerYCode)
+		// Next imports company bank accounts
+		val accountFailures = importCompanyBankAccounts(modelPerYCode, companyIdPerYCode, bankIdPerBid)
+		
+		// Returns collected id-mappers and failures
+		(companyIdPerYCode, newDetailsIdPerOldId, productIdMap,
+			failures ++ detailFailures ++ productFailures ++ accountFailures)
 	}
 	
 	private def importCompanyDetails(companyModelPerYCode: Map[String, Model],
@@ -246,6 +257,63 @@ object ImportData
 		newDetailIdPerOldId -> detailParseFailures
 	}
 	
+	private def importCompanyProducts(companyModelPerYCode: Map[String, Model], companyIdPerYCode: Map[String, Int])
+	                                 (implicit connection: Connection, context: DescriptionContext) =
+	{
+		// Imports all products as new (this may change once product codes have been introduced)
+		// Parses product data from the models
+		val (parseFailures, productModels) = companyModelPerYCode.splitFlatMap { case (yCode, companyModel) =>
+			val companyId = companyIdPerYCode(yCode)
+			val (failures, productModels) = companyModel("products").getVector.flatMap { _.model }
+				.map { productSchema.validate(_).toTry }.divided
+			failures -> productModels.map { companyId -> _ }
+		}
+		// [(Product data, description models, old product id)]
+		val productData = productModels.map { case (companyId, model) =>
+			val data = CompanyProductData(companyId, model("unit_id"), model("default_unit_price"),
+				model("tax_modifier"), created = model("created"), discontinuedAfter = model("discontinued_after"))
+			val descriptionModels = model("descriptions").getVector.flatMap { _.model }
+			(data, descriptionModels, model("id").getInt)
+		}
+		// Inserts product data to the DB
+		val insertedProducts = CompanyProductModel.insert(productData.map { _._1 })
+		val insertedProductsWithData = insertedProducts.zip(productData)
+		// Inserts descriptions, also
+		val descriptionFailures = importDescriptions(DbCompanyProductDescriptions,
+			insertedProductsWithData
+				.map { case (inserted, (_, descriptionModels, _)) => inserted.id -> descriptionModels }.toMap)
+		// Returns old id -> new id -map, along with possible failures
+		insertedProductsWithData.map { case (inserted, (_, _, oldId)) => oldId -> inserted.id }.toMap ->
+			(parseFailures ++ descriptionFailures)
+	}
+	
+	private def importCompanyBankAccounts(companyModelPerYCode: Map[String, Model],
+	                                      companyIdPerYCode: Map[String, Int], bankIdPerBic: Map[String, Int])
+	                                     (implicit connection: Connection) =
+	{
+		// Processes bank account models
+		val (parseFailures, accountData) = companyModelPerYCode.splitFlatMap { case (yCode, model) =>
+			val companyId = companyIdPerYCode(yCode)
+			val (failures, accountModels) = model("bank_accounts").getVector.flatMap { _.model }
+				.map { bankAccountSchema.validate(_).toTry }.divided
+			failures -> accountModels.map { model =>
+				CompanyBankAccountData(companyId, bankIdPerBic(model("bic")), model("iban"), None, model("created"),
+					model("deprecated_after"), model("is_official"))
+			}
+		}
+		// Checks for existing bank accounts (doesn't import duplicates)
+		val companyIds = accountData.map { _.companyId }.toSet
+		val bankIds = accountData.map { _.bankId }.toSet
+		val ibans = accountData.map { _.address }.toSet
+		val existingAccountsPerCompanyId = DbCompanyBankAccounts.belongingToAnyOfCompanies(companyIds)
+			.inAnyOfBanks(bankIds).withAnyOfAddresses(ibans).pull.groupBy { _.companyId }
+		// Inserts the accounts which are new
+		CompanyBankAccountModel.insert(accountData.filter { data => existingAccountsPerCompanyId.get(data.companyId)
+			.exists { _.exists { existing => existing.bankId == data.bankId && existing.address == data.address } } })
+		// Returns encountered failures
+		parseFailures
+	}
+	
 	// Returns: [CountyName: [PostalCode: PostalCodeId]]
 	private def importPostalCodes(postalModels: Iterable[Model])(implicit connection: Connection) =
 	{
@@ -286,6 +354,19 @@ object ImportData
 			val insertedPostals = PostalCodeModel.insert(certainlyNewPostal
 				.map { case (countyId, number) => PostalCodeData(number, countyId) })
 			_postalsToMap(insertedPostals)
+		}
+	}
+	
+	private def importOrganizations(organizationModels: Vector[Model], companyIdPerYCode: Map[String, Int],
+	                                userIdMap: Map[Int, Int])
+	                               (implicit connection: Connection, context: DescriptionContext) =
+	{
+		organizationModels.map { model =>
+			val (membershipParseFailures, membershipModels) = model("memberships").getVector.flatMap { _.model }
+				.map { idSchema.validate(_).toTry }.divided
+			val memberships = membershipModels.map { model =>
+				???
+			}
 		}
 	}
 	

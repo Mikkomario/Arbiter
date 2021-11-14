@@ -57,7 +57,7 @@ object InvoiceActions
 	 */
 	def selectOrCreateBankAccount(userId: Int, companyId: Int)(implicit connection: Connection) =
 	{
-		val existingAccounts = DbCompany(companyId).fullBankAccounts
+		val existingAccounts = DbCompany(companyId).bankAccounts.full.pull
 		if (existingAccounts.isEmpty)
 			createBankAccount(userId, companyId)
 		else

@@ -2,7 +2,7 @@ package vf.arbiter.core.database.access.single.company
 
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.distinct.SingleIntIdModelAccess
-import vf.arbiter.core.database.access.many.company.{DbCompanyProducts, DbFullCompanyBankAccounts, DbOrganizationCompanies}
+import vf.arbiter.core.database.access.many.company.{DbCompanyBankAccounts, DbCompanyProducts, DbFullCompanyBankAccounts, DbOrganizationCompanies}
 import vf.arbiter.core.database.model.company.OrganizationCompanyModel
 import vf.arbiter.core.model.partial.company.OrganizationCompanyData
 import vf.arbiter.core.model.stored.company.Company
@@ -21,10 +21,14 @@ case class DbSingleCompany(id: Int) extends UniqueCompanyAccess with SingleIntId
 	 */
 	def products = DbCompanyProducts.ofCompanyWithId(id)
 	/**
-	 * @return Bank accounts belonging to this company (including bank information)
+	 * @return An access point to this company's bank accounts
 	 */
-	def fullBankAccounts(implicit connection: Connection) =
-		DbFullCompanyBankAccounts.belongingToCompanyWithId(id)
+	def bankAccounts = DbCompanyBankAccounts.belongingToCompanyWithId(id)
+	/**
+	 * @return An access point to bank accounts belonging to this company (including bank information)
+	 */
+	@deprecated("Please use bankAccounts.full instead", "v1.2")
+	def fullBankAccounts = DbFullCompanyBankAccounts.belongingToCompanyWithId(id)
 	
 	/**
 	 * @param connection Implicit DB Connection

@@ -1,6 +1,5 @@
 package vf.arbiter.core.database.access.many.company
 
-import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.view.SubView
 import utopia.vault.sql.Condition
@@ -21,7 +20,8 @@ object ManyCompanyBankAccountsAccess
   * @author Mikko Hilpinen
   * @since 2021-10-31
   */
-trait ManyCompanyBankAccountsAccess extends ManyCompanyBankAccountsAccessLike[CompanyBankAccount]
+trait ManyCompanyBankAccountsAccess
+	extends ManyCompanyBankAccountsAccessLike[CompanyBankAccount, ManyCompanyBankAccountsAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -31,13 +31,12 @@ trait ManyCompanyBankAccountsAccess extends ManyCompanyBankAccountsAccessLike[Co
 	protected def model = accountModel
 	
 	/**
-	 * @param connection Implicit DB Connection
-	 * @return "full" versions of these accounts (include bank information)
+	 * @return An access point to "full" versions of these accounts (include bank information)
 	 */
-	def full(implicit connection: Connection) = globalCondition match
+	def full = globalCondition match
 	{
-		case Some(condition) => DbFullCompanyBankAccounts.find(condition)
-		case None => DbFullCompanyBankAccounts.all
+		case Some(condition) => DbFullCompanyBankAccounts.filter(condition)
+		case None => DbFullCompanyBankAccounts
 	}
 	
 	
@@ -47,7 +46,7 @@ trait ManyCompanyBankAccountsAccess extends ManyCompanyBankAccountsAccessLike[Co
 	
 	override protected def defaultOrdering = None
 	
-	override def filter(additionalCondition: Condition): ManyCompanyBankAccountsAccess =
+	override def _filter(additionalCondition: Condition): ManyCompanyBankAccountsAccess =
 		new ManyCompanyBankAccountsAccess.ManyCompanyBankAccountsSubView(this, additionalCondition)
 }
 
