@@ -1,33 +1,37 @@
 package vf.arbiter.command.controller
 
 import utopia.bunnymunch.jawn.JsonBunny
-import utopia.citadel.database.access.many.description.{DbDescriptionRoles, DbLanguageDescriptions, DbLanguageFamiliarityDescriptions, LinkedDescriptionsAccess}
+import utopia.citadel.database.access.many.description.{DbDescriptionRoles, DbLanguageDescriptions, DbLanguageFamiliarityDescriptions, DbOrganizationDescriptions, LinkedDescriptionsAccess}
 import utopia.citadel.database.access.many.language.DbLanguages
+import utopia.citadel.database.access.many.organization.{DbMemberships, DbUserRoles}
 import utopia.citadel.database.access.many.user.DbManyUserSettings
 import utopia.citadel.database.model.language.LanguageModel
+import utopia.citadel.database.model.organization.{MemberRoleLinkModel, MembershipModel, OrganizationModel}
 import utopia.citadel.database.model.user.{UserModel, UserSettingsModel}
 import utopia.flow.datastructure.immutable.{Model, ModelDeclaration}
-import utopia.flow.generic.{IntType, ModelType, StringType}
+import utopia.flow.generic.{IntType, StringType}
 import utopia.flow.generic.ValueUnwraps._
 import utopia.flow.time.Now
 import utopia.flow.util.CollectionExtensions._
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.metropolis.model.partial.language.LanguageData
+import utopia.metropolis.model.partial.organization.{MemberRoleLinkData, MembershipData, OrganizationData}
 import utopia.metropolis.model.partial.user.{UserData, UserSettingsData}
 import utopia.metropolis.model.stored.description.DescriptionRole
 import utopia.vault.database.Connection
-import vf.arbiter.core.database.access.many.company.{DbBanks, DbCompanies, DbCompanyBankAccounts, DbDetailedCompanies, DbManyCompanyDetails}
+import vf.arbiter.core.database.access.many.company.{DbBanks, DbCompanyBankAccounts, DbDetailedCompanies, DbManyCompanyDetails, DbOrganizationCompanies}
 import vf.arbiter.core.database.access.many.description.{DbCompanyProductDescriptions, DbItemUnitDescriptions}
 import vf.arbiter.core.database.access.many.location.{DbCounties, DbPostalCodes}
 import vf.arbiter.core.database.access.single.location.DbStreetAddress
-import vf.arbiter.core.database.model.company.{BankModel, CompanyBankAccountModel, CompanyDetailsModel, CompanyModel, CompanyProductModel}
+import vf.arbiter.core.database.model.company.{BankModel, CompanyBankAccountModel, CompanyDetailsModel, CompanyModel, CompanyProductModel, OrganizationCompanyModel}
 import vf.arbiter.core.database.model.location.{CountyModel, PostalCodeModel}
 import vf.arbiter.core.model.combined.company.DetailedCompany
-import vf.arbiter.core.model.partial.company.{BankData, CompanyBankAccountData, CompanyData, CompanyDetailsData, CompanyProductData}
+import vf.arbiter.core.model.partial.company.{BankData, CompanyBankAccountData, CompanyData, CompanyDetailsData, CompanyProductData, OrganizationCompanyData}
 import vf.arbiter.core.model.partial.location.{CountyData, PostalCodeData, StreetAddressData}
 import vf.arbiter.core.model.stored.location.PostalCode
 
 import java.nio.file.Path
+import scala.util.{Failure, Success}
 
 /**
  * Used for importing previously exported data
@@ -66,6 +70,9 @@ object ImportData
 		// Imports companies and related information
 		val (companyIdPerYCode, companyDetailIdMap, productIdMap, companyFailures) = importCompanies(
 			root("companies").getVector.flatMap { _.model }, bankIdPerBic)
+		// Imports organization data
+		val organizationFailures = importOrganizations(root("organizations").getVector.flatMap { _.model },
+			companyIdPerYCode, userIdMap)
 		// TODO: Import other data
 	}
 	
@@ -361,13 +368,101 @@ object ImportData
 	                                userIdMap: Map[Int, Int])
 	                               (implicit connection: Connection, context: DescriptionContext) =
 	{
-		organizationModels.map { model =>
-			val (membershipParseFailures, membershipModels) = model("memberships").getVector.flatMap { _.model }
+		val validUserRoleIds = DbUserRoles.ids.toSet
+		// Reads information from each model
+		// [([companyIds], [(userId, [userRoleIds])], [descriptionModels], [failures])]
+		val organizationData = organizationModels.map { model =>
+			// Reads organization members
+			val (memberParseFailures, memberModels) = model("members").getVector.flatMap { _.model }
 				.map { idSchema.validate(_).toTry }.divided
-			val memberships = membershipModels.map { model =>
-				???
-			}
+			val (memberFailures, members) = memberModels.map { model =>
+				userIdMap.get(model("id").getInt)
+					.toTry { new NoSuchElementException(s"No user matches id ${model("id").getInt}") }
+					.flatMap { userId =>
+						val roleIds = model("role_ids").getVector.flatMap { _.int }.filter(validUserRoleIds.contains)
+						if (roleIds.isEmpty)
+							Failure(new IllegalArgumentException(
+								s"role_ids must contain at least one valid value (provided: ${
+									model("role_ids").getString})"))
+						else
+							Success(userId -> roleIds)
+					}
+			}.divided
+			// Also includes company y-codes and descriptions
+			val (yCodeFailures, companyIds) = model("company_codes").getVector.flatMap { _.string }
+				.map { yCode => companyIdPerYCode.get(yCode)
+					.toTry { new NoSuchElementException(s"No company for code $yCode") } }
+				.divided
+			(companyIds, members, model("descriptions").getVector.flatMap { _.model },
+				memberParseFailures ++ memberFailures ++ yCodeFailures)
 		}
+		// Looks for existing organizations associated with specified companies
+		val organizationCompanyIds = organizationData.flatMap { _._1 }.toSet
+		val existingOrganizationCompanyLinks = DbOrganizationCompanies
+			.linkedToAnyOfCompanies(organizationCompanyIds).pull
+		val existingOrganizationIdsPerCompanyId = existingOrganizationCompanyLinks
+			.map { link => link.companyId -> link.organizationId }.asMultiMap
+		val existingCompanyIdsPerOrganizationId = existingOrganizationCompanyLinks
+			.map { link => link.organizationId -> link.companyId }.asMultiMap
+		// Also checks existing memberships among the listed users
+		val existingUserIdsPerOrganizationId = DbMemberships
+			.inAnyOfOrganizations(existingCompanyIdsPerOrganizationId.keys)
+			.ofAnyOfUsers(userIdMap.valuesIterator.toSet)
+			.pull.map { membership => membership.organizationId -> membership.userId }.asMultiMap
+		// Divides the data into new organizations / companies and updates
+		// Existing organization must be linked with one of the specified companies and must share one
+		// common member
+		val (updates, newOrganizationData) = organizationData
+			.divideWith { case (companyIds, members, descriptionModels, _) =>
+				companyIds.findMap { companyId => existingOrganizationIdsPerCompanyId.getOrElse(companyId, Vector())
+					.find { organizationId => existingUserIdsPerOrganizationId.getOrElse(organizationId, Vector())
+						.exists { userId => members.exists { _._1 == userId } } } }
+				match {
+					case Some(organizationId) => Left((organizationId, companyIds, members, descriptionModels))
+					case None => Right(companyIds, members, descriptionModels)
+				}
+			}
+		// Imports descriptions for existing organizations
+		val descriptionUpdateFailures = importDescriptions(DbOrganizationDescriptions,
+			updates.map { case (organizationId, _, _, descriptionModels) => organizationId -> descriptionModels }.toMap)
+		// Collects new company- and member -links for the existing organizations
+		val (updateCompanyLinks, updateMembershipData) = updates
+			.splitFlatMap { case (organizationId, companyIds, members, _) =>
+				val existingCompanyIds = existingCompanyIdsPerOrganizationId.getOrElse(organizationId, Vector())
+				val existingUserIds = existingUserIdsPerOrganizationId.getOrElse(organizationId, Vector())
+				val newCompanyLinks = companyIds.filterNot(existingCompanyIds.contains)
+					.map { companyId => OrganizationCompanyData(organizationId, companyId) }
+				val newMemberData = members.filterNot { case (userId, _) => existingUserIds.contains(userId) }
+					.map { case (userId, roleIds) => MembershipData(organizationId, userId) -> roleIds }
+				newCompanyLinks -> newMemberData
+			}
+		// Inserts new organizations to the DB
+		val newOrganizationsWithData = OrganizationModel
+			.insert(Vector.fill(newOrganizationData.size)(OrganizationData()))
+			.zip(newOrganizationData)
+		// Inserts descriptions for the new organizations
+		val newDescriptionsFailures = importDescriptions(DbOrganizationDescriptions,
+			newOrganizationsWithData.map { case (organization, (_, _ , descriptionModels)) =>
+				organization.id -> descriptionModels }.toMap,
+			checkForDuplicates = false)
+		// Forms company- and member links for the new organizations
+		val (newCompanyLinks, newMembershipData) = newOrganizationsWithData
+			.splitFlatMap { case (organization, (companyIds, members, _)) =>
+				companyIds.map { OrganizationCompanyData(organization.id, _) } ->
+					members.map { case (userId, roleIds) => MembershipData(organization.id, userId) -> roleIds }
+			}
+		// Inserts the company links in a bulk
+		OrganizationCompanyModel.insert(updateCompanyLinks ++ newCompanyLinks)
+		// Inserts the memberships and then membership roles
+		val allMembershipData = updateMembershipData ++ newMembershipData
+		val insertedMemberships = MembershipModel.insert(allMembershipData.map { _._1 })
+		val newMemberRoleData = insertedMemberships.zip(allMembershipData).flatMap { case (membership, (_, roleIds)) =>
+			roleIds.map { roleId => MemberRoleLinkData(membership.id, roleId) }
+		}
+		MemberRoleLinkModel.insert(newMemberRoleData)
+		
+		// Returns all encountered failures
+		organizationData.flatMap { _._4 } ++ descriptionUpdateFailures ++ newDescriptionsFailures
 	}
 	
 	private def importDescriptionsFromModels(descriptionsAccess: LinkedDescriptionsAccess,

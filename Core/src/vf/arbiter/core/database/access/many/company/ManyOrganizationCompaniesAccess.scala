@@ -10,6 +10,7 @@ import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.SubView
 import utopia.vault.sql.{Condition, Select, Where}
+import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.factory.company.OrganizationCompanyFactory
 import vf.arbiter.core.database.model.company.OrganizationCompanyModel
 import vf.arbiter.core.model.stored.company.OrganizationCompany
@@ -95,6 +96,12 @@ trait ManyOrganizationCompaniesAccess extends ManyRowModelAccess[OrganizationCom
 	 */
 	def linkedToCompanyWithId(companyId: Int) =
 		filter(model.withCompanyId(companyId).toCondition)
+	/**
+	 * @param companyIds Ids of targeted companies
+	 * @return An access point to organization-company links concerning any of those companies
+	 */
+	def linkedToAnyOfCompanies(companyIds: Iterable[Int]) =
+		filter(model.companyIdColumn in companyIds)
 	
 	/**
 	  * Updates the companyId of the targeted OrganizationCompany instance(s)
