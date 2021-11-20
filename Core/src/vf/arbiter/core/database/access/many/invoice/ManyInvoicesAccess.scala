@@ -1,14 +1,17 @@
 package vf.arbiter.core.database.access.many.invoice
 
-import java.time.{Instant, LocalDate}
+import java.time.{Instant, LocalDate, Year}
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.Days
+import utopia.flow.time.TimeExtensions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.SubView
-import utopia.vault.sql.Condition
+import utopia.vault.sql.{Condition, Select, Where}
+import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.factory.invoice.InvoiceFactory
+import vf.arbiter.core.database.model.company.CompanyDetailsModel
 import vf.arbiter.core.database.model.invoice.InvoiceModel
 import vf.arbiter.core.model.stored.invoice.Invoice
 
@@ -100,6 +103,26 @@ trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed
 	
 	
 	// OTHER	--------------------
+	
+	/**
+	 * @param year Targeted year
+	 * @return A copy of this access point, limited to invoices created during that year
+	 */
+	def during(year: Year) =
+		filter(model.createdColumn.isBetween(year.firstDay.atStartOfDay(),
+			year.lastDay.tomorrow.atStartOfDay()))
+	
+	/**
+	 * @param senderCompanyId Id of the company sending invoices
+	 * @param connection Implicit DB Connection
+	 * @return All accessible invoices sent by that company
+	 */
+	def sentByCompanyWithId(senderCompanyId: Int)(implicit connection: Connection) = {
+		val detailsModel = CompanyDetailsModel
+		// Joins to company details table in order to acquire all company-related invoices
+		factory(connection(Select.tables(target.joinFrom(model.senderCompanyDetailsIdColumn), factory.tables) +
+			Where(mergeCondition(detailsModel.withCompanyId(senderCompanyId).toCondition))))
+	}
 	
 	/**
 	 * Updates the cancelledAfter of the targeted Invoice instance(s)

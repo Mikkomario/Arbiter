@@ -11,14 +11,6 @@ import utopia.vault.sql.SqlExtensions._
   */
 object DbCompanies extends ManyCompaniesAccess with UnconditionalView
 {
-	// COMPUTED ---------------------------------
-	
-	/**
-	 * @return An access point to detailed copies of these companies
-	 */
-	def detailed = DbDetailedCompanies
-	
-	
 	// OTHER	--------------------
 	
 	/**

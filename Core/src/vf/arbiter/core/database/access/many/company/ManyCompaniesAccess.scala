@@ -29,6 +29,14 @@ trait ManyCompaniesAccess extends ManyCompaniesAccessLike[Company]
 	 */
 	protected def model = companyModel
 	
+	/**
+	 * @return A copy of this access point which includes latest details for each accessible company
+	 */
+	def detailed = globalCondition match {
+		case Some(c) => DbDetailedCompanies.filter(c)
+		case None => DbDetailedCompanies
+	}
+	
 	
 	// IMPLEMENTED	--------------------
 	

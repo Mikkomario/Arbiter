@@ -7,6 +7,7 @@ import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.SubView
 import utopia.vault.sql.Condition
+import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.access.many.company.DbCompanyProducts
 import vf.arbiter.core.database.factory.invoice.InvoiceItemFactory
 import vf.arbiter.core.database.model.invoice.InvoiceItemModel
@@ -105,6 +106,12 @@ trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexe
 	 * @return An access point to items belonging to that invoice
 	 */
 	def forInvoiceWithId(invoiceId: Int) = filter(model.withInvoiceId(invoiceId).toCondition)
+	/**
+	 * @param invoiceIds Ids of targeted invoices
+	 * @return An access point to all of those invoices items
+	 */
+	def forAnyOfInvoices(invoiceIds: Iterable[Int]) =
+		filter(model.invoiceIdColumn in invoiceIds)
 	
 	/**
 	 * Reads these invoice items and attaches all linked information

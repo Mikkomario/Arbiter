@@ -19,12 +19,13 @@ import utopia.trove.controller.LocalDatabase
 import utopia.vault.database.Connection
 import utopia.vault.util.ErrorHandling
 import utopia.vault.util.ErrorHandlingPrinciple.Throw
-import vf.arbiter.command.controller.{ArbiterDbSetupListener, ExportData, ImportData, ImportDescriptions}
+import vf.arbiter.command.controller.{ArbiterDbSetupListener, ExportData, ExportSummary, ImportData, ImportDescriptions}
 import vf.arbiter.core.model.combined.company.DetailedCompany
+import vf.arbiter.core.model.stored.company.CompanyDetails
 import vf.arbiter.core.util.Globals._
 
 import java.nio.file.Path
-import java.time.Instant
+import java.time.{Instant, Year}
 import scala.io.StdIn
 import scala.util.{Failure, Success}
 
@@ -178,7 +179,7 @@ object ArbiterCommandsApp extends App
 			}
 		}
 	}
-	val backupCommand = Command("backup", "export", help = "Exports all available data to a json document")(
+	val backupCommand = Command("backup", help = "Exports all available data to a json document")(
 		ArgumentSchema("path", "to", help = "Path to the json document to generate (optional)")) { args =>
 		val path = args("path").stringOr {
 			val defaultPath = s"backup/dump-${Today.toString}.json"
@@ -268,6 +269,32 @@ object ArbiterCommandsApp extends App
 			case _ => println("Unrecognized target. Supported values are: product")
 		}
 	}
+	def exportDataCommand(senderCompanyDetails: CompanyDetails) = Command("export", "summary",
+		help = "Generates summary csv documents from company invoice data")(
+		ArgumentSchema("year", defaultValue = Today.year.getValue, help = "Year from which data is collected"),
+		ArgumentSchema("directory", "to", help = "Directory where reports will be generated (optional)")) { args =>
+		val year = Year.of(args("year").getInt)
+		val path = args("to").string match {
+			case Some(str) => str: Path
+			case None =>
+				val defaultPath = ("summaries": Path)/senderCompanyDetails.name.replace(' ', '-')/
+					year.toString
+				StdIn.readNonEmptyLine(s"Where do you want to save summary data? (default = $defaultPath)")
+					.map { s => s: Path }.getOrElse(defaultPath)
+		}
+		connectionPool { implicit connection =>
+			implicit val languageIds: LanguageIds = languageIdsPointer.value
+			println(s"Exporting summary to ${path.toAbsolutePath}...")
+			ExportSummary.asCsv(senderCompanyDetails.companyId, path, year) match {
+				case Success(_) =>
+					println("Summaries written")
+					path.openInDesktop()
+				case Failure(error) =>
+					error.printStackTrace()
+					println(s"Summary writing failed: ${error.getMessage}")
+			}
+		}
+	}
 	def createInvoiceCommand(userId: Int, senderCompany: DetailedCompany) =
 		Command.withoutArguments("invoice", "send", "Creates a new invoice") {
 			connectionPool { implicit connection =>
@@ -285,7 +312,8 @@ object ArbiterCommandsApp extends App
 					company.toVector.flatMap { company => Vector(
 						createInvoiceCommand(user.userId, company),
 						printInvoiceCommand(user.userId, company.id),
-						editCommand(user.userId, company.id)
+						editCommand(user.userId, company.id),
+						exportDataCommand(company.details)
 					)}
 			case None => Vector(loginCommand)
 		}

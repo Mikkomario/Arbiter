@@ -18,6 +18,11 @@ case class InvoiceWithItems(invoice: Invoice, items: Vector[InvoiceItem]) extend
 	  */
 	def id = invoice.id
 	
+	/**
+	 * @return Total price of this invoice, without any taxes included
+	 */
+	def price = items.map { _.price }.sum
+	
 	
 	// IMPLEMENTED	--------------------
 	
