@@ -8,10 +8,10 @@ import utopia.citadel.database.access.many.user.DbManyUserSettings
 import utopia.citadel.database.model.language.LanguageModel
 import utopia.citadel.database.model.organization.{MemberRoleLinkModel, MembershipModel, OrganizationModel}
 import utopia.citadel.database.model.user.{UserModel, UserSettingsModel}
-import utopia.flow.datastructure.immutable.{Model, ModelDeclaration}
-import utopia.flow.generic.{IntType, StringType}
+import utopia.flow.datastructure.immutable.{Model, ModelDeclaration, Pair}
+import utopia.flow.generic.{DoubleType, InstantType, IntType, StringType}
 import utopia.flow.generic.ValueUnwraps._
-import utopia.flow.time.Now
+import utopia.flow.time.{Days, Now}
 import utopia.flow.util.CollectionExtensions._
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.metropolis.model.partial.language.LanguageData
@@ -24,9 +24,11 @@ import vf.arbiter.core.database.access.many.description.{DbCompanyProductDescrip
 import vf.arbiter.core.database.access.many.location.{DbCounties, DbPostalCodes}
 import vf.arbiter.core.database.access.single.location.DbStreetAddress
 import vf.arbiter.core.database.model.company.{BankModel, CompanyBankAccountModel, CompanyDetailsModel, CompanyModel, CompanyProductModel, OrganizationCompanyModel}
+import vf.arbiter.core.database.model.invoice.{InvoiceItemModel, InvoiceModel}
 import vf.arbiter.core.database.model.location.{CountyModel, PostalCodeModel}
 import vf.arbiter.core.model.combined.company.DetailedCompany
 import vf.arbiter.core.model.partial.company.{BankData, CompanyBankAccountData, CompanyData, CompanyDetailsData, CompanyProductData, OrganizationCompanyData}
+import vf.arbiter.core.model.partial.invoice.{InvoiceData, InvoiceItemData}
 import vf.arbiter.core.model.partial.location.{CountyData, PostalCodeData, StreetAddressData}
 import vf.arbiter.core.model.stored.location.PostalCode
 
@@ -40,40 +42,81 @@ import scala.util.{Failure, Success}
  */
 object ImportData
 {
-	private val idSchema = ModelDeclaration("id" -> IntType)
-	private val descriptionModelSchema = ModelDeclaration("language" -> StringType)
-	private val languageSchema = ModelDeclaration("code" -> StringType)
-	private val userSchema = ModelDeclaration("id" -> IntType, "name" -> StringType)
-	private val bankSchema = ModelDeclaration("bic" -> StringType, "name" -> StringType)
-	private val companySchema = ModelDeclaration("y_code" -> StringType)
-	private val companyDetailsSchema = idSchema.withChild("address", ModelDeclaration(
+	private lazy val idSchema = ModelDeclaration("id" -> IntType)
+	private lazy val descriptionModelSchema = ModelDeclaration("language" -> StringType)
+	private lazy val languageSchema = ModelDeclaration("code" -> StringType)
+	private lazy val userSchema = ModelDeclaration("id" -> IntType, "name" -> StringType)
+	private lazy val bankSchema = ModelDeclaration("bic" -> StringType, "name" -> StringType)
+	private lazy val companySchema = ModelDeclaration("y_code" -> StringType)
+	private lazy val companyDetailsSchema = idSchema.withChild("address", ModelDeclaration(
 		"street_name" -> StringType, "building_number" -> StringType)
 		.withChild("postal_code", ModelDeclaration("county" -> StringType, "code" -> StringType)))
-	private val productSchema = ModelDeclaration("id" -> IntType, "unit_id" -> IntType)
-	private val bankAccountSchema = ModelDeclaration("bic" -> StringType, "iban" -> StringType)
+	private lazy val productSchema = ModelDeclaration("id" -> IntType, "unit_id" -> IntType)
+	private lazy val bankAccountSchema = ModelDeclaration("bic" -> StringType, "iban" -> StringType)
+	private lazy val invoiceSchema = ModelDeclaration(
+		"id" -> IntType, "reference_code" -> StringType,
+		"sender_details_id" -> IntType, "recipient_details_id" -> IntType, "language" -> StringType,
+		"created" -> InstantType, "payment_duration_days" -> IntType)
+		.withChild("sender_bank_account",
+			ModelDeclaration("bic" -> StringType, "iban" -> StringType))
+	private lazy val invoiceItemSchema = ModelDeclaration(
+		"product_id" -> IntType, "description" -> StringType,
+		"price_per_unit" -> DoubleType, "units_sold" -> DoubleType)
 	
+	/**
+	 * Imports all sorts of data (users, companies, languages, invoices) from a json file
+	 * @param path Path to an existing data json file
+	 * @param connection Implicit DB Connection
+	 * @return Whether file read (json parsing) succeeded or failed.
+	 *         Content-related failures are documented within this method call.
+	 */
 	def fromJson(path: Path)(implicit connection: Connection) = JsonBunny.munchPath(path).map { root =>
 		val descriptionRoles = DbDescriptionRoles.pull
+		//println(s"Using description roles: [${descriptionRoles.map { _.jsonKeySingular }.mkString(", ")}]")
 		// Imports languages and language familiarities
 		val (descriptionContext, languageFailures) = importLanguages(root("languages").getVector.flatMap { _.model },
 			descriptionRoles)
+		//println(s"Languages: {${descriptionContext.languageIdPerCode.map { case (code, id) => s"$code: $id" }.mkString(", ") }}")
 		implicit val dContext: DescriptionContext = descriptionContext
 		val familiarityFailures = importLanguageFamiliarities(
 			root("language_familiarities").getVector.flatMap { _.model })
 		// Imports users. Remembers which user was linked with which id
 		// UserIdMap is { old user id: new user id }
 		val (userIdMap, userFailures) = importUsers(root("users").getVector.flatMap { _.model })
+		//println(s"User Id Conversion: {${userIdMap.map { case (old, newId) => s"$old => $newId" }.mkString(", ") }}")
 		// Imports item units
 		val unitFailures = importUnits(root("units").getVector.flatMap { _.model })
 		// Imports banks
 		val (bankIdPerBic, bankFailures) = importBanks(root("banks").getVector.flatMap { _.model })
+		//println(s"Banks: {${bankIdPerBic.map { case (bic, id) => s"$bic: $id" }.mkString(", ") }}")
 		// Imports companies and related information
-		val (companyIdPerYCode, companyDetailIdMap, productIdMap, companyFailures) = importCompanies(
+		// companyDetailsIdMap contains [old details id: Pair(new details id, company id)]
+		val (companyIdPerYCode, companyDetailsMap, productIdMap, accountsMap, companyFailures) = importCompanies(
 			root("companies").getVector.flatMap { _.model }, bankIdPerBic)
+		/*
+		println(s"Companies: {${companyIdPerYCode.map { case (code, id) => s"$code: $id" }.mkString(", ") }}")
+		println(s"Company Details: {${companyDetailsMap
+			.map { case (oldId, Pair(newId, companyId)) => s"$oldId: $newId (in $companyId)" }.mkString(", ") }}")
+		println(s"Bank Accounts:")
+		accountsMap.foreach { case (bankId, accounts) =>
+			println(s"- Bank #$bankId (${accounts.size} accounts):")
+			accounts.foreach { case (iban, id) => println(s"\t- $iban: $id") }
+		}*/
 		// Imports organization data
 		val organizationFailures = importOrganizations(root("organizations").getVector.flatMap { _.model },
 			companyIdPerYCode, userIdMap)
-		// TODO: Import other data
+		// Imports invoice data
+		val invoiceFailures = importInvoices(root("invoices").getVector.flatMap { _.model }, companyDetailsMap,
+			bankIdPerBic, accountsMap, productIdMap)
+		
+		// Records failures
+		val allFailures = languageFailures ++ familiarityFailures ++ userFailures ++ unitFailures ++ bankFailures ++
+			companyFailures ++ organizationFailures ++ invoiceFailures
+		if (allFailures.nonEmpty) {
+			allFailures.head.printStackTrace()
+			println(s"Encountered ${allFailures.size} failures during the import:")
+			allFailures.foreach { e => println(s"- ${e.getMessage}") }
+		}
 	}
 	
 	private def importLanguages(languageModels: Vector[Model], descriptionRoles: Iterable[DescriptionRole])
@@ -180,10 +223,10 @@ object ImportData
 		// Next imports company products
 		val (productIdMap, productFailures) = importCompanyProducts(modelPerYCode, companyIdPerYCode)
 		// Next imports company bank accounts
-		val accountFailures = importCompanyBankAccounts(modelPerYCode, companyIdPerYCode, bankIdPerBid)
+		val (accountsMap, accountFailures) = importCompanyBankAccounts(modelPerYCode, companyIdPerYCode, bankIdPerBid)
 		
 		// Returns collected id-mappers and failures
-		(companyIdPerYCode, newDetailsIdPerOldId, productIdMap,
+		(companyIdPerYCode, newDetailsIdPerOldId, productIdMap, accountsMap,
 			failures ++ detailFailures ++ productFailures ++ accountFailures)
 	}
 	
@@ -199,13 +242,14 @@ object ImportData
 		}
 		val detailsPerYCode = detailModels.asMultiMap
 		// Inserts missing postal codes
-		val postalCodeIdMap = importPostalCodes(detailModels.map { _._2("address")("postal").getModel })
+		val postalCodeIdMap = importPostalCodes(detailModels.map { _._2("address")("postal_code").getModel })
 		// Handles company details next
 		def _detailsFromModel(companyId: Int, details: Model) = {
 			val oldId = details("id").getInt
 			val addressModel = details("address").getModel
 			val postalCodeModel = addressModel("postal_code").getModel
 			val address = DbStreetAddress.getOrInsert(StreetAddressData(
+				// FIXME: NoSuchElementException thrown
 				postalCodeIdMap(postalCodeModel("county"))(postalCodeModel("code")),
 				addressModel("street_name"), addressModel("building_number"), addressModel("stair"),
 				addressModel("room_number")))
@@ -214,25 +258,28 @@ object ImportData
 				isOfficial = details("is_official"))
 			oldId -> data
 		}
+		
+		// When processing new data:
+		// Deprecates the imported details, unless they are official and the existing company details aren't
+		def _deprecate(data: (Int, CompanyDetailsData)) = {
+			if (data._2.isValid)
+				data._1 -> data._2.copy(deprecatedAfter = Some(Now))
+			else
+				data
+		}
+		
 		// Updates are in 3 parts:
 		// 1) Option[Existing detail id to deprecate]
-		// 2) Duplicates in form of [old detail id -> new detail id]
+		// 2) Duplicates in form of [old detail id -> (new detail id, company id)]
 		// 3) [old detail id -> Detail data to insert]
 		val detailsUpdates = existingVersions.map { existingCompany =>
 			val detailsData = detailsPerYCode(existingCompany.yCode).map { _detailsFromModel(existingCompany.id, _) }
 			// Checks for possible duplicate data
 			val (duplicateIdConversion, newData) = detailsData.divideWith { case (oldDetailsId, data) =>
 				if (data ~== existingCompany.details.data)
-					Left(oldDetailsId -> existingCompany.details.id)
+					Left(oldDetailsId -> Pair(existingCompany.details.id, existingCompany.id))
 				else
 					Right(oldDetailsId -> data)
-			}
-			// Deprecates the imported details, unless they are official and the existing company details aren't
-			def _deprecate(data: (Int, CompanyDetailsData)) = {
-				if (data._2.isValid)
-					data._1 -> data._2.copy(deprecatedAfter = Some(Now))
-				else
-					data
 			}
 			if (existingCompany.details.isOfficial)
 				(None, duplicateIdConversion, newData.map(_deprecate))
@@ -250,17 +297,21 @@ object ImportData
 		if (detailIdsToDeprecate.nonEmpty)
 			DbManyCompanyDetails(detailIdsToDeprecate).deprecate()
 		// Inserts new details
+		// Details of new companies
 		val newDetailsData = newCompanyYCodes.flatMap { yCode =>
 			val companyId = companyIdPerYCode(yCode)
 			val detailModels = detailsPerYCode(yCode)
 			detailModels.map { _detailsFromModel(companyId, _) }
 		}
+		// Details added to old companies + those of new companies
 		val allDetailsDataToInsert = (newDetailsData ++ detailsUpdates.flatMap { _._3 }).toVector
 		val insertedDetails = CompanyDetailsModel.insert(allDetailsDataToInsert.map { _._2 })
+		// Forms a map where keys are old detail ids and values are Pair(new detail id, company id)
 		val newDetailIdPerOldId = insertedDetails.zip(allDetailsDataToInsert)
-			.map { case (inserted, (oldId, _)) => oldId -> inserted.id }.toMap ++ detailsUpdates.flatMap { _._2 }
+			.map { case (inserted, (oldId, _)) => oldId -> Pair(inserted.id, inserted.companyId) }.toMap ++
+			detailsUpdates.flatMap { _._2 }
 		
-		// Returns new detail id per old detail id -map + possible parsing failures
+		// Returns this formed map + possible parsing failures
 		newDetailIdPerOldId -> detailParseFailures
 	}
 	
@@ -304,6 +355,7 @@ object ImportData
 			val (failures, accountModels) = model("bank_accounts").getVector.flatMap { _.model }
 				.map { bankAccountSchema.validate(_).toTry }.divided
 			failures -> accountModels.map { model =>
+				// TODO: There are many possibilities for failures here
 				CompanyBankAccountData(companyId, bankIdPerBic(model("bic")), model("iban"), None, model("created"),
 					model("deprecated_after"), model("is_official"))
 			}
@@ -312,13 +364,20 @@ object ImportData
 		val companyIds = accountData.map { _.companyId }.toSet
 		val bankIds = accountData.map { _.bankId }.toSet
 		val ibans = accountData.map { _.address }.toSet
-		val existingAccountsPerCompanyId = DbCompanyBankAccounts.belongingToAnyOfCompanies(companyIds)
-			.inAnyOfBanks(bankIds).withAnyOfAddresses(ibans).pull.groupBy { _.companyId }
+		val existingAccounts = DbCompanyBankAccounts.belongingToAnyOfCompanies(companyIds)
+			.inAnyOfBanks(bankIds).withAnyOfAddresses(ibans).pull
+		val existingAccountsPerCompanyId = existingAccounts.groupBy { _.companyId }
 		// Inserts the accounts which are new
-		CompanyBankAccountModel.insert(accountData.filter { data => existingAccountsPerCompanyId.get(data.companyId)
-			.exists { _.exists { existing => existing.bankId == data.bankId && existing.address == data.address } } })
-		// Returns encountered failures
-		parseFailures
+		val insertedAccounts = CompanyBankAccountModel.insert(
+			accountData.filterNot { data =>
+				existingAccountsPerCompanyId.get(data.companyId)
+					.exists { _.exists { existing =>
+						existing.bankId == data.bankId && existing.address == data.address } } })
+		// Returns a map for finding bank account ids + encountered failures
+		// [bank id: [iban: account id]]
+		val accountsMap = (existingAccounts ++ insertedAccounts).groupBy { _.bankId }
+			.view.mapValues { _.map { account => account.address -> account.id }.toMap }.toMap
+		accountsMap -> parseFailures
 	}
 	
 	// Returns: [CountyName: [PostalCode: PostalCodeId]]
@@ -463,6 +522,62 @@ object ImportData
 		
 		// Returns all encountered failures
 		organizationData.flatMap { _._4 } ++ descriptionUpdateFailures ++ newDescriptionsFailures
+	}
+	
+	private def importInvoices(invoiceModels: Vector[Model], detailsIdMap: Map[Int, Pair[Int]],
+	                           bankIdPerBic: Map[String, Int], accountsMap: Map[Int, Map[String, Int]],
+	                           productIdMap: Map[Int, Int])
+	                          (implicit connection: Connection, context: DescriptionContext) =
+	{
+		// Parses the main invoice part of each model
+		val (parseFailures, validModels) = invoiceModels.map { invoiceSchema.validate(_).toTry }.divided
+		// (failures, [(Pair(sender company id, recipient company id), invoice data, invoice model)])
+		val (invoiceFailures, invoiceData) = validModels.map { model =>
+			detailsIdMap.get(model("sender_details_id"))
+				.toTry { new NoSuchElementException(s"Invalid sender_details_id ${model("sender_details_id").getInt}") }
+				.flatMap { case Pair(senderDetailsId, senderCompanyId) =>
+					detailsIdMap.get(model("recipient_details_id"))
+						.toTry { new NoSuchElementException(
+							s"Invalid recipient_details_id ${model("recipient_details_id").getInt}") }
+						.flatMap { case Pair(recipientDetailsId, recipientCompanyId) =>
+							context.languageIdPerCode.get(model("language"))
+								.toTry { new NoSuchElementException(s"Invalid language code ${model("language")}") }
+								.flatMap { languageId =>
+									val accountModel = model("sender_bank_account").getModel
+									bankIdPerBic.get(accountModel("bic")).flatMap(accountsMap.get)
+										.toTry { new NoSuchElementException(s"Unlisted bic ${accountModel("bic")}") }
+										.flatMap { _.get(accountModel("iban")).toTry { new NoSuchElementException(
+											s"Unlisted bank account $accountModel") } }
+										.map { accountId =>
+											val data = InvoiceData(senderDetailsId, recipientDetailsId, accountId,
+												languageId, model("reference_code"),
+												Days(model("payment_duration_days")), model("product_delivery"),
+												created = model("created"), cancelledAfter = model("cancelled_after"))
+											(Pair(senderCompanyId, recipientCompanyId), data, model)
+										}
+								}
+						}
+				}
+		}.divided
+		// TODO: Filter out duplicates (based on company ids + reference code)
+		// Inserts new invoices to DB
+		val insertedInvoices = InvoiceModel.insert(invoiceData.map { _._2 })
+		// Next parses all invoice items
+		val (itemFailures, itemData) = insertedInvoices.zip(invoiceData.map { _._3 })
+			.flatMap { case (invoice, invoiceModel) =>
+				invoiceModel("items").getVector.flatMap { _.model }
+					.map { invoiceItemSchema.validate(_).toTry.flatMap { model =>
+						productIdMap.get(model("product_id"))
+							.toTry { new NoSuchElementException(s"Invalid product id ${model("product_id")}") }
+							.map { productId => InvoiceItemData(invoice.id, productId, model("description"),
+								model("price_per_unit"), model("units_sold")) }
+					} }
+			}.divided
+		// Inserts them to the database
+		InvoiceItemModel.insert(itemData)
+		
+		// Returns encountered failures
+		parseFailures ++ invoiceFailures ++ itemFailures
 	}
 	
 	private def importDescriptionsFromModels(descriptionsAccess: LinkedDescriptionsAccess,

@@ -1,5 +1,7 @@
 --
--- Inserts the initial project data to the DB
+-- Inserts the initial Arbiter project data to the DB
+-- Intended to follow Citadel data insert
+-- Supports versions v0.2 and above
 --
 
 -- Inserts the Finnish language (2)

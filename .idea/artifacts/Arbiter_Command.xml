@@ -26,7 +26,7 @@
           <element id="file-copy" path="$PROJECT_DIR$/Core/data/arbiter-descriptions.json" />
         </element>
         <element id="directory" name="sql">
-          <element id="file-copy" path="$PROJECT_DIR$/Command/data/sql/db-structure-v1.0.sql" />
+          <element id="dir-copy" path="$PROJECT_DIR$/Command/data/sql" />
         </element>
       </element>
     </root>

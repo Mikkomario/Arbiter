@@ -1,3 +1,8 @@
+--
+-- Arbiter Core DB Structure
+-- Supports versions v1.1 and above
+--
+
 -- Represents different categories a unit can belong to. Units within a category can be compared.
 CREATE TABLE `unit_category`(
 	id INT NOT NULL PRIMARY KEY AUTO_INCREMENT

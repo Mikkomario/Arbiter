@@ -9,6 +9,7 @@ import utopia.flow.generic.ValueConversions._
 import utopia.flow.parse.JsonParser
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.Today
+import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.console.{ArgumentSchema, Command, CommandArguments, Console}
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.FileExtensions._
@@ -18,10 +19,12 @@ import utopia.trove.controller.LocalDatabase
 import utopia.vault.database.Connection
 import utopia.vault.util.ErrorHandling
 import utopia.vault.util.ErrorHandlingPrinciple.Throw
-import vf.arbiter.command.controller.{ArbiterDbSetupListener, ExportData, ImportDescriptions}
+import vf.arbiter.command.controller.{ArbiterDbSetupListener, ExportData, ImportData, ImportDescriptions}
 import vf.arbiter.core.model.combined.company.DetailedCompany
 import vf.arbiter.core.util.Globals._
 
+import java.nio.file.Path
+import java.time.Instant
 import scala.io.StdIn
 import scala.util.{Failure, Success}
 
@@ -53,7 +56,7 @@ object ArbiterCommandsApp extends App
 		val listener = new ArbiterDbSetupListener()
 		println("Configuring the database...")
 		LocalDatabase.setup("data/sql", "arbiter_db", "database_version",
-			Tables("arbiter_db", "database_version"), Some(listener), Some("UTF-8"), Some("utf8_general_ci"))
+			Tables("arbiter_db", "database_version"), Some(listener), Some("utf8"), Some("utf8_general_ci"))
 		if (listener.failed)
 		{
 			println("Shutting down the database and quitting...")
@@ -175,7 +178,7 @@ object ArbiterCommandsApp extends App
 			}
 		}
 	}
-	val backupCommand = Command("backup", help = "Exports all available data to a json document")(
+	val backupCommand = Command("backup", "export", help = "Exports all available data to a json document")(
 		ArgumentSchema("path", "to", help = "Path to the json document to generate (optional)")) { args =>
 		val path = args("path").stringOr {
 			val defaultPath = s"backup/dump-${Today.toString}.json"
@@ -193,6 +196,45 @@ object ArbiterCommandsApp extends App
 				case Failure(error) =>
 					error.printStackTrace()
 					println(s"Data writing failed due to an error: ${error.getMessage}")
+			}
+		}
+	}
+	val importCommand = Command("import", help = "Imports previously dumped data back to this application")(
+		ArgumentSchema("path", "from", help = "Path to the data json file")) { args =>
+		val path = args("path").string match {
+			case Some(argPath) => Some(argPath: Path)
+			case None =>
+				val defaultPath = ("backup": Path).iterateChildren { _.filter { _.fileType == "json" }
+					.maxByOption { _.lastModified.getOrElse(Instant.EPOCH) } }.toOption.flatten
+				val defaultStr = defaultPath match {
+					case Some(path) => s" (default = $path (latest dump))"
+					case None => ""
+				}
+				println("Please specify the path to the json data file you want to import" + defaultStr)
+				if (defaultPath.isEmpty)
+					println(s"Hint: Current directory is ${"".toAbsolutePath}")
+				StdIn.readNonEmptyLine(retryPrompt = if (defaultPath.isEmpty)
+					"Are you sure? Leaving this value will cancel this import." else "") match
+				{
+					case Some(input) => Some(input: Path)
+					case None => defaultPath
+				}
+		}
+		path.foreach { path =>
+			if (path.notExists)
+				println(s"Path ${path.toAbsolutePath} doesn't exist in the file system")
+			else {
+				connectionPool.tryWith { implicit connection =>
+					ImportData.fromJson(path) match {
+						case Success(_) => println("Data import completed")
+						case Failure(error) =>
+							error.printStackTrace()
+							println(s"Data json parsing failed: ${error.getMessage}")
+					}
+				}.failure.foreach { error =>
+					error.printStackTrace()
+					println(s"Data import process failed unexpectedly: ${error.getMessage}")
+				}
 			}
 		}
 	}
@@ -247,14 +289,16 @@ object ArbiterCommandsApp extends App
 					)}
 			case None => Vector(loginCommand)
 		}
-		Vector(registerCommand, backupCommand) ++ statefulCommands
+		Vector(registerCommand, backupCommand, importCommand) ++ statefulCommands
 	}
 	
 	// Starts the console
+	println()
 	println("Welcome to Arbiter")
 	println("Instructions: use 'help' or 'man' commands to get more information. Use exit to quit.")
 	Console(commandsPointer, "Please enter the next command", closeCommandName = "exit").run()
 	println("Bye!")
+	println()
 	
 	System.exit(0)
 }
