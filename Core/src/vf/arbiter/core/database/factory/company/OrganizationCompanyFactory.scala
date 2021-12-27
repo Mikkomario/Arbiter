@@ -1,6 +1,6 @@
 package vf.arbiter.core.database.factory.company
 
-import utopia.flow.datastructure.immutable.{Constant, Model}
+import utopia.flow.datastructure.immutable.Model
 import utopia.vault.nosql.factory.row.model.FromValidatedRowModelFactory
 import vf.arbiter.core.database.CoreTables
 import vf.arbiter.core.model.partial.company.OrganizationCompanyData
@@ -16,6 +16,8 @@ object OrganizationCompanyFactory extends FromValidatedRowModelFactory[Organizat
 	// IMPLEMENTED	--------------------
 	
 	override def table = CoreTables.organizationCompany
+	
+	override def defaultOrdering = None
 	
 	override def fromValidatedModel(valid: Model) =
 		OrganizationCompany(valid("id").getInt, OrganizationCompanyData(valid("organizationId").getInt, 

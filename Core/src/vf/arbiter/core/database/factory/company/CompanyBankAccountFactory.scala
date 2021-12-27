@@ -1,6 +1,6 @@
 package vf.arbiter.core.database.factory.company
 
-import utopia.flow.datastructure.immutable.{Constant, Model}
+import utopia.flow.datastructure.immutable.Model
 import utopia.vault.nosql.factory.row.model.FromValidatedRowModelFactory
 import utopia.vault.nosql.template.Deprecatable
 import vf.arbiter.core.database.CoreTables
@@ -18,6 +18,8 @@ object CompanyBankAccountFactory extends FromValidatedRowModelFactory[CompanyBan
 	// IMPLEMENTED	--------------------
 	
 	override def nonDeprecatedCondition = CompanyBankAccountModel.nonDeprecatedCondition
+	
+	override def defaultOrdering = None
 	
 	override def table = CoreTables.companyBankAccount
 	

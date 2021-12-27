@@ -17,5 +17,5 @@ case class DbSingleCompanyDetails(id: Int)
 	 * @param connection Implicit DB Connection
 	 * @return A version of these company details which includes full address information
 	 */
-	def full(implicit connection: Connection) = FullCompanyDetailsFactory.get(condition)
+	def full(implicit connection: Connection) = FullCompanyDetailsFactory.find(condition)
 }

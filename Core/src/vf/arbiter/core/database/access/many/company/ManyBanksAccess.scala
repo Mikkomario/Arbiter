@@ -5,7 +5,7 @@ import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.SubView
+import utopia.vault.nosql.view.{FilterableView, SubView}
 import utopia.vault.sql.Condition
 import vf.arbiter.core.database.factory.company.BankFactory
 import vf.arbiter.core.database.model.company.BankModel
@@ -25,7 +25,7 @@ object ManyBanksAccess
   * @author Mikko Hilpinen
   * @since 2021-10-31
   */
-trait ManyBanksAccess extends ManyRowModelAccess[Bank] with Indexed
+trait ManyBanksAccess extends ManyRowModelAccess[Bank] with Indexed with FilterableView[ManyBanksAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -63,8 +63,6 @@ trait ManyBanksAccess extends ManyRowModelAccess[Bank] with Indexed
 	// IMPLEMENTED	--------------------
 	
 	override def factory = BankFactory
-	
-	override protected def defaultOrdering = None
 	
 	override def filter(additionalCondition: Condition): ManyBanksAccess = 
 		new ManyBanksAccess.ManyBanksSubView(this, additionalCondition)

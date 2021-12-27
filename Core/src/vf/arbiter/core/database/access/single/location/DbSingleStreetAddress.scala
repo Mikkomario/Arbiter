@@ -17,5 +17,5 @@ case class DbSingleStreetAddress(id: Int)
 	 * @param connection Implicit Connection
 	 * @return Full version of this street address
 	 */
-	def full(implicit connection: Connection) = FullStreetAddressFactory.get(condition)
+	def full(implicit connection: Connection) = FullStreetAddressFactory.find(condition)
 }

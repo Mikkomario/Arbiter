@@ -18,5 +18,5 @@ case class DbSingleCompanyBankAccount(id: Int)
 	 * @return A full copy of this bank account
 	 */
 	def full(implicit connection: Connection) =
-		FullCompanyBankAccountFactory.get(condition)
+		FullCompanyBankAccountFactory.find(condition)
 }

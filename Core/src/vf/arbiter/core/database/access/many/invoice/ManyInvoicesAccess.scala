@@ -7,7 +7,7 @@ import utopia.flow.time.TimeExtensions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.SubView
+import utopia.vault.nosql.view.{FilterableView, SubView}
 import utopia.vault.sql.{Condition, Select, Where}
 import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.factory.invoice.InvoiceFactory
@@ -29,7 +29,7 @@ object ManyInvoicesAccess
  * @author Mikko Hilpinen
  * @since 2021-10-14
  */
-trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed
+trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed with FilterableView[ManyInvoicesAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -95,8 +95,6 @@ trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed
 	// IMPLEMENTED	--------------------
 	
 	override def factory = InvoiceFactory
-	
-	override protected def defaultOrdering = Some(factory.defaultOrdering)
 	
 	override def filter(additionalCondition: Condition): ManyInvoicesAccess =
 		new ManyInvoicesAccess.ManyInvoicesSubView(this, additionalCondition)

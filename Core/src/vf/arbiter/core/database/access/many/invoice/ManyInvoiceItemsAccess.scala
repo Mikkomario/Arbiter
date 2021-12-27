@@ -5,7 +5,7 @@ import utopia.metropolis.model.cached.LanguageIds
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.SubView
+import utopia.vault.nosql.view.{FilterableView, SubView}
 import utopia.vault.sql.Condition
 import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.access.many.company.DbCompanyProducts
@@ -28,7 +28,8 @@ object ManyInvoiceItemsAccess
  * @author Mikko Hilpinen
  * @since 2021-10-14
  */
-trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexed
+trait ManyInvoiceItemsAccess
+	extends ManyRowModelAccess[InvoiceItem] with Indexed with FilterableView[ManyInvoiceItemsAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -92,8 +93,6 @@ trait ManyInvoiceItemsAccess extends ManyRowModelAccess[InvoiceItem] with Indexe
 	// IMPLEMENTED	--------------------
 	
 	override def factory = InvoiceItemFactory
-	
-	override protected def defaultOrdering = None
 	
 	override def filter(additionalCondition: Condition): ManyInvoiceItemsAccess =
 		new ManyInvoiceItemsAccess.ManyInvoiceItemsSubView(this, additionalCondition)

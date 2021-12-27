@@ -20,7 +20,7 @@ object ManyCompaniesAccess
   * @author Mikko Hilpinen
   * @since 2021-10-31
   */
-trait ManyCompaniesAccess extends ManyCompaniesAccessLike[Company]
+trait ManyCompaniesAccess extends ManyCompaniesAccessLike[Company, ManyCompaniesAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -41,8 +41,6 @@ trait ManyCompaniesAccess extends ManyCompaniesAccessLike[Company]
 	// IMPLEMENTED	--------------------
 	
 	override def factory = CompanyFactory
-	
-	override protected def defaultOrdering = Some(factory.defaultOrdering)
 	
 	override def filter(additionalCondition: Condition): ManyCompaniesAccess =
 		new ManyCompaniesAccess.ManyCompaniesSubView(this, additionalCondition)

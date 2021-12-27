@@ -5,7 +5,7 @@ import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.SubView
+import utopia.vault.nosql.view.{FilterableView, SubView}
 import utopia.vault.sql.Condition
 import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.factory.location.PostalCodeFactory
@@ -26,7 +26,8 @@ object ManyPostalCodesAccess
   * @author Mikko Hilpinen
   * @since 2021-10-31
   */
-trait ManyPostalCodesAccess extends ManyRowModelAccess[PostalCode] with Indexed
+trait ManyPostalCodesAccess
+	extends ManyRowModelAccess[PostalCode] with Indexed with FilterableView[ManyPostalCodesAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -65,8 +66,6 @@ trait ManyPostalCodesAccess extends ManyRowModelAccess[PostalCode] with Indexed
 	// IMPLEMENTED	--------------------
 	
 	override def factory = PostalCodeFactory
-	
-	override protected def defaultOrdering = None
 	
 	override def filter(additionalCondition: Condition): ManyPostalCodesAccess = 
 		new ManyPostalCodesAccess.ManyPostalCodesSubView(this, additionalCondition)

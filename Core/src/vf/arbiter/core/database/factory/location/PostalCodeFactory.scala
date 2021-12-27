@@ -1,6 +1,6 @@
 package vf.arbiter.core.database.factory.location
 
-import utopia.flow.datastructure.immutable.{Constant, Model}
+import utopia.flow.datastructure.immutable.Model
 import utopia.vault.nosql.factory.row.model.FromValidatedRowModelFactory
 import vf.arbiter.core.database.CoreTables
 import vf.arbiter.core.model.partial.location.PostalCodeData
@@ -16,6 +16,8 @@ object PostalCodeFactory extends FromValidatedRowModelFactory[PostalCode]
 	// IMPLEMENTED	--------------------
 	
 	override def table = CoreTables.postalCode
+	
+	override def defaultOrdering = None
 	
 	override def fromValidatedModel(valid: Model) =
 		PostalCode(valid("id").getInt, PostalCodeData(valid("number").getString, valid("countyId").getInt, 

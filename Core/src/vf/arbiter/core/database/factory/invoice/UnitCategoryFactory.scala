@@ -1,6 +1,6 @@
 package vf.arbiter.core.database.factory.invoice
 
-import utopia.flow.datastructure.immutable.{Constant, Model}
+import utopia.flow.datastructure.immutable.Model
 import utopia.vault.nosql.factory.row.model.FromValidatedRowModelFactory
 import vf.arbiter.core.database.CoreTables
 import vf.arbiter.core.model.partial.invoice.UnitCategoryData
@@ -16,6 +16,8 @@ object UnitCategoryFactory extends FromValidatedRowModelFactory[UnitCategory]
 	// IMPLEMENTED	--------------------
 	
 	override def table = CoreTables.unitCategory
+	
+	override def defaultOrdering = None
 	
 	override def fromValidatedModel(valid: Model) = UnitCategory(valid("id").getInt,
 		UnitCategoryData())

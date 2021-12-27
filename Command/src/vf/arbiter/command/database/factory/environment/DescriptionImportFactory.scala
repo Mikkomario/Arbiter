@@ -18,6 +18,8 @@ object DescriptionImportFactory extends FromValidatedRowModelFactory[Description
 	
 	override def table = CommandTables.descriptionImport
 	
+	override def defaultOrdering = None
+	
 	override def fromValidatedModel(valid: Model) =
 		DescriptionImport(valid("id").getInt, DescriptionImportData(valid("Path").getString, 
 			valid("Created").getInstant))

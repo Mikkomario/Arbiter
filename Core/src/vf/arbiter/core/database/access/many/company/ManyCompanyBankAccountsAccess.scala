@@ -44,8 +44,6 @@ trait ManyCompanyBankAccountsAccess
 	
 	override def factory = CompanyBankAccountFactory
 	
-	override protected def defaultOrdering = None
-	
 	override def _filter(additionalCondition: Condition): ManyCompanyBankAccountsAccess =
 		new ManyCompanyBankAccountsAccess.ManyCompanyBankAccountsSubView(this, additionalCondition)
 }

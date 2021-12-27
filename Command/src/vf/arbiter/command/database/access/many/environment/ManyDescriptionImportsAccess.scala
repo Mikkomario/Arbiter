@@ -5,7 +5,7 @@ import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.SubView
+import utopia.vault.nosql.view.{FilterableView, SubView}
 import utopia.vault.sql.Condition
 import vf.arbiter.command.database.factory.environment.DescriptionImportFactory
 import vf.arbiter.command.database.model.environment.DescriptionImportModel
@@ -25,7 +25,8 @@ object ManyDescriptionImportsAccess
   * @author Mikko Hilpinen
   * @since 2021-10-20
   */
-trait ManyDescriptionImportsAccess extends ManyRowModelAccess[DescriptionImport] with Indexed
+trait ManyDescriptionImportsAccess
+	extends ManyRowModelAccess[DescriptionImport] with Indexed with FilterableView[ManyDescriptionImportsAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -52,8 +53,6 @@ trait ManyDescriptionImportsAccess extends ManyRowModelAccess[DescriptionImport]
 	// IMPLEMENTED	--------------------
 	
 	override def factory = DescriptionImportFactory
-	
-	override protected def defaultOrdering = None
 	
 	override def filter(additionalCondition: Condition): ManyDescriptionImportsAccess = 
 		new ManyDescriptionImportsAccess.ManyDescriptionImportsSubView(this, additionalCondition)

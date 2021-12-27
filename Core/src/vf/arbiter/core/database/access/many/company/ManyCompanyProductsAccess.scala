@@ -5,7 +5,7 @@ import utopia.citadel.database.access.many.description.ManyDescribedAccess
 import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
-import utopia.vault.nosql.view.SubView
+import utopia.vault.nosql.view.{FilterableView, SubView}
 import utopia.vault.sql.Condition
 import vf.arbiter.core.database.access.many.description.DbCompanyProductDescriptions
 import vf.arbiter.core.database.factory.company.CompanyProductFactory
@@ -30,6 +30,7 @@ object ManyCompanyProductsAccess
 trait ManyCompanyProductsAccess 
 	extends ManyRowModelAccess[CompanyProduct] 
 		with ManyDescribedAccess[CompanyProduct, DescribedCompanyProduct]
+		with FilterableView[ManyCompanyProductsAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -86,8 +87,6 @@ trait ManyCompanyProductsAccess
 	// IMPLEMENTED	--------------------
 	
 	override def factory = CompanyProductFactory
-	
-	override protected def defaultOrdering = Some(factory.defaultOrdering)
 	
 	override protected def describedFactory = DescribedCompanyProduct
 	

@@ -23,7 +23,6 @@ trait ManyFullCompanyBankAccountsAccess
 	extends ManyCompanyBankAccountsAccessLike[FullCompanyBankAccount, ManyFullCompanyBankAccountsAccess]
 {
 	override def factory = FullCompanyBankAccountFactory
-	override protected def defaultOrdering = None
 	
 	override protected def _filter(condition: Condition): ManyFullCompanyBankAccountsAccess =
 		new SubAccess(this, condition)

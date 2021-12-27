@@ -18,6 +18,8 @@ object InvoiceFormFactory extends FromValidatedRowModelFactory[InvoiceForm]
 	
 	override def table = CommandTables.invoiceForm
 	
+	override def defaultOrdering = None
+	
 	override def fromValidatedModel(valid: Model) =
 		InvoiceForm(valid("id").getInt, InvoiceFormData(valid("OwnerId").getInt, valid("LanguageId").getInt, 
 			valid("CompanyId").int, valid("Path").getString))

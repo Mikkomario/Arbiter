@@ -8,7 +8,7 @@ import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.SubView
+import utopia.vault.nosql.view.{FilterableView, SubView}
 import utopia.vault.sql.{Condition, Select, Where}
 import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.factory.company.OrganizationCompanyFactory
@@ -29,7 +29,8 @@ object ManyOrganizationCompaniesAccess
   * @author Mikko Hilpinen
   * @since 2021-10-31
   */
-trait ManyOrganizationCompaniesAccess extends ManyRowModelAccess[OrganizationCompany] with Indexed
+trait ManyOrganizationCompaniesAccess
+	extends ManyRowModelAccess[OrganizationCompany] with Indexed with FilterableView[ManyOrganizationCompaniesAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -81,8 +82,6 @@ trait ManyOrganizationCompaniesAccess extends ManyRowModelAccess[OrganizationCom
 	// IMPLEMENTED	--------------------
 	
 	override def factory = OrganizationCompanyFactory
-	
-	override protected def defaultOrdering = None
 	
 	override def filter(additionalCondition: Condition): ManyOrganizationCompaniesAccess = 
 		new ManyOrganizationCompaniesAccess.ManyOrganizationCompaniesSubView(this, additionalCondition)

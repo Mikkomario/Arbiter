@@ -5,7 +5,7 @@ import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.SubView
+import utopia.vault.nosql.view.{FilterableView, SubView}
 import utopia.vault.sql.Condition
 import vf.arbiter.core.database.factory.location.StreetAddressFactory
 import vf.arbiter.core.database.model.location.StreetAddressModel
@@ -25,7 +25,8 @@ object ManyStreetAddressesAccess
   * @author Mikko Hilpinen
   * @since 2021-10-31
   */
-trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with Indexed
+trait ManyStreetAddressesAccess
+	extends ManyRowModelAccess[StreetAddress] with Indexed with FilterableView[ManyStreetAddressesAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -82,8 +83,6 @@ trait ManyStreetAddressesAccess extends ManyRowModelAccess[StreetAddress] with I
 	// IMPLEMENTED	--------------------
 	
 	override def factory = StreetAddressFactory
-	
-	override protected def defaultOrdering = None
 	
 	override def filter(additionalCondition: Condition): ManyStreetAddressesAccess = 
 		new ManyStreetAddressesAccess.ManyStreetAddressesSubView(this, additionalCondition)

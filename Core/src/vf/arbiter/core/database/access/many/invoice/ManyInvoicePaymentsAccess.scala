@@ -5,7 +5,7 @@ import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.SubView
+import utopia.vault.nosql.view.{FilterableView, SubView}
 import utopia.vault.sql.Condition
 import vf.arbiter.core.database.factory.invoice.InvoicePaymentFactory
 import vf.arbiter.core.database.model.invoice.InvoicePaymentModel
@@ -25,7 +25,8 @@ object ManyInvoicePaymentsAccess
   * @author Mikko Hilpinen
   * @since 2021-10-31
   */
-trait ManyInvoicePaymentsAccess extends ManyRowModelAccess[InvoicePayment] with Indexed
+trait ManyInvoicePaymentsAccess
+	extends ManyRowModelAccess[InvoicePayment] with Indexed with FilterableView[ManyInvoicePaymentsAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -70,8 +71,6 @@ trait ManyInvoicePaymentsAccess extends ManyRowModelAccess[InvoicePayment] with 
 	// IMPLEMENTED	--------------------
 	
 	override def factory = InvoicePaymentFactory
-	
-	override protected def defaultOrdering = None
 	
 	override def filter(additionalCondition: Condition): ManyInvoicePaymentsAccess = 
 		new ManyInvoicePaymentsAccess.ManyInvoicePaymentsSubView(this, additionalCondition)

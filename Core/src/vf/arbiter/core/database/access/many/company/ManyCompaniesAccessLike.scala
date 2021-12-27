@@ -6,6 +6,7 @@ import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
+import utopia.vault.nosql.view.FilterableView
 import utopia.vault.sql.{Select, Where}
 import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.model.company.{CompanyModel, OrganizationCompanyModel}
@@ -17,7 +18,7 @@ import java.time.Instant
   * @author Mikko Hilpinen
   * @since 2021-10-14
   */
-trait ManyCompaniesAccessLike[+A] extends ManyRowModelAccess[A] with Indexed
+trait ManyCompaniesAccessLike[+A, +Repr] extends ManyRowModelAccess[A] with Indexed with FilterableView[Repr]
 {
 	// COMPUTED	--------------------
 	
