@@ -10,7 +10,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="scala-sdk-2.13.3" level="application" />
     <orderEntry type="library" name="itext" level="project" />
     <orderEntry type="library" name="mariadb-java-client-1" level="project" />
     <orderEntry type="module" module-name="Citadel" />
@@ -22,5 +21,6 @@
     <orderEntry type="module" module-name="Trove" />
     <orderEntry type="library" name="ch.vorburger.mariaDB4j:mariaDB4j:2.4.0" level="project" />
     <orderEntry type="module" module-name="Citadel-Description-Importer" />
+    <orderEntry type="library" name="scala-sdk-2.13.7" level="application" />
   </component>
 </module>

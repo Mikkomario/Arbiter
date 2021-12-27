@@ -22,6 +22,11 @@ case class FullStreetAddress(address: StreetAddress, postalCode: FullPostalCode)
 	 */
 	def id = address.id
 	
+	/**
+	 * @return County of this address
+	 */
+	def county = postalCode.county
+	
 	
 	// IMPLEMENTED  --------------------------
 	

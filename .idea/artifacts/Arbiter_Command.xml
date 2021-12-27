@@ -16,7 +16,6 @@
         <element id="module-output" name="Trove" />
         <element id="module-output" name="Citadel-Description-Importer" />
       </element>
-      <element id="library" level="application" name="scala-sdk-2.13.3" />
       <element id="library" level="project" name="ch.vorburger.mariaDB4j:mariaDB4j:2.4.0" />
       <element id="library" level="project" name="mariadb-java-client-1" />
       <element id="library" level="project" name="itext" />
@@ -29,6 +28,7 @@
           <element id="dir-copy" path="$PROJECT_DIR$/Command/data/sql" />
         </element>
       </element>
+      <element id="library" level="application" name="scala-sdk-2.13.7" />
     </root>
   </artifact>
 </component>

@@ -3,6 +3,7 @@ package vf.arbiter.command.app
 import utopia.citadel.database.access.many.description.DbOrganizationDescriptions
 import utopia.citadel.database.access.single.language.DbLanguage
 import utopia.citadel.database.access.single.organization.DbOrganization
+import utopia.citadel.database.access.single.user.DbUser
 import utopia.citadel.database.model.description.DescriptionModel
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.citadel.model.enumeration.StandardUserRole.Owner
@@ -13,15 +14,16 @@ import utopia.flow.util.StringExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.vault.database.Connection
+import vf.arbiter.core.database.ArbiterDbExtensions._
 import vf.arbiter.core.database.access.many.company.DbDetailedCompanies
 import vf.arbiter.core.database.access.many.invoice.DbItemUnits
 import vf.arbiter.core.database.access.single.company.DbCompany
 import vf.arbiter.core.database.access.single.location.{DbCounty, DbPostalCode, DbStreetAddress}
 import vf.arbiter.core.database.model.CoreDescriptionLinkModel
-import vf.arbiter.core.database.model.company.CompanyProductModel
+import vf.arbiter.core.database.model.company.{CompanyDetailsModel, CompanyProductModel}
 import vf.arbiter.core.model.combined.company.DetailedCompany
 import vf.arbiter.core.model.enumeration.ArbiterDescriptionRoleId.Abbreviation
-import vf.arbiter.core.model.partial.company.CompanyProductData
+import vf.arbiter.core.model.partial.company.{CompanyDetailsData, CompanyProductData}
 import vf.arbiter.core.model.partial.location.StreetAddressData
 
 import scala.io.StdIn
@@ -139,6 +141,72 @@ object CompanyActions
 								None
 					}
 			}
+	}
+	
+	/**
+	 * Edits a company's information
+	 * @param userId Id of the user doing the editing
+	 * @param companyName Targeted company's name or part of that company's name
+	 * @param connection Implicit DB Connection
+	 */
+	def edit(userId: Int, companyName: String)(implicit connection: Connection) = {
+		// Finds the company to edit
+		val options = DbDetailedCompanies.matchingName(companyName)
+		if (options.isEmpty)
+			println(s"No company matching '$companyName'")
+		else
+			options.find { _.details.name ~== companyName }
+				.orElse { ActionUtils.selectFrom(options.map { c => c -> c.nameAndYCode },
+					"companies", "edit", skipQuestion = true) }
+				.foreach { company =>
+					// Asks the user to provide new company information
+					val oldAddress = company.details.addressAccess.full.get
+					
+					println("Please provide new company information. Leaving a field empty will keep the previous value.")
+					val newName = StdIn.readNonEmptyLine(s"New company name? (default: ${company.details.name})")
+					val newCounty = StdIn.readNonEmptyLine(s"New county? (default: ${oldAddress.county.name})")
+						.map { _.capitalize }
+					val newPostal = StdIn.readNonEmptyLine(
+						s"New postal code? (default: ${oldAddress.postalCode.number})")
+					val newStreet = StdIn.readNonEmptyLine(s"New street name (without number) (default: ${
+						oldAddress.streetName})")
+						.map { _.capitalize }
+					val newBuilding = StdIn.readNonEmptyLine(
+						s"New building number? (default: ${oldAddress.buildingNumber})")
+					val newStair = StdIn.readNonEmptyLine(s"New stair? (default: ${oldAddress.stair})")
+					val newRoom = StdIn.readNonEmptyLine(s"New room number? (default: ${oldAddress.roomNumber})")
+					val newTaxCode = StdIn.readNonEmptyLine(s"New tax code? (default: ${company.details.taxCode})")
+					
+					// Inserts the new information
+					val countyId = newCounty match {
+						case Some(newCountyName) => DbCounty.getOrInsert(newCountyName, Some(userId)).id
+						case None => oldAddress.county.id
+					}
+					val postalId = {
+						if (countyId != oldAddress.county.id || newPostal.nonEmpty)
+							DbPostalCode.getOrInsert(countyId, newPostal.getOrElse(oldAddress.postalCode.number),
+								Some(userId)).id
+						else
+							oldAddress.postalCodeId
+					}
+					val addressId = {
+						if (postalId != oldAddress.postalCodeId ||
+							Vector(newStreet, newBuilding, newStair, newRoom).exists { _.nonEmpty })
+							DbStreetAddress.getOrInsert(StreetAddressData(
+								postalId, newStreet.getOrElse(oldAddress.streetName),
+								newBuilding.getOrElse(oldAddress.buildingNumber), newStair.orElse(oldAddress.stair),
+								newRoom.orElse(oldAddress.roomNumber), Some(userId))).id
+						else
+							oldAddress.id
+					}
+					if (addressId != oldAddress.id || newName.nonEmpty || newTaxCode.nonEmpty) {
+						val isOfficial = DbUser(userId).isMemberOfCompanyWithId(company.id)
+						company.details.access.deprecatedAfter = Now
+						CompanyDetailsModel.insert(CompanyDetailsData(
+							company.id, newName.getOrElse(company.details.name), addressId,
+							newTaxCode.orElse(company.details.taxCode), Some(userId), isOfficial = isOfficial))
+					}
+				}
 	}
 	
 	/**

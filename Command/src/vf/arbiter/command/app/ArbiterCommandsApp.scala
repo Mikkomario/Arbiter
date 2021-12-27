@@ -257,14 +257,26 @@ object ArbiterCommandsApp extends App
 	}
 	def printInvoiceCommand(userId: Int, companyId: Int) = Command.withoutArguments("print",
 		help = "Prints an invoice") { connectionPool { implicit c => InvoiceActions.findAndPrint(userId, companyId) } }
-	def editCommand(userId: Int, companyId: Int) = Command("edit", help = "Edits a company product")(
-		ArgumentSchema("target", defaultValue = "product")) { args =>
-		args("target").getString.toLowerCase match
-		{
+	def editCommand(userId: Int, companyId: Option[Int]) = Command("edit", help = "Edits a company's information")(
+		ArgumentSchema("target", defaultValue = "company")) { args =>
+		args("target").getString.toLowerCase match {
+			case "company" =>
+				println("Which company do you want to edit?")
+				StdIn.readNonEmptyLine("Instruction: Write full or partial company name",
+					"Empty will cancel edit. Ok?")
+					.foreach { companyName =>
+						connectionPool { implicit c =>
+							CompanyActions.edit(userId, companyName)
+						}
+					}
 			case "product" =>
-				connectionPool { implicit c =>
-					implicit val languageIds: LanguageIds = languageIdsPointer.value
-					CompanyActions.editProduct(userId, companyId)
+				companyId match {
+					case Some(companyId) =>
+						connectionPool { implicit c =>
+							implicit val languageIds: LanguageIds = languageIdsPointer.value
+							CompanyActions.editProduct(userId, companyId)
+						}
+					case None => println("Please select a company first")
 				}
 			case _ => println("Unrecognized target. Supported values are: product")
 		}
@@ -308,11 +320,11 @@ object ArbiterCommandsApp extends App
 		val statefulCommands = user match
 		{
 			case Some(user) =>
-				Vector(selectCompanyCommand(user.userId), claimCompanyCommand(user.userId)) ++
+				Vector(selectCompanyCommand(user.userId), claimCompanyCommand(user.userId),
+					editCommand(user.userId, company.map { _.id })) ++
 					company.toVector.flatMap { company => Vector(
 						createInvoiceCommand(user.userId, company),
 						printInvoiceCommand(user.userId, company.id),
-						editCommand(user.userId, company.id),
 						exportDataCommand(company.details)
 					)}
 			case None => Vector(loginCommand)
