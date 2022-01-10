@@ -17,6 +17,7 @@ import vf.arbiter.core.model.combined.invoice.InvoiceWithItems
 import java.nio.file.Path
 import java.time.{Month, Year}
 import scala.collection.MapView
+import scala.io.Codec
 import scala.util.Success
 
 /**
@@ -26,6 +27,8 @@ import scala.util.Success
  */
 object ExportSummary
 {
+	private implicit val codec: Codec = Codec.UTF8
+	
 	/**
 	 * Exports summary data in csv format
 	 * @param companyId Id of the company whose data is exported
@@ -123,7 +126,8 @@ object ExportSummary
 					"Index;Month;Invoices;Without Tax;Tax;Total;Change %;Change % to Average" +:
 						(zeroMonth +: monthsWithTotals).paired.map { case Pair((_, previous), (month, total)) =>
 							val change = total - previous
-							s"${month.getValue};$month;${total.price};${total.tax};${total.priceWithTax}${
+							s"${month.getValue};$month;${total.invoiceCount};${doubleStr(total.price)};${
+								doubleStr(total.tax)};${doubleStr(total.priceWithTax)};${
 								percentageStr(change.price, previous.price)};${
 								percentageStr(total.price - averagePrice, averagePrice)}"
 						})
@@ -144,7 +148,8 @@ object ExportSummary
 		val groupTotals = sales.toVector.sortBy { _._2.valuesIterator.sum }
 		// Writes months as rows and targets as columns
 		path.createParentDirectories().flatMap { _.writeLines(groupTotals.map { _._1.toString }.mkString(";") +:
-			Month.values().iterator.map { month => groupTotals.map { _._2.getOrElse(month, 0.0) }.mkString(";") }) }
+			Month.values().iterator.map { month =>
+				groupTotals.map { case (_, totals) => doubleStr(totals.getOrElse(month, 0.0)) }.mkString(";") }) }
 	}
 	
 	private def percentageStr(a: Double, total: Double) = {
@@ -152,12 +157,15 @@ object ExportSummary
 			""
 		else {
 			val percentage = (a/total * 100).round
+			val percentageStr = doubleStr(percentage) + "%"
 			if (percentage >= 0)
-				s"+$percentage%"
+				s"+$percentageStr"
 			else
-				s"-$percentage%"
+				percentageStr
 		}
 	}
+	
+	private def doubleStr(a: Double) = (Math.round(a * 100) / 100).toString
 	
 	
 	// NESTED   ---------------------------------
