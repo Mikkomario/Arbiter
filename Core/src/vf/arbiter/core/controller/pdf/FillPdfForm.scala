@@ -1,18 +1,18 @@
 package vf.arbiter.core.controller.pdf
 
-import com.itextpdf.forms.PdfAcroForm
-import com.itextpdf.kernel.pdf.{PdfDocument, PdfReader, PdfWriter}
+import org.apache.pdfbox.pdmodel.PDDocument
 import utopia.flow.util.AutoClose._
 import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.FileExtensions._
 
+import java.io.IOException
 import java.nio.file.Path
 import scala.util.{Failure, Success, Try}
 
 /**
   * Used for filling form fields on a pdf file
   * @author Mikko Hilpinen
-  * @since 8.10.2021, v0.1
+  * @since 12.2.2022, v1.2
   */
 object FillPdfForm
 {
@@ -53,28 +53,27 @@ object FillPdfForm
 	def apply(formPath: Path, fieldValues: Map[String, String], outputPath: Path) =
 	{
 		Try {
-			new PdfReader(formPath.toFile).consume { reader =>
-				new PdfWriter(outputPath.toFile).consume { writer =>
-					new PdfDocument(reader, writer).consume { document =>
-						val form = PdfAcroForm.getAcroForm(document, true)
-						// Updates the named fields based on input
-						// Caches failures on individual value sets
-						val setFailures = fieldValues.flatMap { case (fieldName, fieldValue) =>
-							// Position ordering leftX, lowerY, rightX, upperY
-							// form.getField(fieldName).getWidgets.get(0).getRectangle.getAsNumber(1)
-							// TODO: Use this kind of a rectangle to set image position & size accordingly
-							// See: https://www.concretepage.com/itext/add-image-in-pdf-using-itext-in-java
-							// TODO: Consider gathering / logging fields that were not found
-							Try { Option(form.getField(fieldName)).foreach { _.setValue(fieldValue) } }
-								.failure.map { fieldName -> _ }
+			PDDocument.load(formPath.toFile).consume { document =>
+				Option(document.getDocumentCatalog.getAcroForm)
+					.toTry { new IOException(s"No form is accessible in $formPath") }
+					.flatMap { form =>
+						// Sets field values, catches errors
+						val errors = fieldValues.flatMap { case (fieldName, value) =>
+							Try {
+								Option(form.getField(fieldName))
+									.toTry { new NoSuchElementException(
+										s"$formPath doesn't contain field named $fieldName") }
+									.map { _.setValue(value) }
+							}.flatten.failure.map { fieldName -> _ }
 						}
-						// Only fails if all value sets failed, otherwise returns a list of failures
-						if (setFailures.nonEmpty && setFailures.size == fieldValues.size)
-							Failure(setFailures.head._2)
+						// Writes the new document
+						document.save(outputPath.toFile)
+						// Fails only if all writes failed
+						if (fieldValues.nonEmpty && errors.size == fieldValues.size)
+							Failure(errors.head._2)
 						else
-							Success(setFailures)
+							Success(errors)
 					}
-				}
 			}
 		}.flatten
 	}
