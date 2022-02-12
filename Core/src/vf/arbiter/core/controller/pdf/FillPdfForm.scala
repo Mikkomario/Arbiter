@@ -66,6 +66,9 @@ object FillPdfForm
 									.map { _.setValue(value) }
 							}.flatten.failure.map { fieldName -> _ }
 						}
+						// Flattens the form so that it's no longer editable
+						// TODO: Add this feature later when it is suitable
+						// form.flatten()
 						// Writes the new document
 						document.save(outputPath.toFile)
 						// Fails only if all writes failed
