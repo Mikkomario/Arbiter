@@ -4,7 +4,7 @@ import utopia.bunnymunch.jawn.JsonBunny
 import utopia.citadel.database.Tables
 import utopia.citadel.util.CitadelContext
 import utopia.flow.async.CloseHook
-import utopia.flow.datastructure.mutable.PointerWithEvents
+import utopia.flow.datastructure.mutable.{Pointer, PointerWithEvents}
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.parse.JsonParser
 import utopia.flow.time.TimeExtensions._
@@ -17,6 +17,8 @@ import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.stored.user.UserSettings
 import utopia.trove.controller.LocalDatabase
 import utopia.vault.database.Connection
+import utopia.vault.database.columnlength.ColumnLengthRules
+import utopia.vault.sql.{Count, Limit, SelectAll}
 import utopia.vault.util.ErrorHandling
 import utopia.vault.util.ErrorHandlingPrinciple.Throw
 import vf.arbiter.command.controller.{ArbiterDbSetupListener, ExportData, ExportSummary, ImportData, ImportDescriptions}
@@ -24,7 +26,7 @@ import vf.arbiter.core.model.combined.company.DetailedCompany
 import vf.arbiter.core.model.stored.company.CompanyDetails
 import vf.arbiter.core.util.Globals._
 
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 import java.time.{Instant, Year}
 import scala.io.StdIn
 import scala.util.{Failure, Success}
@@ -40,6 +42,8 @@ object ArbiterCommandsApp extends App
 	ErrorHandling.defaultPrinciple = Throw
 	implicit val jsonParser: JsonParser = JsonBunny
 	
+	val closeConsoleFlag = new Pointer[Boolean](false)
+	
 	val startArguments = CommandArguments(Vector(
 		ArgumentSchema("connect", "C", false, "Whether to use a local MariaDB database instead of Trove"),
 		ArgumentSchema("user", "u", "root", "User used when connecting to a local MariaDB Database"),
@@ -50,7 +54,8 @@ object ArbiterCommandsApp extends App
 	if (startArguments("connect").getBoolean)
 	{
 		Connection.modifySettings { _.copy(user = startArguments("user").getString,
-			password = startArguments("password").getString) }
+			password = startArguments("password").getString, charsetName = "utf8",
+			charsetCollationName = "utf8_general_ci") }
 	}
 	else
 	{
@@ -71,6 +76,11 @@ object ArbiterCommandsApp extends App
 		}
 		else
 		{
+			// Applies length rules
+			Paths.get("data/length-rules")
+				.iterateChildren { _.filter { _.fileType == "json" }
+					.foreach { rules => ColumnLengthRules.loadFrom(rules, CitadelContext.databaseName) } }
+			
 			// Performs description updates
 			println("Updating description data...")
 			connectionPool.tryWith { implicit c =>
@@ -239,6 +249,38 @@ object ArbiterCommandsApp extends App
 			}
 		}
 	}
+	val debugCommand = Command("debug", help = "Command that prints debugging information")(
+		ArgumentSchema("table", help = "Name of the table you want to debug")) { args =>
+		args("table").string match {
+			case Some(tableName) =>
+				connectionPool { implicit c =>
+					if (c.existsTable("arbiter_db", tableName)) {
+						val table = Tables(tableName)
+						println(table)
+						table.columns.foreach { col => println(s"- ${col.name} ${col.dataType}${
+							if (col.allowsNull) "" else " not null"}") }
+						println()
+						val tableSize = c(Count(table)).firstValue.getInt
+						if (tableSize > 0) {
+							println(s"$tableSize rows")
+							c(SelectAll(table) + Limit(3)).rows.foreach { row => println(s"- ${row.toModel}") }
+						}
+						else
+							println("This table is empty")
+					}
+					else
+						println(s"Table '$tableName' doesn't exist")
+				}
+			case None => println("Required argument 'table' is missing")
+		}
+	}
+	val clearAllCommand = Command("clear", help = "Clears all existing data")() { _ =>
+		if (StdIn.ask("Are you sure you want to delete all existing data and close this program?")) {
+			connectionPool { implicit c => c.dropDatabase("arbiter_db") }
+			closeConsoleFlag.value = true
+			println("Database cleared. Closing this program...")
+		}
+	}
 	
 	def selectCompanyCommand(userId: Int) = Command.withoutArguments("use",
 		help = "Switches between owned companies") {
@@ -329,14 +371,14 @@ object ArbiterCommandsApp extends App
 					)}
 			case None => Vector(loginCommand)
 		}
-		Vector(registerCommand, backupCommand, importCommand) ++ statefulCommands
+		Vector(registerCommand, backupCommand, importCommand, debugCommand, clearAllCommand) ++ statefulCommands
 	}
 	
 	// Starts the console
 	println()
 	println("Welcome to Arbiter")
 	println("Instructions: use 'help' or 'man' commands to get more information. Use exit to quit.")
-	Console(commandsPointer, "Please enter the next command", closeCommandName = "exit").run()
+	Console(commandsPointer, "\nPlease enter the next command", closeConsoleFlag, closeCommandName = "exit").run()
 	println("Bye!")
 	println()
 	

@@ -16,11 +16,9 @@
     "names": {
       "fi": {
         "1": "äidinkieli",
-        "2": "luonteva",
-        "3": "sujuva",
-        "4": "tyydyttävä",
-        "5": "välttävä",
-        "6": "tyhjää parempi"
+        "2": "sujuva",
+        "3": "tyydyttävä",
+        "4": "välttävä"
       }
     }
   },

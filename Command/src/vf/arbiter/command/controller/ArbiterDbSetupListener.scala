@@ -1,5 +1,6 @@
 package vf.arbiter.command.controller
 
+import utopia.flow.util.FileExtensions._
 import utopia.trove.event.DatabaseSetupEvent.{DatabaseConfigured, DatabaseStarted, SetupFailed, SetupSucceeded, UpdateApplied, UpdateFailed, UpdatesFound}
 import utopia.trove.event.{DatabaseSetupEvent, DatabaseSetupListener}
 
@@ -26,7 +27,13 @@ class ArbiterDbSetupListener extends DatabaseSetupListener
 	{
 		case DatabaseConfigured => println("Database configured. Starting...")
 		case DatabaseStarted => println("Database started!")
-		case UpdatesFound(filesToImport, _) => println(s"Found ${filesToImport.size} updates to apply...")
+		case UpdatesFound(filesToImport, originVersion) =>
+			originVersion match {
+				case Some(origin) => println(s"Found ${filesToImport.size} updates over current version $origin:")
+				case None => println(s"Starting with ${filesToImport.size} initial updates:")
+			}
+			filesToImport.foreach { f => println(s"- ${f.path.fileName}") }
+			println("Starting the update(s)...")
 		case UpdateApplied(appliedUpdate, remainingUpdates) =>
 			_updated = true
 			val remainingPart = if (remainingUpdates.isEmpty) "" else s" ${remainingUpdates.size} updates remaining..."

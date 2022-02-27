@@ -1,6 +1,8 @@
 # Arbiter App - List of Changes
 
-## v1.2 (in development)
+## v1.3 (in development)
+
+## v1.2 - 27.2.2022
 ### New Features
 - Added edit company -feature (under `edit` command)
 ### Other Changes

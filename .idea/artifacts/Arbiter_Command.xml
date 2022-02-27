@@ -20,11 +20,14 @@
       <element id="library" level="project" name="mariadb-java-client-1" />
       <element id="directory" name="data">
         <element id="directory" name="descriptions">
-          <element id="file-copy" path="$PROJECT_DIR$/../Utopia/Citadel/data/standard-descriptions.json" />
           <element id="file-copy" path="$PROJECT_DIR$/Core/data/arbiter-descriptions.json" />
+          <element id="file-copy" path="$PROJECT_DIR$/../Utopia/Citadel/data/descriptions/citadel-descriptions-v2.1.json" />
         </element>
         <element id="directory" name="sql">
-          <element id="dir-copy" path="$PROJECT_DIR$/Command/data/sql" />
+          <element id="dir-copy" path="$PROJECT_DIR$/Command/data/sql/production" />
+        </element>
+        <element id="directory" name="length-rules">
+          <element id="file-copy" path="$PROJECT_DIR$/../Utopia/Citadel/data/length-rules/citadel-length-rules-v2.1.json" />
         </element>
       </element>
       <element id="library" level="application" name="scala-sdk-2.13.7" />
