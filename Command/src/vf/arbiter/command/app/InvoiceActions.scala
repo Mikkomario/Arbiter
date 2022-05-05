@@ -6,7 +6,8 @@ import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.flow.datastructure.immutable.Lazy
 import utopia.flow.datastructure.mutable.PointerWithEvents
 import utopia.flow.generic.ValueConversions._
-import utopia.flow.time.Days
+import utopia.flow.time.{Days, Now}
+import utopia.flow.time.TimeExtensions._
 import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.FileExtensions._
@@ -19,23 +20,25 @@ import vf.arbiter.command.database.model.device.InvoiceFormModel
 import vf.arbiter.command.model.cached.SelectedLanguage
 import vf.arbiter.command.model.partial.device.InvoiceFormData
 import vf.arbiter.core.controller.pdf.FillPdfForm
-import vf.arbiter.core.database.access.many.company.{DbBanks, DbCompanies}
+import vf.arbiter.core.database.access.many.company.DbCompanies
 import vf.arbiter.core.database.access.many.invoice.{DbInvoices, DbItemUnits}
-import vf.arbiter.core.database.access.single.company.DbCompany
+import vf.arbiter.core.database.access.single.company.{DbCompany, DbCompanyDetails}
 import vf.arbiter.core.database.access.single.description.DbCompanyProductDescription
 import vf.arbiter.core.database.access.single.invoice.{DbInvoice, DbItemUnit}
 import vf.arbiter.core.database.model.CoreDescriptionLinkModel
-import vf.arbiter.core.database.model.company.{BankModel, CompanyBankAccountModel, CompanyProductModel}
+import vf.arbiter.core.database.model.company.CompanyProductModel
 import vf.arbiter.core.database.model.invoice.{InvoiceItemModel, InvoiceModel}
-import vf.arbiter.core.model.combined.company.{DescribedCompanyProduct, DetailedCompany, FullCompanyBankAccount, FullCompanyProduct, FullyDetailedCompany}
+import vf.arbiter.core.model.combined.company.{DescribedCompanyProduct, DetailedCompany, FullCompanyBankAccount, FullCompanyDetails, FullCompanyProduct, FullyDetailedCompany}
 import vf.arbiter.core.model.combined.invoice.{DescribedItemUnit, FullInvoice, FullInvoiceItem}
 import vf.arbiter.core.model.enumeration.ArbiterDescriptionRoleId.Abbreviation
-import vf.arbiter.core.model.partial.company.{BankData, CompanyBankAccountData, CompanyProductData}
+import vf.arbiter.core.model.partial.company.CompanyProductData
 import vf.arbiter.core.model.partial.invoice.{InvoiceData, InvoiceItemData}
+import vf.arbiter.core.model.stored.invoice.Invoice
 import vf.arbiter.core.util.ReferenceCode
 
 import java.nio.file.{Path, Paths}
 import java.time.format.DateTimeFormatter
+import scala.concurrent.duration.Duration
 import scala.io.StdIn
 import scala.util.{Failure, Random, Success}
 
@@ -49,71 +52,33 @@ object InvoiceActions
 	// OTHER    -------------------------------
 	
 	/**
-	 * Asks the user to select a bank account. Also allows account creation.
-	 * @param userId Id of the user who's selecting the account
-	 * @param companyId Id of the company for which the account is selected
-	 * @param connection Implicit DB connection
-	 * @return Selected or created account. None if no account was selected or created.
-	 */
-	def selectOrCreateBankAccount(userId: Int, companyId: Int)(implicit connection: Connection) =
-	{
-		val existingAccounts = DbCompany(companyId).bankAccounts.full.pull
-		if (existingAccounts.isEmpty)
-			createBankAccount(userId, companyId)
-		else
-			ActionUtils.selectOrInsert(existingAccounts.map { a => a -> s"${a.bank.name}: ${a.address}" }) {
-				createBankAccount(userId, companyId)
-			}
-	}
-	
-	/**
-	 * Creates a new bank account for the specified company
-	 * @param userId Id of the user adding the bank account
-	 * @param companyId Id of the company for which the bank account is added
+	 * Lists latest invoices
+	 * @param senderCompanyId Id of the invoice sender company
+	 * @param companyFilter A filter applied to recipient company name (optional)
+	 * @param maxPast Maximum duration of invoices included (default = 30 days)
 	 * @param connection Implicit DB Connection
-	 * @return Inserted bank account. None if user cancelled.
+	 * @param languageIds Implicit language ids
 	 */
-	def createBankAccount(userId: Int, companyId: Int)(implicit connection: Connection) =
-		selectOrCreateBank(userId).flatMap { bank =>
-			println(s"What's your bank account number (IBAN) in ${bank.name}?")
-			StdIn.readNonEmptyLine(
-				retryPrompt = "This information is required. Leaving empty will cancel this process.").map { address =>
-				// TODO: Should check for duplicates
-				val newAccount = CompanyBankAccountModel.insert(
-					CompanyBankAccountData(companyId, bank.id, address, Some(userId)))
-				FullCompanyBankAccount(newAccount, bank)
-			}
+	def listLatest(senderCompanyId: Int, companyFilter: String = "", maxPast: Duration = 30.days)
+	              (implicit connection: Connection, languageIds: LanguageIds) =
+	{
+		val baseAccess = maxPast.finite match {
+			case Some(duration) => DbInvoices.createdAfter(Now - duration)
+			case None => DbInvoices
 		}
-	
-	/**
-	 * Allows the user to select from existing banks or to create a new one
-	 * @param userId Id of the user
-	 * @param connection Implicit DB Connection
-	 * @return Selected or created bank. None if user didn't want to select nor create.
-	 */
-	def selectOrCreateBank(userId: Int)(implicit connection: Connection) =
-	{
-		val existingBanks = DbBanks.pull
-		if (existingBanks.isEmpty)
-			createBank(userId)
-		else
-			ActionUtils.selectOrInsert(existingBanks.map { b => b -> b.nameAndBic }, "bank") { createBank(userId) }
-	}
-	
-	/**
-	 * Creates a new bank, provided the user gives the necessary information
-	 * @param userId Id of the user who's adding information
-	 * @param connection Implicit DB Connection
-	 * @return Created bank. None if user didn't provide information.
-	 */
-	// TODO: Should probably check for duplicates
-	def createBank(userId: Int)(implicit connection: Connection) =
-	{
-		val retryPrompt = "This information is required for bank creation. Leaving empty will cancel this process."
-		StdIn.readNonEmptyLine("What's the name of the bank you're using?", retryPrompt).flatMap { name =>
-			StdIn.readNonEmptyLine("What's the BIC of the bank you're using?", retryPrompt).map { bic =>
-				BankModel.insert(BankData(name, bic, Some(userId)))
-			}
+		// Finds the target company, if specified
+		val recipientCompany = if (companyFilter.isEmpty) None else CompanyActions.findAndSelectOne(companyFilter)
+		// Then finds the invoices
+		val invoices = recipientCompany match {
+			case Some(recipientCompany) => baseAccess.betweenCompanies(senderCompanyId, recipientCompany.id)
+			case None => baseAccess.sentByCompanyWithId(senderCompanyId)
+		}
+		// Completes invoices and lists invoice information
+		val fullInvoices = DbInvoices.complete(invoices).toVector.sortBy { _.created }
+		println(f"Found ${fullInvoices.size} invoices. Total of ${
+			fullInvoices.foldLeft(0.0) { _ + _.totalPrice }}%1.2f € (without VAT)")
+		fullInvoices.reverseIterator.foreach { i =>
+			println(s"\t- ${i.date}: ${i.id} ${i.recipientCompany.details.name} ${i.totalPrice} € (${i.referenceCode})")
 		}
 	}
 	
@@ -139,61 +104,49 @@ object InvoiceActions
 	}
 	
 	/**
+	 * Finds an invoice and cancels it
+	 * @param senderCompanyId Id of the company who sent the invoice
+	 * @param connection Implicit DB Connection
+	 */
+	def findAndCancel(senderCompanyId: Int)(implicit connection: Connection) =
+		findAnd(senderCompanyId) { (invoice, _) =>
+			println("Invoice information:")
+			println(s"Invoice number: ${invoice.id}")
+			println(s"Date: ${invoice.date}")
+			DbCompanyDetails(invoice.recipientCompanyDetailsId).name.foreach { recipientName =>
+				println(s"Recipient: $recipientName")
+			}
+			println(s"Reference Code: ${invoice.referenceCode}")
+			
+			if (StdIn.ask("\nAre you sure you want to cancel this invoice?")) {
+				invoice.access.cancel()
+				println("The invoice cancelled!")
+			}
+			else
+				println("The invoice was not cancelled.")
+		}
+	
+	/**
 	 * Finds an invoice and prints it
 	 * @param senderCompanyId Id of the company who sent the invoice
 	 * @param connection Implicit DB Connection
 	 */
 	def findAndPrint(userId: Int, senderCompanyId: Int)(implicit connection: Connection) =
-	{
-		println("Which key you want to search with?")
-		ActionUtils.selectFrom(Vector(1 -> "Invoice index", 2 -> "Reference number", 3 -> "Customer name"),
-			"search keys", "use", skipQuestion = true).foreach { searchKey =>
-			val searchKeyName = if (searchKey == 1) "invoice index" else if (searchKey == 2) "reference number" else
-				"customer name"
-			StdIn.readNonEmptyLine(s"What's the $searchKeyName you want to find?").foreach { searched =>
-				// Finds the invoice with the searched key
-				val invoice = {
-					if (searchKey == 1)
-						searched.int match
-						{
-							case Some(invoiceId) => DbInvoice(invoiceId).pull
-							case None =>
-								println(s"$searched is not a valid invoice index")
-								None
-						}
-					else if (searchKey == 2)
-						DbInvoice.withReferenceCode(searched)
-					else
-						CompanyActions.findAndSelectOne(searched).flatMap { recipientCompany =>
-							val invoices = DbInvoices.betweenCompanies(senderCompanyId, recipientCompany.id)
-							ActionUtils.selectFrom(invoices.map { i => i -> s"${i.date}: ${i.id} / ${i.referenceCode}" })
-						}
-				}
-				invoice.foreach { invoice =>
-					// Reads associated data
-					// The invoice must belong to the sender company
-					invoice.senderDetailsAccess.full.filter { _.companyId == senderCompanyId } match
-					{
-						case Some(senderDetails) =>
-							invoice.recipientDetailsAccess.full.foreach { recipientDetails =>
-								val companiesById = DbCompanies(
-									Set(senderDetails.companyId, recipientDetails.companyId)).pull
-									.map { c => c.id -> c }.toMap
-								invoice.bankAccountAccess.full.foreach { bank =>
-									val items = invoice.access.items.fullInLanguageWithId(invoice.languageId)
-									val sender = FullyDetailedCompany(companiesById(senderDetails.companyId),
-										senderDetails)
-									val recipient = FullyDetailedCompany(
-										companiesById(recipientDetails.companyId), recipientDetails)
-									print(userId, FullInvoice(invoice, sender, recipient, bank, items))
-								}
-							}
-						case None => println("This invoice doesn't belong to your company")
-					}
+		findAnd(senderCompanyId) { (invoice, senderDetails) =>
+			invoice.recipientDetailsAccess.full.foreach { recipientDetails =>
+				val companiesById = DbCompanies(
+					Set(senderDetails.companyId, recipientDetails.companyId)).pull
+					.map { c => c.id -> c }.toMap
+				invoice.bankAccountAccess.full.foreach { bank =>
+					val items = invoice.access.items.fullInLanguageWithId(invoice.languageId)
+					val sender = FullyDetailedCompany(companiesById(senderDetails.companyId),
+						senderDetails)
+					val recipient = FullyDetailedCompany(
+						companiesById(recipientDetails.companyId), recipientDetails)
+					print(userId, FullInvoice(invoice, sender, recipient, bank, items))
 				}
 			}
 		}
-	}
 	
 	/**
 	 * Prints an invoice
@@ -256,6 +209,47 @@ object InvoiceActions
 						println(s"Printing failed due to error: ${error.getMessage}")
 				}
 			}
+	}
+	
+	private def findAnd[U](senderCompanyId: Int)
+	                      (action: (Invoice, FullCompanyDetails) => U)
+	                      (implicit connection: Connection) =
+	{
+		println("Which key you want to search with?")
+		ActionUtils.selectFrom(Vector(1 -> "Invoice index", 2 -> "Reference number", 3 -> "Customer name"),
+			"search keys", "use", skipQuestion = true).foreach { searchKey =>
+			val searchKeyName = if (searchKey == 1) "invoice index" else if (searchKey == 2) "reference number" else
+				"customer name"
+			StdIn.readNonEmptyLine(s"What's the $searchKeyName you want to find?").foreach { searched =>
+				// Finds the invoice with the searched key
+				val invoice = {
+					if (searchKey == 1)
+						searched.int match
+						{
+							case Some(invoiceId) => DbInvoice(invoiceId).pull
+							case None =>
+								println(s"$searched is not a valid invoice index")
+								None
+						}
+					else if (searchKey == 2)
+						DbInvoice.withReferenceCode(searched)
+					else
+						CompanyActions.findAndSelectOne(searched).flatMap { recipientCompany =>
+							val invoices = DbInvoices.betweenCompanies(senderCompanyId, recipientCompany.id)
+							ActionUtils.selectFrom(invoices.map { i => i -> s"${i.date}: ${i.id} / ${i.referenceCode}" })
+						}
+				}
+				invoice.foreach { invoice =>
+					// Reads associated data
+					// The invoice must belong to the sender company
+					invoice.senderDetailsAccess.full.filter { _.companyId == senderCompanyId } match
+					{
+						case Some(senderDetails) => action(invoice, senderDetails)
+						case None => println("This invoice doesn't belong to your company")
+					}
+				}
+			}
+		}
 	}
 	
 	private def _create(userId: Int, senderCompany: DetailedCompany, recipientCompany: DetailedCompany,
@@ -378,7 +372,7 @@ object InvoiceActions
 			if (invoiceItemData.nonEmpty ||
 				StdIn.ask("You didn't register any invoice items. Do you still want to save this invoice?"))
 			{
-				selectOrCreateBankAccount(userId, senderCompany.id).map { bankAccount =>
+				BankActions.selectOrCreateBankAccount(userId, senderCompany.id).map { bankAccount =>
 					// TODO: Should check whether reference code is a duplicate
 					val invoice = InvoiceModel.insert(InvoiceData(senderCompany.details.id, recipientCompany.details.id,
 						bankAccount.id, invoiceLanguage.id,

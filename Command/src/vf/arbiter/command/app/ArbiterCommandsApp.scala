@@ -28,6 +28,7 @@ import vf.arbiter.core.util.Globals._
 
 import java.nio.file.{Path, Paths}
 import java.time.{Instant, Year}
+import scala.concurrent.duration.Duration
 import scala.io.StdIn
 import scala.util.{Failure, Success}
 
@@ -38,12 +39,14 @@ import scala.util.{Failure, Success}
  */
 object ArbiterCommandsApp extends App
 {
+	// Sets up the program environment
 	CitadelContext.setup(executionContext, connectionPool, "arbiter_db")
 	ErrorHandling.defaultPrinciple = Throw
 	implicit val jsonParser: JsonParser = JsonBunny
 	
 	val closeConsoleFlag = new Pointer[Boolean](false)
 	
+	// Processes program startup arguments
 	val startArguments = CommandArguments(Vector(
 		ArgumentSchema("connect", "C", false, "Whether to use a local MariaDB database instead of Trove"),
 		ArgumentSchema("user", "u", "root", "User used when connecting to a local MariaDB Database"),
@@ -111,6 +114,7 @@ object ArbiterCommandsApp extends App
 		}
 	}
 	
+	// Sets up the user and company tracking
 	val userSettingsPointer = new PointerWithEvents[Option[UserSettings]](None)
 	def userSettings = userSettingsPointer.value
 	def userSettings_=(newUser: UserSettings) = userSettingsPointer.value = Some(newUser)
@@ -130,6 +134,7 @@ object ArbiterCommandsApp extends App
 	companyPointer.addListener { _.newValue.foreach { c => println(s"Using company ${c.details.name}") } }
 	userSettingsPointer.addAnyChangeListener { company = None }
 	
+	// Creates the basic commands
 	val loginCommand = Command("login", help = "Logs you in as a specific user, enabling other actions")(
 		ArgumentSchema("username", "name", help = "Your username")) { args =>
 		// If no argument was provided, asks the user
@@ -189,6 +194,7 @@ object ArbiterCommandsApp extends App
 			}
 		}
 	}
+	// Creates additional commands
 	val backupCommand = Command("backup", help = "Exports all available data to a json document")(
 		ArgumentSchema("path", "to", help = "Path to the json document to generate (optional)")) { args =>
 		val path = args("path").stringOr {
@@ -282,6 +288,7 @@ object ArbiterCommandsApp extends App
 		}
 	}
 	
+	// Creates user-dependent commands
 	def selectCompanyCommand(userId: Int) = Command.withoutArguments("use",
 		help = "Switches between owned companies") {
 		connectionPool { implicit c => CompanyActions.selectOneFromOwn(userId) }.foreach { company = _ }
@@ -297,6 +304,34 @@ object ArbiterCommandsApp extends App
 				}
 			}
 	}
+	// Creates company-dependent commands
+	// TODO: Add support for other data types
+	def listCommand(companyId: Int) = Command("list", "l", help = "Lists data")(
+		ArgumentSchema("target", "t", "invoice", "The targeted item group (currently only 'invoice' is supported)"),
+		ArgumentSchema("filter", "f",
+			help = "Additional filter to apply. In this case (partial) recipient company name. Optional."),
+		ArgumentSchema("period", "time",
+			help = "Time period to look back: day | week | month | quarter | year | decade | all. Default is context dependent.")) { args =>
+		// Determines the time period to include
+		val filter = args("filter").getString
+		val duration: Duration = args("period").getString.toLowerCase match {
+			case "day" => 1.days
+			case "week" => 7.days
+			case "month" => 30.days
+			case "quarter" => 90.days
+			case "year" => 365.days
+			case "decade" => 3652.days
+			case "all" => Duration.Inf
+			case _ => if (filter.isEmpty) 30.days else 90.days
+		}
+		// Lists invoices
+		implicit val languageIds: LanguageIds = languageIdsPointer.value
+		connectionPool { implicit c => InvoiceActions.listLatest(companyId, filter, duration) }
+	}
+	def cancelInvoiceCommand(companyId: Int) = Command
+		.withoutArguments("cancel", "delete", help = "Cancels an existing invoice") {
+			connectionPool { implicit c => InvoiceActions.findAndCancel(companyId) }
+		}
 	def printInvoiceCommand(userId: Int, companyId: Int) = Command.withoutArguments("print",
 		help = "Prints an invoice") { connectionPool { implicit c => InvoiceActions.findAndPrint(userId, companyId) } }
 	def editCommand(userId: Int, companyId: Option[Int]) = Command("edit", help = "Edits a company's information")(
@@ -359,19 +394,24 @@ object ArbiterCommandsApp extends App
 	
 	// Updates the available commands when the user logs in / selects a company
 	val commandsPointer = userSettingsPointer.lazyMergeWith(companyPointer) { (user, company) =>
-		val statefulCommands = user match
+		val userStatefulCommands = user match
 		{
 			case Some(user) =>
 				Vector(selectCompanyCommand(user.userId), claimCompanyCommand(user.userId),
 					editCommand(user.userId, company.map { _.id })) ++
 					company.toVector.flatMap { company => Vector(
 						createInvoiceCommand(user.userId, company),
-						printInvoiceCommand(user.userId, company.id),
-						exportDataCommand(company.details)
+						printInvoiceCommand(user.userId, company.id)
 					)}
 			case None => Vector(loginCommand)
 		}
-		Vector(registerCommand, backupCommand, importCommand, debugCommand, clearAllCommand) ++ statefulCommands
+		val companyStatefulCommands = company match {
+			case Some(company) =>
+				Vector(listCommand(company.id), cancelInvoiceCommand(company.id), exportDataCommand(company.details))
+			case None => Vector()
+		}
+		(Vector(registerCommand, backupCommand, importCommand, debugCommand, clearAllCommand) ++ userStatefulCommands ++
+			companyStatefulCommands).sortBy { _.name }
 	}
 	
 	// Starts the console

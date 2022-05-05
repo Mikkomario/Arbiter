@@ -1,6 +1,7 @@
 package vf.arbiter.core.database.factory.company
 
 import utopia.vault.nosql.factory.row.linked.CombiningFactory
+import utopia.vault.nosql.template.Deprecatable
 import vf.arbiter.core.database.factory.location.FullStreetAddressFactory
 import vf.arbiter.core.model.combined.company.FullCompanyDetails
 import vf.arbiter.core.model.combined.location.FullStreetAddress
@@ -11,11 +12,14 @@ import vf.arbiter.core.model.stored.company.CompanyDetails
  * @author Mikko Hilpinen
  * @since 18.10.2021, v0.2
  */
-object FullCompanyDetailsFactory extends CombiningFactory[FullCompanyDetails, CompanyDetails, FullStreetAddress]
+object FullCompanyDetailsFactory
+	extends CombiningFactory[FullCompanyDetails, CompanyDetails, FullStreetAddress] with Deprecatable
 {
 	override def parentFactory = CompanyDetailsFactory
 	
 	override def childFactory = FullStreetAddressFactory
 	
 	override def apply(parent: CompanyDetails, child: FullStreetAddress) = parent + child
+	
+	override def nonDeprecatedCondition = parentFactory.nonDeprecatedCondition
 }

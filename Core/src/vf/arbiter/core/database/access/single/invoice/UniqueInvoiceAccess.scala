@@ -3,7 +3,7 @@ package vf.arbiter.core.database.access.single.invoice
 import java.time.{Instant, LocalDate}
 import utopia.flow.datastructure.immutable.Value
 import utopia.flow.generic.ValueConversions._
-import utopia.flow.time.Days
+import utopia.flow.time.{Days, Now}
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.template.model.DistinctModelAccess
@@ -91,6 +91,13 @@ trait UniqueInvoiceAccess
 	
 	
 	// OTHER	--------------------
+	
+	/**
+	 * Cancels the accessed invoice
+	 * @param connection Implicit DB Connection
+	 * @return Whether any invoice was targeted
+	 */
+	def cancel()(implicit connection: Connection) = cancelledAfter = Now
 	
 	/**
 	  * Updates the cancelledAfter of the targeted Invoice instance(s)

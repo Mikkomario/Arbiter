@@ -2,7 +2,7 @@ package vf.arbiter.core.model.stored.company
 
 import utopia.vault.model.template.StoredModelConvertible
 import vf.arbiter.core.database.access.single.company.DbSingleCompany
-import vf.arbiter.core.model.combined.company.DetailedCompany
+import vf.arbiter.core.model.combined.company.{DetailedCompany, FullCompanyDetails, FullyDetailedCompany}
 import vf.arbiter.core.model.partial.company.CompanyData
 
 /**
@@ -29,5 +29,10 @@ case class Company(id: Int, data: CompanyData) extends StoredModelConvertible[Co
 	 * @return A detailed version of this company
 	 */
 	def +(details: CompanyDetails) = DetailedCompany(this, details)
+	/**
+	 * @param details Details for this company
+	 * @return A detailed version of this company
+	 */
+	def +(details: FullCompanyDetails) = FullyDetailedCompany(this, details)
 }
 

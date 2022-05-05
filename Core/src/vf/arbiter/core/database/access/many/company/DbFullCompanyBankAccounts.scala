@@ -1,6 +1,8 @@
 package vf.arbiter.core.database.access.many.company
 
+import utopia.flow.generic.ValueConversions._
 import utopia.vault.nosql.view.NonDeprecatedView
+import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.model.combined.company.FullCompanyBankAccount
 
 /**
@@ -10,3 +12,20 @@ import vf.arbiter.core.model.combined.company.FullCompanyBankAccount
  */
 object DbFullCompanyBankAccounts
 	extends ManyFullCompanyBankAccountsAccess with NonDeprecatedView[FullCompanyBankAccount]
+{
+	// OTHER    ------------------------------
+	
+	/**
+	 * @param ids Ids of targeted company bank accounts
+	 * @return An access point to those bank accounts
+	 */
+	def apply(ids: Iterable[Int]) = new DbFullCompanyBankAccountsSubSet(ids)
+	
+	
+	// NESTED   ------------------------------
+	
+	class DbFullCompanyBankAccountsSubSet(_ids: Iterable[Int]) extends ManyFullCompanyBankAccountsAccess
+	{
+		override def globalCondition = Some(index in _ids)
+	}
+}

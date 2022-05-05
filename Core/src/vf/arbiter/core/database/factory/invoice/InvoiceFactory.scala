@@ -1,6 +1,6 @@
 package vf.arbiter.core.database.factory.invoice
 
-import utopia.flow.datastructure.immutable.{Constant, Model}
+import utopia.flow.datastructure.immutable.Model
 import utopia.flow.time.Days
 import utopia.vault.nosql.factory.row.FromRowFactoryWithTimestamps
 import utopia.vault.nosql.factory.row.model.FromValidatedRowModelFactory

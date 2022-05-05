@@ -1,18 +1,23 @@
 package vf.arbiter.core.database.access.many.invoice
 
+import utopia.flow.datastructure.immutable.Pair
+
 import java.time.{Instant, LocalDate, Year}
 import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.Days
 import utopia.flow.time.TimeExtensions._
+import utopia.metropolis.model.cached.LanguageIds
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.{FilterableView, SubView}
+import utopia.vault.nosql.view.{ChronoRowFactoryView, SubView}
 import utopia.vault.sql.{Condition, Select, Where}
 import utopia.vault.sql.SqlExtensions._
+import vf.arbiter.core.database.access.many.company.{DbCompanies, DbFullCompanyBankAccounts, DbManyCompanyDetails}
 import vf.arbiter.core.database.factory.invoice.InvoiceFactory
 import vf.arbiter.core.database.model.company.CompanyDetailsModel
 import vf.arbiter.core.database.model.invoice.InvoiceModel
+import vf.arbiter.core.model.combined.invoice.FullInvoice
 import vf.arbiter.core.model.stored.invoice.Invoice
 
 object ManyInvoicesAccess
@@ -29,7 +34,8 @@ object ManyInvoicesAccess
  * @author Mikko Hilpinen
  * @since 2021-10-14
  */
-trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed with FilterableView[ManyInvoicesAccess]
+trait ManyInvoicesAccess
+	extends ManyRowModelAccess[Invoice] with Indexed with ChronoRowFactoryView[Invoice, ManyInvoicesAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -90,6 +96,17 @@ trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed with F
 	 * Factory used for constructing database the interaction models
 	 */
 	protected def model = InvoiceModel
+	/**
+	 * @return Factory used for constructing database interaction models for company details
+	 */
+	protected def companyDetailsModel = CompanyDetailsModel
+	
+	/**
+	 * @param connection Implicit DB connection
+	 * @param languageIds Implicit language ids
+	 * @return Fully detailed copies of all accessible invoices
+	 */
+	def full(implicit connection: Connection, languageIds: LanguageIds) = complete(pull).toVector
 	
 	
 	// IMPLEMENTED	--------------------
@@ -120,6 +137,54 @@ trait ManyInvoicesAccess extends ManyRowModelAccess[Invoice] with Indexed with F
 		// Joins to company details table in order to acquire all company-related invoices
 		factory(connection(Select.tables(target.joinFrom(model.senderCompanyDetailsIdColumn), factory.tables) +
 			Where(mergeCondition(detailsModel.withCompanyId(senderCompanyId).toCondition))))
+	}
+	
+	/**
+	 * Finds invoices that are made between the two mentioned companies
+	 * @param senderCompanyId Id of the company who sent the invoice
+	 * @param recipientCompanyId Id of the company who received the invoice
+	 * @param connection Implicit DB connection
+	 * @return Invoices from the sender company to the recipient company
+	 */
+	def betweenCompanies(senderCompanyId: Int, recipientCompanyId: Int)(implicit connection: Connection) =
+	{
+		// Unfortunately, because having to join to the same table twice, has to perform two separate searches
+		val invoiceIds = connection(Select(target.joinFrom(model.senderCompanyDetailsIdColumn), index) +
+			Where(mergeCondition(companyDetailsModel.withCompanyId(senderCompanyId)))).rowIntValues
+		factory(connection(Select(target.joinFrom(model.recipientCompanyDetailsIdColumn), table) +
+			Where(companyDetailsModel.withCompanyId(recipientCompanyId).toCondition && index.in(invoiceIds))))
+	}
+	
+	/**
+	 * Completes the specified invoices by adding company, bank & item data
+	 * @param invoices Invoices to complete
+	 * @param connection Implicit DB Connection
+	 * @param languageIds Implicit language ids
+	 * @return Fully detailed copies of the specified invoices
+	 */
+	def complete(invoices: Iterable[Invoice])(implicit connection: Connection, languageIds: LanguageIds) =
+	{
+		if (invoices.isEmpty)
+			Vector()
+		else {
+			// Collects invoice ids, then searches for linked data
+			val invoiceIds = invoices.map { _.id }.toSet
+			val itemsByInvoiceId = DbInvoiceItems.forAnyOfInvoices(invoiceIds).full.groupBy { _.invoiceId }
+			// Also fetches company data
+			val companyDetailsIds = invoices
+				.flatMap { i => Pair(i.senderCompanyDetailsId, i.recipientCompanyDetailsId) }.toSet
+			val fullDetails = DbManyCompanyDetails(companyDetailsIds).full.pull
+			val companyIds = fullDetails.map { _.companyId }.toSet
+			val companyById = DbCompanies(companyIds).pull.map { c => c.id -> c }.toMap
+			val fullCompanyByDetailsId = fullDetails.map { d => d.id -> (companyById(d.companyId) + d) }.toMap
+			// Finally collects bank data
+			val bankAccountIds = invoices.map { _.senderBankAccountId }.toSet
+			val bankAccountPerId = DbFullCompanyBankAccounts(bankAccountIds).pull.map { a => a.id -> a }.toMap
+			// Combines the data together
+			invoices.map { i => FullInvoice(i, fullCompanyByDetailsId(i.senderCompanyDetailsId),
+				fullCompanyByDetailsId(i.recipientCompanyDetailsId), bankAccountPerId(i.senderBankAccountId),
+				itemsByInvoiceId.getOrElse(i.id, Vector())) }
+		}
 	}
 	
 	/**
