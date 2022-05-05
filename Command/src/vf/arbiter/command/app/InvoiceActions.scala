@@ -236,6 +236,21 @@ object InvoiceActions
 							println(s"Warning: ${failures.size} fields were not written correctly")
 						}
 						outputPath.openInDesktop()
+						// Allows the user to flatten the document afterwards
+						if (StdIn.ask("Do you want to flatten this document so that it's no longer editable?")) {
+							val flatPath = outputPath.withMappedFileName { name =>
+								val (namePart, extension) = name.splitAtLast(".")
+								s"$namePart-flat.$extension"
+							}
+							FillPdfForm.flatten(outputPath, flatPath) match {
+								case Success(_) =>
+									println("Document flattened")
+									flatPath.openFileLocation()
+								case Failure(error) =>
+									error.printStackTrace()
+									println("Failed to flatten the document. See error above.")
+							}
+						}
 					case Failure(error) =>
 						error.printStackTrace()
 						println(s"Printing failed due to error: ${error.getMessage}")

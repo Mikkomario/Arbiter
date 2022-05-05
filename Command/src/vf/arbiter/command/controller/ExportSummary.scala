@@ -157,7 +157,7 @@ object ExportSummary
 			""
 		else {
 			val percentage = (a/total * 100).round
-			val percentageStr = doubleStr(percentage) + "%"
+			val percentageStr = doubleStr(percentage.toDouble) + "%"
 			if (percentage >= 0)
 				s"+$percentageStr"
 			else

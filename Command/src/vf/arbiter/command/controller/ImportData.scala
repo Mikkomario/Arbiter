@@ -40,6 +40,7 @@ import scala.util.{Failure, Success}
  * @author Mikko Hilpinen
  * @since 13.11.2021, v1.2
  */
+// FIXME: When importing invoices, the invoice ids are swapped (from low to high)
 object ImportData
 {
 	private lazy val idSchema = ModelDeclaration("id" -> IntType)

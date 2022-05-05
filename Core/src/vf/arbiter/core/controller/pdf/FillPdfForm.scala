@@ -80,4 +80,25 @@ object FillPdfForm
 			}
 		}.flatten
 	}
+	
+	/**
+	 * Creates a flattened copy of a form
+	 * @param path Path to the form file to flatten
+	 * @param outputPath Path to the location the flattened file will be stored
+	 * @return Success or failure
+	 */
+	def flatten(path: Path, outputPath: Path) = {
+		Try {
+			PDDocument.load(path.toFile).consume { document =>
+				Option(document.getDocumentCatalog.getAcroForm)
+					.toTry { new IOException(s"No form is accessible in $path") }
+					.map { form =>
+						// Flattens the form so that it's no longer editable
+						form.flatten()
+						// Writes the new document
+						document.save(outputPath.toFile)
+					}
+			}
+		}.flatten
+	}
 }
