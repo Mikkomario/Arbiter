@@ -11,7 +11,7 @@ import utopia.citadel.database.model.user.{UserModel, UserSettingsModel}
 import utopia.flow.datastructure.immutable.{Model, ModelDeclaration, Pair}
 import utopia.flow.generic.{DoubleType, InstantType, IntType, StringType}
 import utopia.flow.generic.ValueUnwraps._
-import utopia.flow.time.{Days, Now}
+import utopia.flow.time.{DateRange, Days, Now}
 import utopia.flow.util.CollectionExtensions._
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.metropolis.model.partial.language.LanguageData
@@ -552,7 +552,8 @@ object ImportData
 										.map { accountId =>
 											val data = InvoiceData(senderDetailsId, recipientDetailsId, accountId,
 												languageId, model("reference_code"),
-												Days(model("payment_duration_days")), model("product_delivery"),
+												Days(model("payment_duration_days")),
+												model("product_delivery").model.flatMap { DateRange(_).toOption },
 												created = model("created"), cancelledAfter = model("cancelled_after"))
 											(Pair(senderCompanyId, recipientCompanyId), data, model)
 										}

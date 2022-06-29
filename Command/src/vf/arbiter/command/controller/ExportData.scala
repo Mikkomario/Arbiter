@@ -155,7 +155,7 @@ object ExportData
 				"language" -> languageCodePerId(invoice.languageId),
 				"items" -> itemsPerInvoiceId.getOrElse(invoice.id, Vector()).map { _.toExportModel },
 				"created" -> invoice.created,
-				"product_delivery" -> invoice.productDeliveryDate,
+				"product_delivery" -> invoice.productDeliveryDates.map { _.toModel },
 				"payment_duration_days" -> invoice.paymentDuration.length,
 				"cancelled_after" -> invoice.cancelledAfter
 			))

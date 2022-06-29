@@ -1,10 +1,12 @@
 package vf.arbiter.command.app
 
+import utopia.flow.time.{DateRange, Today}
+import utopia.flow.time.TimeExtensions._
 import utopia.flow.util.CollectionExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.StringExtensions._
 
-import java.time.LocalDate
+import java.time.{LocalDate, YearMonth}
 import scala.io.StdIn
 
 /**
@@ -27,12 +29,11 @@ object ActionUtils
 			if (v.isEmpty)
 				Some(None)
 			else
-				v.localDate match
-				{
+				v.localDate match {
 					case Some(d) => Some(Some(d))
 					case None =>
-						if (StdIn.ask(s"Couldn't convert '${v.getString}' to a date. Do you want to try again?"))
-						{
+						if (StdIn.ask(
+							s"Couldn't convert '${v.getString}' to a date. Do you want to try again?")) {
 							println("Please write the date again")
 							None
 						}
@@ -40,6 +41,44 @@ object ActionUtils
 							Some(None)
 				}
 		}.get
+	}
+	
+	/**
+	 * Reads a date range from user input
+	 * @param prompt Prompt to display before asking for a date range
+	 * @return Parsed input
+	 */
+	def readDateRange(prompt: String = "") = {
+		prompt.notEmpty.foreach(println)
+		println("Instruction: Supported format is dd.mm.yyyy, you may specify a range with '-'")
+		println("If some parts are left empty, current month and year are substituted")
+		println("Also supports options: today, yesterday, this month, last month")
+		val input = StdIn.readLine()
+		if (input.isEmpty)
+			None
+		else
+			input.toLowerCase match {
+				case "today" => Some(DateRange.single(Today))
+				case "yesterday" => Some(DateRange.single(Today.yesterday))
+				case "this month" => Some(Today.yearMonth.dates)
+				case "last month" => Some(Today.yearMonth.previous.dates)
+				case _ =>
+					val (startPart, endPart) = input.splitAtFirst("-")
+					val endDate = dateFromString(endPart)
+					val startDate = dateFromString(startPart, endDate.getOrElse(Today.toLocalDate).yearMonth)
+					startDate match {
+						case Some(start) =>
+							endDate match {
+								case Some(end) => Some(DateRange.inclusive(start, end))
+								case None =>
+									if (input.contains('-'))
+										Some(DateRange.inclusive(start, Today))
+									else
+										Some(DateRange.single(start))
+							}
+						case None => endDate.map(DateRange.single)
+					}
+			}
 	}
 	
 	/**
@@ -253,5 +292,14 @@ object ActionUtils
 				case Left(filter) => _narrow(filter)
 			}
 		}
+	}
+	
+	private def dateFromString(str: String, defaultMonth: YearMonth = Today.yearMonth) = {
+		val parts = str.split('.').toVector.flatMap { _.trim.filter { _.isDigit }.toIntOption }
+		if (parts.isEmpty)
+			None
+		else
+			Some(LocalDate.of(parts.getOrElse(2, defaultMonth.year.value),
+				parts.getOrElse(1, defaultMonth.month.value), parts.head))
 	}
 }

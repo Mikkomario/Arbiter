@@ -5,22 +5,22 @@ import vf.arbiter.core.model.partial.invoice.InvoiceData
 import vf.arbiter.core.model.stored.invoice.{Invoice, InvoiceItem}
 
 /**
-  * Combines Invoice with items data
+  * Combines invoice with items data
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021, v1.3
   */
 case class InvoiceWithItems(invoice: Invoice, items: Vector[InvoiceItem]) extends Extender[InvoiceData]
 {
 	// COMPUTED	--------------------
 	
 	/**
-	  * Id of this Invoice in the database
+	  * Id of this invoice in the database
 	  */
 	def id = invoice.id
 	
 	/**
-	 * @return Total price of this invoice, without any taxes included
-	 */
+	  * Total price of this invoice, without any taxes included
+	  */
 	def price = items.map { _.price }.sum
 	
 	

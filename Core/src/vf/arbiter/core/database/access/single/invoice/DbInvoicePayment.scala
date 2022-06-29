@@ -8,9 +8,9 @@ import vf.arbiter.core.database.model.invoice.InvoicePaymentModel
 import vf.arbiter.core.model.stored.invoice.InvoicePayment
 
 /**
-  * Used for accessing individual InvoicePayments
+  * Used for accessing individual invoice payments
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021, v1.3
   */
 object DbInvoicePayment extends SingleRowModelAccess[InvoicePayment] with UnconditionalView with Indexed
 {
@@ -30,8 +30,8 @@ object DbInvoicePayment extends SingleRowModelAccess[InvoicePayment] with Uncond
 	// OTHER	--------------------
 	
 	/**
-	  * @param id Database id of the targeted InvoicePayment instance
-	  * @return An access point to that InvoicePayment
+	  * @param id Database id of the targeted invoice payment
+	  * @return An access point to that invoice payment
 	  */
 	def apply(id: Int) = DbSingleInvoicePayment(id)
 }

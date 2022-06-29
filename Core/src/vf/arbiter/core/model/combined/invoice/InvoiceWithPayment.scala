@@ -5,16 +5,16 @@ import vf.arbiter.core.model.partial.invoice.InvoiceData
 import vf.arbiter.core.model.stored.invoice.{Invoice, InvoicePayment}
 
 /**
-  * Combines Invoice with payment data
+  * Combines invoice with payment data
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021, v1.3
   */
 case class InvoiceWithPayment(invoice: Invoice, payment: Option[InvoicePayment]) extends Extender[InvoiceData]
 {
 	// COMPUTED	--------------------
 	
 	/**
-	  * Id of this Invoice in the database
+	  * Id of this invoice in the database
 	  */
 	def id = invoice.id
 	

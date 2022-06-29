@@ -9,9 +9,9 @@ import vf.arbiter.core.database.model.invoice.InvoiceModel
 import vf.arbiter.core.model.stored.invoice.Invoice
 
 /**
-  * Used for accessing individual Invoices
+  * Used for accessing individual invoices
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021, v1.3
   */
 object DbInvoice extends SingleRowModelAccess[Invoice] with NonDeprecatedView[Invoice] with Indexed
 {
@@ -31,17 +31,17 @@ object DbInvoice extends SingleRowModelAccess[Invoice] with NonDeprecatedView[In
 	// OTHER	--------------------
 	
 	/**
-	  * @param id Database id of the targeted Invoice instance
-	  * @return An access point to that Invoice
+	  * @param id Database id of the targeted invoice
+	  * @return An access point to that invoice
 	  */
 	def apply(id: Int) = DbSingleInvoice(id)
 	
 	/**
-	 * @param reference A reference code
-	 * @param connection Implicit DB Connection
-	 * @return Invoice with that reference code
-	 */
-	def withReferenceCode(reference: String)(implicit connection: Connection) =
+	  * @param reference A reference code
+	  * @param connection Implicit DB Connection
+	  * @return Invoice with that reference code
+	  */
+	def withReferenceCode(reference: String)(implicit connection: Connection) = 
 		find(model.withReferenceCode(reference).toCondition)
 }
 

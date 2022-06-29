@@ -1,3 +1,6 @@
+-- Version: v0.2
+-- Type: Full
+
 -- Represents a county within a country
 -- name: County name, with that county's or country's primary language
 -- creator_id: Id of the user who registered this county

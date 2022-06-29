@@ -263,7 +263,7 @@ object InvoiceActions
 			.intOr(30))
 		println("When were the services or items delivered for the customer?")
 		println("Leave empty if not applicable")
-		val deliveryDate = ActionUtils.readDate()
+		val deliveryDate = ActionUtils.readDateRange()
 		
 		// Prepares information for the next phase
 		// Units must have some kind of description available
@@ -630,7 +630,7 @@ object InvoiceActions
 				duration -> s"${invoice.paymentDuration.length} pv netto",
 				deadline -> dateFormat.format(invoice.paymentDeadline),
 				s"$deadline-2" -> dl,
-				delivery -> invoice.productDeliveryDate.map(dateFormat.format).getOrElse(""),
+				delivery -> invoice.productDeliveryDates.map { _.toString }.getOrElse(""),
 				totalPrice -> (round(price) + " €"),
 				totalTax -> (round(tax) + " €"),
 				totalPriceTaxed -> priceWithTax,

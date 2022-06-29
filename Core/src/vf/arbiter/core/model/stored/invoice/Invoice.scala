@@ -6,28 +6,28 @@ import vf.arbiter.core.model.combined.invoice.InvoiceWithItems
 import vf.arbiter.core.model.partial.invoice.InvoiceData
 
 /**
-  * Represents a Invoice that has already been stored in the database
-  * @param id id of this Invoice in the database
-  * @param data Wrapped Invoice data
+  * Represents a invoice that has already been stored in the database
+  * @param id id of this invoice in the database
+  * @param data Wrapped invoice data
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021, v1.3
   */
 case class Invoice(id: Int, data: InvoiceData) extends StoredModelConvertible[InvoiceData]
 {
 	// COMPUTED	--------------------
 	
 	/**
-	  * An access point to this Invoice in the database
+	  * An access point to this invoice in the database
 	  */
 	def access = DbSingleInvoice(id)
 	
 	
-	// OTHER    --------------------
+	// OTHER	--------------------
 	
 	/**
-	 * @param items Items of this invoice
-	 * @return A copy of this invoice with those items
-	 */
+	  * @param items Items of this invoice
+	  * @return A copy of this invoice with those items
+	  */
 	def withItems(items: Vector[InvoiceItem]) = InvoiceWithItems(this, items)
 }
 

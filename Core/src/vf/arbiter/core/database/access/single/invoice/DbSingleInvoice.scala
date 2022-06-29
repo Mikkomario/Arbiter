@@ -5,14 +5,17 @@ import vf.arbiter.core.database.access.many.invoice.DbInvoiceItems
 import vf.arbiter.core.model.stored.invoice.Invoice
 
 /**
-  * An access point to individual Invoices, based on their id
+  * An access point to individual invoices, based on their id
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021, v1.3
   */
 case class DbSingleInvoice(id: Int) extends UniqueInvoiceAccess with SingleIntIdModelAccess[Invoice]
 {
+	// COMPUTED	--------------------
+	
 	/**
-	 * @return An access point to this invoice's items
-	 */
+	  * An access point to this invoice's items
+	  */
 	def items = DbInvoiceItems.forInvoiceWithId(id)
 }
+

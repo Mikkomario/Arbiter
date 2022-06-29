@@ -2,7 +2,7 @@
 -- Arbiter Core DB Structure
 -- Supports versions v1.1 and above
 -- Type: Full
--- Version: v1.1
+-- Version: v1.3
 --
 
 -- Represents different categories a unit can belong to. Units within a category can be compared.
@@ -224,36 +224,39 @@ CREATE TABLE `company_details`(
 )Engine=InnoDB DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
 
 -- Represents a bill / an invoice sent by one company to another to request a monetary transfer / payment
--- sender_company_details_id: Id of the details of the company who sent this invoice (payment recipient)
+-- Represents a bill / an invoice sent by one company to another to request a monetary transfer / payment
+-- sender_company_details_id:    Id of the details of the company who sent this invoice (payment recipient)
 -- recipient_company_details_id: Id of the details of the recipient company used in this invoice
--- sender_bank_account_id: Id of the bank account the invoice sender wants the recipient to transfer money to
--- language_id: Id of the language used in this invoice
--- reference_code: A custom reference code used by the sender to identify this invoice
--- payment_duration_days: Number of days during which this invoice can be paid before additional consequences
--- product_delivery_date: Date when the sold products were delivered, if applicable
--- creator_id: Id of the user who created this invoice
--- created: Time when this Invoice was first created
--- cancelled_after: Time when this Invoice became deprecated. None while this Invoice is still valid.
+-- sender_bank_account_id:       Id of the bank account the invoice sender wants the recipient to transfer money to
+-- language_id:                  Id of the language used in this invoice
+-- reference_code:               A custom reference code used by the sender to identify this invoice
+-- payment_duration_days:        Number of days during which this invoice can be paid before additional consequences
+-- product_delivery_begin:       The first date when the products were delivered, if applicable
+-- product_delivery_end:         The last date when the invoiced products were delivered, if applicable
+-- creator_id:                   Id of the user who created this invoice
+-- created:                      Time when this invoice was first created
+-- cancelled_after:              Time when this invoice became deprecated. None while this invoice is still valid.
 CREATE TABLE `invoice`(
-	id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, 
-	`sender_company_details_id` INT NOT NULL, 
-	`recipient_company_details_id` INT NOT NULL, 
-	`sender_bank_account_id` INT NOT NULL, 
-	`language_id` INT NOT NULL, 
-	`reference_code` VARCHAR(16) NOT NULL, 
-	`payment_duration_days` INT NOT NULL DEFAULT 0, 
-	`product_delivery_date` DATE, 
-	`creator_id` INT, 
-	`created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
-	`cancelled_after` DATETIME, 
-	INDEX i_reference_code_idx (`reference_code`), 
-	INDEX i_created_idx (`created`), 
-	INDEX i_cancelled_after_idx (`cancelled_after`), 
-	CONSTRAINT i_cd_sender_company_details_ref_fk FOREIGN KEY i_cd_sender_company_details_ref_idx (sender_company_details_id) REFERENCES `company_details`(id) ON DELETE CASCADE, 
-	CONSTRAINT i_cd_recipient_company_details_ref_fk FOREIGN KEY i_cd_recipient_company_details_ref_idx (recipient_company_details_id) REFERENCES `company_details`(id) ON DELETE CASCADE, 
-	CONSTRAINT i_cba_sender_bank_account_ref_fk FOREIGN KEY i_cba_sender_bank_account_ref_idx (sender_bank_account_id) REFERENCES `company_bank_account`(id) ON DELETE CASCADE, 
-	CONSTRAINT i_l_language_ref_fk FOREIGN KEY i_l_language_ref_idx (language_id) REFERENCES `language`(id) ON DELETE CASCADE, 
-	CONSTRAINT i_u_creator_ref_fk FOREIGN KEY i_u_creator_ref_idx (creator_id) REFERENCES `user`(id) ON DELETE SET NULL
+	`id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	`sender_company_details_id` INT NOT NULL,
+	`recipient_company_details_id` INT NOT NULL,
+	`sender_bank_account_id` INT NOT NULL,
+	`language_id` INT NOT NULL,
+	`reference_code` VARCHAR(16) NOT NULL,
+	`payment_duration_days` INT NOT NULL DEFAULT 0,
+	`product_delivery_begin` DATE,
+	`product_delivery_end` DATE,
+	`creator_id` INT,
+	`created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`cancelled_after` DATETIME,
+	INDEX i_reference_code_idx (`reference_code`),
+	INDEX i_created_idx (`created`),
+	INDEX i_cancelled_after_idx (`cancelled_after`),
+	CONSTRAINT i_cd_sender_company_details_ref_fk FOREIGN KEY i_cd_sender_company_details_ref_idx (sender_company_details_id) REFERENCES `company_details`(`id`) ON DELETE CASCADE,
+	CONSTRAINT i_cd_recipient_company_details_ref_fk FOREIGN KEY i_cd_recipient_company_details_ref_idx (recipient_company_details_id) REFERENCES `company_details`(`id`) ON DELETE CASCADE,
+	CONSTRAINT i_cba_sender_bank_account_ref_fk FOREIGN KEY i_cba_sender_bank_account_ref_idx (sender_bank_account_id) REFERENCES `company_bank_account`(`id`) ON DELETE CASCADE,
+	CONSTRAINT i_l_language_ref_fk FOREIGN KEY i_l_language_ref_idx (language_id) REFERENCES `language`(`id`) ON DELETE CASCADE,
+	CONSTRAINT i_u_creator_ref_fk FOREIGN KEY i_u_creator_ref_idx (creator_id) REFERENCES `user`(`id`) ON DELETE SET NULL
 )Engine=InnoDB DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
 
 -- Represents a payment event concerning an invoice you have sent

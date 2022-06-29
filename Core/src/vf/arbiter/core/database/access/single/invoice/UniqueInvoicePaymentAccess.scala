@@ -1,6 +1,5 @@
 package vf.arbiter.core.database.access.single.invoice
 
-import java.time.{Instant, LocalDate}
 import utopia.flow.datastructure.immutable.Value
 import utopia.flow.generic.ValueConversions._
 import utopia.vault.database.Connection
@@ -11,10 +10,12 @@ import vf.arbiter.core.database.factory.invoice.InvoicePaymentFactory
 import vf.arbiter.core.database.model.invoice.InvoicePaymentModel
 import vf.arbiter.core.model.stored.invoice.InvoicePayment
 
+import java.time.{Instant, LocalDate}
+
 /**
-  * A common trait for access points that return individual and distinct InvoicePayments.
+  * A common trait for access points that return individual and distinct invoice payments.
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021, v1.3
   */
 trait UniqueInvoicePaymentAccess 
 	extends SingleRowModelAccess[InvoicePayment] 
@@ -63,40 +64,40 @@ trait UniqueInvoicePaymentAccess
 	// OTHER	--------------------
 	
 	/**
-	  * Updates the created of the targeted InvoicePayment instance(s)
+	  * Updates the creation times of the targeted invoice payments
 	  * @param newCreated A new created to assign
-	  * @return Whether any InvoicePayment instance was affected
+	  * @return Whether any invoice payment was affected
 	  */
 	def created_=(newCreated: Instant)(implicit connection: Connection) = 
 		putColumn(model.createdColumn, newCreated)
 	
 	/**
-	  * Updates the date of the targeted InvoicePayment instance(s)
+	  * Updates the dates of the targeted invoice payments
 	  * @param newDate A new date to assign
-	  * @return Whether any InvoicePayment instance was affected
+	  * @return Whether any invoice payment was affected
 	  */
 	def date_=(newDate: LocalDate)(implicit connection: Connection) = putColumn(model.dateColumn, newDate)
 	
 	/**
-	  * Updates the invoiceId of the targeted InvoicePayment instance(s)
-	  * @param newInvoiceId A new invoiceId to assign
-	  * @return Whether any InvoicePayment instance was affected
+	  * Updates the invoices ids of the targeted invoice payments
+	  * @param newInvoiceId A new invoice id to assign
+	  * @return Whether any invoice payment was affected
 	  */
 	def invoiceId_=(newInvoiceId: Int)(implicit connection: Connection) = 
 		putColumn(model.invoiceIdColumn, newInvoiceId)
 	
 	/**
-	  * Updates the receivedAmount of the targeted InvoicePayment instance(s)
-	  * @param newReceivedAmount A new receivedAmount to assign
-	  * @return Whether any InvoicePayment instance was affected
+	  * Updates the received amounts of the targeted invoice payments
+	  * @param newReceivedAmount A new received amount to assign
+	  * @return Whether any invoice payment was affected
 	  */
 	def receivedAmount_=(newReceivedAmount: Double)(implicit connection: Connection) = 
 		putColumn(model.receivedAmountColumn, newReceivedAmount)
 	
 	/**
-	  * Updates the remarks of the targeted InvoicePayment instance(s)
+	  * Updates the remarkss of the targeted invoice payments
 	  * @param newRemarks A new remarks to assign
-	  * @return Whether any InvoicePayment instance was affected
+	  * @return Whether any invoice payment was affected
 	  */
 	def remarks_=(newRemarks: String)(implicit connection: Connection) = 
 		putColumn(model.remarksColumn, newRemarks)
