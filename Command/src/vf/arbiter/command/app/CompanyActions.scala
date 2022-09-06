@@ -194,7 +194,7 @@ object CompanyActions
 					}
 					val addressId = {
 						if (postalId != oldAddress.postalCodeId ||
-							Vector(newStreet, newBuilding, newStair, newRoom).exists { _.exists { _ != "-" } })
+							Vector(newStreet, newBuilding, newStair, newRoom).exists { _.nonEmpty })
 						{
 							val newId = DbStreetAddress.getOrInsert(StreetAddressData(
 								postalId, newStreet.getOrElse(oldAddress.streetName),
@@ -207,7 +207,7 @@ object CompanyActions
 						else
 							oldAddress.id
 					}
-					if (addressId != oldAddress.id || newName.nonEmpty || newTaxCode.exists { _ != "-" }) {
+					if (addressId != oldAddress.id || newName.nonEmpty || newTaxCode.nonEmpty) {
 						val isOfficial = DbUser(userId).isMemberOfCompanyWithId(company.id)
 						company.details.access.deprecatedAfter = Now
 						val newDetails = CompanyDetailsModel.insert(CompanyDetailsData(
