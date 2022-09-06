@@ -5,7 +5,6 @@ import utopia.citadel.database.access.single.language.DbLanguage
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.flow.datastructure.immutable.Lazy
 import utopia.flow.datastructure.mutable.PointerWithEvents
-import utopia.flow.generic.ValueConversions._
 import utopia.flow.time.{Days, Now}
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.util.CollectionExtensions._
@@ -223,9 +222,9 @@ object InvoiceActions
 			StdIn.readNonEmptyLine(s"What's the $searchKeyName you want to find?").foreach { searched =>
 				// Finds the invoice with the searched key
 				val invoice = {
+					import utopia.flow.generic.ValueConversions._
 					if (searchKey == 1)
-						searched.int match
-						{
+						searched.int match {
 							case Some(invoiceId) => DbInvoice(invoiceId).pull
 							case None =>
 								println(s"$searched is not a valid invoice index")

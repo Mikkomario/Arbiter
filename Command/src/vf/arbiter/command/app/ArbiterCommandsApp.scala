@@ -24,7 +24,7 @@ import utopia.vault.util.ErrorHandlingPrinciple.Throw
 import vf.arbiter.command.controller.{ArbiterDbSetupListener, ExportData, ExportSummary, ImportData, ImportDescriptions}
 import vf.arbiter.core.model.combined.company.DetailedCompany
 import vf.arbiter.core.model.stored.company.CompanyDetails
-import vf.arbiter.core.util.Globals._
+import vf.arbiter.core.util.Common._
 
 import java.nio.file.{Path, Paths}
 import java.time.{Instant, Year}

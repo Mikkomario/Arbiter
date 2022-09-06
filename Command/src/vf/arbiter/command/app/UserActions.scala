@@ -246,8 +246,7 @@ object UserActions
 	}
 	
 	private def findUserForName(userName: String)(implicit connection: Connection) =
-		DbManyUserSettings.withName(userName).pull.bestMatch(Vector(_.email.isEmpty))
-			.headOption
+		DbManyUserSettings.withName(userName).pull.bestMatch { _.email.isEmpty }.headOption
 	
 	private def setUserLanguages(userId: Int, languageCodes: Vector[String])(implicit connection: Connection) =
 	{

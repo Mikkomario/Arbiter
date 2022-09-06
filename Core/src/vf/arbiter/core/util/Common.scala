@@ -1,6 +1,7 @@
 package vf.arbiter.core.util
 
 import utopia.flow.async.ThreadPool
+import utopia.flow.util.logging.{Logger, SysErrLogger}
 import utopia.vault.database.ConnectionPool
 
 import scala.concurrent.ExecutionContext
@@ -10,8 +11,13 @@ import scala.concurrent.ExecutionContext
  * @author Mikko Hilpinen
  * @since 10.10.2021, v0.1
  */
-object Globals
+object Common
 {
+	/**
+	 * The commonly used logging implementation
+	 */
+	implicit val log: Logger = SysErrLogger
+	
 	/**
 	 * Threadpool used by this project
 	 */

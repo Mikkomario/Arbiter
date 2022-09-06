@@ -8,9 +8,9 @@ import utopia.citadel.database.model.description.DescriptionModel
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.citadel.model.enumeration.CitadelUserRole.Owner
 import utopia.flow.generic.ValueConversions._
+import utopia.flow.operator.EqualsExtensions._
 import utopia.flow.time.Now
 import utopia.flow.util.console.ConsoleExtensions._
-import utopia.flow.util.StringExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.vault.database.Connection
@@ -173,6 +173,9 @@ object CompanyActions
 						.map { _.capitalize }
 					val newBuilding = StdIn.readNonEmptyLine(
 						s"New building number? (default: ${oldAddress.buildingNumber})")
+					// Since empty signifies default, needs a new input for an empty value
+					if (oldAddress.stair.nonEmpty || oldAddress.roomNumber.nonEmpty || company.details.taxCode.nonEmpty)
+						println("Info: If you want to clear one of the previously added values, pass '-' as input (without quotations)")
 					val newStair = StdIn.readNonEmptyLine(s"New stair? (default: ${oldAddress.stair})")
 					val newRoom = StdIn.readNonEmptyLine(s"New room number? (default: ${oldAddress.roomNumber})")
 					val newTaxCode = StdIn.readNonEmptyLine(s"New tax code? (default: ${company.details.taxCode})")
@@ -191,20 +194,27 @@ object CompanyActions
 					}
 					val addressId = {
 						if (postalId != oldAddress.postalCodeId ||
-							Vector(newStreet, newBuilding, newStair, newRoom).exists { _.nonEmpty })
-							DbStreetAddress.getOrInsert(StreetAddressData(
+							Vector(newStreet, newBuilding, newStair, newRoom).exists { _.exists { _ != "-" } })
+						{
+							val newId = DbStreetAddress.getOrInsert(StreetAddressData(
 								postalId, newStreet.getOrElse(oldAddress.streetName),
-								newBuilding.getOrElse(oldAddress.buildingNumber), newStair.orElse(oldAddress.stair),
-								newRoom.orElse(oldAddress.roomNumber), Some(userId))).id
+								newBuilding.getOrElse(oldAddress.buildingNumber),
+								newStair.orElse(oldAddress.stair).filterNot { _ == "-" },
+								newRoom.orElse(oldAddress.roomNumber).filterNot { _ == "-" }, Some(userId))).id
+							println(s"Address of ${ newName.getOrElse(company.details.name) } updated")
+							newId
+						}
 						else
 							oldAddress.id
 					}
-					if (addressId != oldAddress.id || newName.nonEmpty || newTaxCode.nonEmpty) {
+					if (addressId != oldAddress.id || newName.nonEmpty || newTaxCode.exists { _ != "-" }) {
 						val isOfficial = DbUser(userId).isMemberOfCompanyWithId(company.id)
 						company.details.access.deprecatedAfter = Now
-						CompanyDetailsModel.insert(CompanyDetailsData(
+						val newDetails = CompanyDetailsModel.insert(CompanyDetailsData(
 							company.id, newName.getOrElse(company.details.name), addressId,
-							newTaxCode.orElse(company.details.taxCode), Some(userId), isOfficial = isOfficial))
+							newTaxCode.orElse(company.details.taxCode).filterNot { _ == "-" }, Some(userId),
+							isOfficial = isOfficial))
+						println(s"${ newDetails.name } updated")
 					}
 				}
 	}
