@@ -1,7 +1,7 @@
 package vf.arbiter.core.database.access.many.invoice
 
 import utopia.citadel.database.access.many.description.ManyDescribedAccess
-import utopia.flow.generic.ValueConversions._
+import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.view.{FilterableView, SubView}

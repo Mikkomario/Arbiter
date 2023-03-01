@@ -1,7 +1,7 @@
 package vf.arbiter.command.database.factory.environment
 
-import utopia.flow.datastructure.immutable.{Constant, Model}
-import utopia.flow.util.FileExtensions._
+import utopia.flow.generic.model.immutable.{Constant, Model}
+import utopia.flow.parse.file.FileExtensions._
 import utopia.vault.nosql.factory.row.model.FromValidatedRowModelFactory
 import vf.arbiter.command.database.CommandTables
 import vf.arbiter.command.model.partial.environment.DescriptionImportData

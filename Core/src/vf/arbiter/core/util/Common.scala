@@ -1,6 +1,6 @@
 package vf.arbiter.core.util
 
-import utopia.flow.async.ThreadPool
+import utopia.flow.async.context.ThreadPool
 import utopia.flow.util.logging.{Logger, SysErrLogger}
 import utopia.vault.database.ConnectionPool
 
@@ -21,7 +21,7 @@ object Common
 	/**
 	 * Threadpool used by this project
 	 */
-	val threadPool = new ThreadPool("Arbiter")
+	private val threadPool = new ThreadPool("Arbiter")
 	
 	/**
 	 * Execution context used in this project

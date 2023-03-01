@@ -1,6 +1,5 @@
 package vf.arbiter.core.test
 
-import utopia.flow.generic.DataType
 import utopia.flow.util.StringExtensions._
 import vf.arbiter.core.util.ReferenceCode
 
@@ -11,8 +10,6 @@ import vf.arbiter.core.util.ReferenceCode
  */
 object ReferenceCodeApp extends App
 {
-	DataType.setup()
-	
 	val parts = args.toVector.map { _.digits }.filter { _.nonEmpty }.map { _.toInt }
 	if (parts.isEmpty)
 		println("Please specify reference code parts")

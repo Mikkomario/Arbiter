@@ -8,11 +8,12 @@ import utopia.citadel.database.access.many.user.DbManyUserSettings
 import utopia.citadel.database.model.language.LanguageModel
 import utopia.citadel.database.model.organization.{MemberRoleLinkModel, MembershipModel, OrganizationModel}
 import utopia.citadel.database.model.user.{UserModel, UserSettingsModel}
-import utopia.flow.datastructure.immutable.{Model, ModelDeclaration, Pair}
-import utopia.flow.generic.{DoubleType, InstantType, IntType, StringType}
-import utopia.flow.generic.ValueUnwraps._
+import utopia.flow.generic.model.immutable.{Model, ModelDeclaration}
+import utopia.flow.generic.model.mutable.DataType.{DoubleType, InstantType, IntType, StringType}
+import utopia.flow.generic.casting.ValueUnwraps._
 import utopia.flow.time.{DateRange, Days, Now}
-import utopia.flow.util.CollectionExtensions._
+import utopia.flow.collection.CollectionExtensions._
+import utopia.flow.collection.immutable.Pair
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.metropolis.model.partial.language.LanguageData
 import utopia.metropolis.model.partial.organization.{MemberRoleLinkData, MembershipData, OrganizationData}

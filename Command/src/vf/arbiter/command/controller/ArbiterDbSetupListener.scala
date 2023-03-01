@@ -1,6 +1,6 @@
 package vf.arbiter.command.controller
 
-import utopia.flow.util.FileExtensions._
+import utopia.flow.parse.file.FileExtensions._
 import utopia.trove.event.DatabaseSetupEvent.{DatabaseConfigured, DatabaseStarted, SetupFailed, SetupSucceeded, UpdateApplied, UpdateFailed, UpdatesFound}
 import utopia.trove.event.{DatabaseSetupEvent, DatabaseSetupListener}
 

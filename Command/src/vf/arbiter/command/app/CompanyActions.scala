@@ -7,7 +7,7 @@ import utopia.citadel.database.access.single.user.DbUser
 import utopia.citadel.database.model.description.DescriptionModel
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.citadel.model.enumeration.CitadelUserRole.Owner
-import utopia.flow.generic.ValueConversions._
+import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.operator.EqualsExtensions._
 import utopia.flow.time.Now
 import utopia.flow.util.console.ConsoleExtensions._

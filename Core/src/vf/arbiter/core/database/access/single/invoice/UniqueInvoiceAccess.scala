@@ -1,7 +1,7 @@
 package vf.arbiter.core.database.access.single.invoice
 
-import utopia.flow.datastructure.immutable.Value
-import utopia.flow.generic.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
+import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.time.{Days, Now}
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess

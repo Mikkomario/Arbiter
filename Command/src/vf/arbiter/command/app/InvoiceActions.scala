@@ -3,13 +3,13 @@ package vf.arbiter.command.app
 import utopia.citadel.database.access.single.description.DbLanguageDescription
 import utopia.citadel.database.access.single.language.DbLanguage
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
-import utopia.flow.datastructure.immutable.Lazy
-import utopia.flow.datastructure.mutable.PointerWithEvents
+import utopia.flow.view.immutable.caching.Lazy
+import utopia.flow.view.mutable.eventful.PointerWithEvents
 import utopia.flow.time.{Days, Now}
 import utopia.flow.time.TimeExtensions._
-import utopia.flow.util.CollectionExtensions._
+import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
-import utopia.flow.util.FileExtensions._
+import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.util.StringExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.partial.description.DescriptionData
@@ -222,7 +222,7 @@ object InvoiceActions
 			StdIn.readNonEmptyLine(s"What's the $searchKeyName you want to find?").foreach { searched =>
 				// Finds the invoice with the searched key
 				val invoice = {
-					import utopia.flow.generic.ValueConversions._
+					import utopia.flow.generic.casting.ValueConversions._
 					if (searchKey == 1)
 						searched.int match {
 							case Some(invoiceId) => DbInvoice(invoiceId).pull
@@ -314,7 +314,7 @@ object InvoiceActions
 			
 			// Creates / prepares the invoice items
 			val lastProductPointer = new PointerWithEvents[Option[FullCompanyProduct]](None)
-			lastProductPointer.addListener { _.newValue.flatMap { _(Name) }
+			lastProductPointer.addContinuousListener { _.newValue.flatMap { _(Name) }
 				.foreach { n => println(s"Using product $n for the this invoice item") } }
 			// Collected info: product id + description + amount + price per unit
 			val invoiceItemData = Iterator.iterate(1) { _ + 1 }.map { index =>
@@ -519,29 +519,29 @@ object InvoiceActions
 	
 	private object PrintFields
 	{
-		val dateFormat = DateTimeFormatter.ofPattern("dd.MM.uuuu")
+		private val dateFormat = DateTimeFormatter.ofPattern("dd.MM.uuuu")
 		
-		val invoiceNumber = "invoice-index"
-		val referenceCode = "reference-code"
+		private val invoiceNumber = "invoice-index"
+		private val referenceCode = "reference-code"
 		
-		val date = "date"
-		val duration = "pay-duration"
-		val deadline = "payment-deadline"
-		val delivery = "delivery-date"
+		private val date = "date"
+		private val duration = "pay-duration"
+		private val deadline = "payment-deadline"
+		private val delivery = "delivery-date"
 		
-		val totalPrice = "payment-total"
-		val totalTax = "tax-total"
-		val totalPriceTaxed = "payment-total-taxed"
+		private val totalPrice = "payment-total"
+		private val totalTax = "tax-total"
+		private val totalPriceTaxed = "payment-total-taxed"
 		
 		object Sender
 		{
-			val name = "sender-name"
-			val yCode = "sender-y-code"
-			val taxCode = "sender-tax-code"
-			val address = "sender-address"
-			val postalCode = "sender-postal-code"
-			val iban = "sender-bank"
-			val bic = "sender-bic"
+			private val name = "sender-name"
+			private val yCode = "sender-y-code"
+			private val taxCode = "sender-tax-code"
+			private val address = "sender-address"
+			private val postalCode = "sender-postal-code"
+			private val iban = "sender-bank"
+			private val bic = "sender-bic"
 			
 			def from(senderCompany: FullyDetailedCompany, bankAccount: FullCompanyBankAccount) =
 			{
@@ -562,11 +562,11 @@ object InvoiceActions
 		
 		object Recipient
 		{
-			val name = "buyer-name"
-			val yCode = "buyer-y-code"
-			val id = "customer-code"
-			val address = "buyer-address"
-			val postalCode = "buyer-postal-code"
+			private val name = "buyer-name"
+			private val yCode = "buyer-y-code"
+			private val id = "customer-code"
+			private val address = "buyer-address"
+			private val postalCode = "buyer-postal-code"
 			
 			def from(recipientCompany: FullyDetailedCompany) =
 			{
@@ -588,13 +588,13 @@ object InvoiceActions
 		
 		object ItemRow
 		{
-			val name = "name"
-			val amount = "amount"
-			val unit = "unit"
-			val unitPrice = "unit-price"
-			val price = "price"
-			val taxPercent = "tax"
-			val totalPrice = "price-taxed"
+			private val name = "name"
+			private val amount = "amount"
+			private val unit = "unit"
+			private val unitPrice = "unit-price"
+			private val price = "price"
+			private val taxPercent = "tax"
+			private val totalPrice = "price-taxed"
 			
 			def from(item: FullInvoiceItem, index: Int) =
 			{

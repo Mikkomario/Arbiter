@@ -1,8 +1,8 @@
 package vf.arbiter.core.model.partial.invoice
 
-import utopia.flow.datastructure.immutable.Model
-import utopia.flow.generic.ModelConvertible
-import utopia.flow.generic.ValueConversions._
+import utopia.flow.generic.model.immutable.Model
+import utopia.flow.generic.model.template.ModelConvertible
+import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.{DateRange, Days, Now}
 import vf.arbiter.core.database.access.single.company.{DbCompanyBankAccount, DbCompanyDetails}

@@ -1,6 +1,6 @@
 package vf.arbiter.core.model.template
 
-import utopia.flow.datastructure.immutable.Model
+import utopia.flow.generic.model.immutable.Model
 
 /**
  * Common trait for models which can be exported in json format and transferred across database versions

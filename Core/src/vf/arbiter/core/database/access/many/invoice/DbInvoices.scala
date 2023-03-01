@@ -1,6 +1,6 @@
 package vf.arbiter.core.database.access.many.invoice
 
-import utopia.flow.generic.ValueConversions._
+import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.nosql.view.NonDeprecatedView
 import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.model.stored.invoice.Invoice

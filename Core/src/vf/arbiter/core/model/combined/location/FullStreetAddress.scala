@@ -1,8 +1,8 @@
 package vf.arbiter.core.model.combined.location
 
-import utopia.flow.datastructure.immutable.Constant
-import utopia.flow.generic.ValueConversions._
-import utopia.flow.util.Extender
+import utopia.flow.generic.model.immutable.Constant
+import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.view.template.Extender
 import vf.arbiter.core.model.partial.location.StreetAddressData
 import vf.arbiter.core.model.stored.location.StreetAddress
 import vf.arbiter.core.model.template.Exportable

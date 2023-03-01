@@ -1,12 +1,12 @@
 package vf.arbiter.command.controller
 
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
-import utopia.flow.datastructure.immutable.Pair
+import utopia.flow.collection.immutable.Pair
 import utopia.flow.operator.DoubleLike
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.Today
-import utopia.flow.util.CollectionExtensions._
-import utopia.flow.util.FileExtensions._
+import utopia.flow.collection.CollectionExtensions._
+import utopia.flow.parse.file.FileExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.vault.database.Connection
 import vf.arbiter.core.database.access.many.company.{DbCompanies, DbCompanyProducts, DbManyCompanyDetails}
@@ -181,11 +181,11 @@ object ExportSummary
 	
 	case class Total(invoiceCount: Int, price: Double, tax: Double) extends DoubleLike[Total]
 	{
-		override def repr = this
+		override def self: Total = this
 		override def isZero = price == 0
 		override def length = price
 		override def compareTo(o: Total) = price.compareTo(o.price)
-		override protected def zero = Total.zero
+		override def zero = Total.zero
 		override def *(mod: Double) = Total(invoiceCount, price * mod, tax * mod)
 		override def isPositive = price > 0
 		

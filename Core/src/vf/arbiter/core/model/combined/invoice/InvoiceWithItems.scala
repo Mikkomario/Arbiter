@@ -1,6 +1,6 @@
 package vf.arbiter.core.model.combined.invoice
 
-import utopia.flow.util.Extender
+import utopia.flow.view.template.Extender
 import vf.arbiter.core.model.partial.invoice.InvoiceData
 import vf.arbiter.core.model.stored.invoice.{Invoice, InvoiceItem}
 

@@ -1,8 +1,8 @@
 package vf.arbiter.core.model.combined.company
 
-import utopia.flow.datastructure.immutable.Constant
-import utopia.flow.generic.ValueConversions._
-import utopia.flow.util.Extender
+import utopia.flow.generic.model.immutable.Constant
+import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.view.template.Extender
 import vf.arbiter.core.model.combined.location.FullStreetAddress
 import vf.arbiter.core.model.partial.company.CompanyDetailsData
 import vf.arbiter.core.model.stored.company.CompanyDetails

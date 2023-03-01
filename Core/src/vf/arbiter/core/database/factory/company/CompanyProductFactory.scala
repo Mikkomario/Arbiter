@@ -1,6 +1,6 @@
 package vf.arbiter.core.database.factory.company
 
-import utopia.flow.datastructure.immutable.{Constant, Model}
+import utopia.flow.generic.model.immutable.Model
 import utopia.vault.nosql.factory.row.FromRowFactoryWithTimestamps
 import utopia.vault.nosql.factory.row.model.FromValidatedRowModelFactory
 import utopia.vault.nosql.template.Deprecatable

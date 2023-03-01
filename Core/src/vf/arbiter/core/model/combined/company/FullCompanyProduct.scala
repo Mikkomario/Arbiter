@@ -1,6 +1,6 @@
 package vf.arbiter.core.model.combined.company
 
-import utopia.flow.util.Extender
+import utopia.flow.view.template.Extender
 import vf.arbiter.core.model.combined.invoice.DescribedItemUnit
 
 /**

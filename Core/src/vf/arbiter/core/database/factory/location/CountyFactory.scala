@@ -1,6 +1,6 @@
 package vf.arbiter.core.database.factory.location
 
-import utopia.flow.datastructure.immutable.Model
+import utopia.flow.generic.model.immutable.Model
 import utopia.vault.nosql.factory.row.model.FromValidatedRowModelFactory
 import vf.arbiter.core.database.CoreTables
 import vf.arbiter.core.model.partial.location.CountyData

@@ -10,8 +10,8 @@ import utopia.citadel.database.model.description.CitadelDescriptionLinkModel
 import utopia.citadel.database.model.user.{UserLanguageLinkModel, UserModel, UserSettingsModel}
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.citadel.util.MetropolisAccessExtensions._
-import utopia.flow.parse.Regex
-import utopia.flow.util.CollectionExtensions._
+import utopia.flow.parse.string.Regex
+import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.partial.description.DescriptionData

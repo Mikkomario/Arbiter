@@ -1,6 +1,6 @@
 package vf.arbiter.core.database.access.many.location
 
-import utopia.flow.generic.ValueConversions._
+import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.nosql.view.UnconditionalView
 import utopia.vault.sql.SqlExtensions._
 

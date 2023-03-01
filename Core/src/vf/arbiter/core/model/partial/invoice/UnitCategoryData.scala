@@ -1,7 +1,7 @@
 package vf.arbiter.core.model.partial.invoice
 
-import utopia.flow.datastructure.immutable.Model
-import utopia.flow.generic.ModelConvertible
+import utopia.flow.generic.model.immutable.Model
+import utopia.flow.generic.model.template.ModelConvertible
 
 /**
   * Represents different categories a unit can belong to. Units within a category can be compared.

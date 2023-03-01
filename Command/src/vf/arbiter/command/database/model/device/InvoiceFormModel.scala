@@ -1,7 +1,7 @@
 package vf.arbiter.command.database.model.device
 
-import utopia.flow.datastructure.immutable.Value
-import utopia.flow.generic.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
+import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.model.immutable.StorableWithFactory
 import utopia.vault.nosql.storable.DataInserter
 import vf.arbiter.command.database.factory.device.InvoiceFormFactory

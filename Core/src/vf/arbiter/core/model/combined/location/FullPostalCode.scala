@@ -1,8 +1,8 @@
 package vf.arbiter.core.model.combined.location
 
-import utopia.flow.datastructure.immutable.Model
-import utopia.flow.generic.ValueConversions._
-import utopia.flow.util.Extender
+import utopia.flow.generic.model.immutable.Model
+import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.view.template.Extender
 import vf.arbiter.core.model.partial.location.PostalCodeData
 import vf.arbiter.core.model.stored.location.{County, PostalCode}
 import vf.arbiter.core.model.template.Exportable

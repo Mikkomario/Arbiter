@@ -1,6 +1,6 @@
 package vf.arbiter.core.database.access.many.invoice
 
-import utopia.flow.generic.ValueConversions._
+import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.time.{Days, Now}
 import utopia.flow.time.TimeExtensions._
 import utopia.vault.database.Connection

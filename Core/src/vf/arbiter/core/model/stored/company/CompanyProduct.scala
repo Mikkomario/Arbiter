@@ -1,7 +1,7 @@
 package vf.arbiter.core.model.stored.company
 
-import utopia.flow.datastructure.immutable.Constant
-import utopia.flow.generic.ValueConversions._
+import utopia.flow.generic.model.immutable.Constant
+import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.model.template.StoredModelConvertible
 import vf.arbiter.core.database.access.single.company.DbSingleCompanyProduct
 import vf.arbiter.core.model.partial.company.CompanyProductData

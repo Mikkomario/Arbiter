@@ -5,10 +5,10 @@ import utopia.citadel.database.access.many.description.{DbDescriptionRoles, DbOr
 import utopia.citadel.database.access.many.language.{DbLanguageFamiliarities, DbLanguages}
 import utopia.citadel.database.access.many.user.{DbManyUserSettings, DbUserLanguageLinks}
 import utopia.citadel.database.factory.organization.MembershipWithRolesFactory
-import utopia.flow.datastructure.immutable.{Constant, Model, Value}
-import utopia.flow.generic.ValueConversions._
-import utopia.flow.util.CollectionExtensions._
-import utopia.flow.util.FileExtensions._
+import utopia.flow.generic.model.immutable.{Constant, Model, Value}
+import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.collection.CollectionExtensions._
+import utopia.flow.parse.file.FileExtensions._
 import utopia.metropolis.model.combined.description.LinkedDescription
 import utopia.metropolis.model.stored.description.DescriptionRole
 import utopia.vault.database.Connection
