@@ -128,7 +128,7 @@ object InvoiceActions
 					item.unit.abbreviation} * ${item.pricePerUnit} €/${ item.unit.abbreviation } = ${item.price} € + ${
 					(item.product.taxModifier * 100).toInt}% VAT (${ item.tax } €) = ${item.totalPrice} €")
 			}
-			println(s"-----\nTotal of ${ invoice.price } € + ${ invoice.tax } € VAT = ${ invoice.totalPrice }")
+			println(s"-----\nTotal of ${ invoice.price } € + ${ invoice.tax } € VAT = ${ invoice.totalPrice } €")
 			println("----- BANK -----")
 			println(invoice.senderBankAccount)
 			println("-----")
@@ -321,8 +321,7 @@ object InvoiceActions
 			.sortBy { _.wrapped.categoryId }
 		if (readUnits.isEmpty)
 			None
-		else
-		{
+		else {
 			// Also makes sure units have appropriate names in the targeted language
 			val units = readUnits.map { u =>
 				val (unitPlaceholderName, hasName, hasAbbreviation) = u.description(Name) match {
@@ -340,8 +339,7 @@ object InvoiceActions
 				if (hasName && hasAbbreviation)
 					u
 				// Case: Some data is missing => asks the user to fill it in
-				else
-				{
+				else {
 					val newName = if (hasName) None else StdIn.readNonEmptyLine(
 						s"What's the name of $unitPlaceholderName in ${invoiceLanguage.name}")
 					val newAbbreviation = if (hasAbbreviation) None else
@@ -370,8 +368,7 @@ object InvoiceActions
 			// Collected info: product id + description + amount + price per unit
 			val invoiceItemData = Iterator.iterate(1) { _ + 1 }.map { index =>
 				// Asks whether to stop iterating
-				if (index <= 1 || StdIn.ask("Do you want to add another item to this invoice?"))
-				{
+				if (index <= 1 || StdIn.ask("Do you want to add another item to this invoice?")) {
 					// Selects the product to use
 					val product: Option[FullCompanyProduct] = lastProductPointer.value
 						// Option A: Use same product as for the last line
@@ -432,8 +429,7 @@ object InvoiceActions
 							InvoiceItemData(invoice.id, product.id, description, pricePerUnit, amount) })
 					
 					// May print the invoice afterwards
-					if (StdIn.ask("Do you want to export this invoice into a pdf?"))
-					{
+					if (StdIn.ask("Do you want to export this invoice into a pdf?")) {
 						// Creates full invoice data
 						senderCompany.details.addressAccess.full.flatMap { senderAddress =>
 							recipientCompany.details.addressAccess.full.map { recipientAddress =>

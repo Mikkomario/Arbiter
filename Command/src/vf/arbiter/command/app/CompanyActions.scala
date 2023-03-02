@@ -175,17 +175,20 @@ object CompanyActions
 	 * @param userId Id of the user doing the editing
 	 * @param companyName Targeted company's name or part of that company's name
 	 * @param connection Implicit DB Connection
+	 * @return Inserted company details. None if no changes were made.
 	 */
 	def edit(userId: Int, companyName: String)(implicit connection: Connection) = {
 		// Finds the company to edit
 		val options = DbDetailedCompanies.matchingName(companyName)
-		if (options.isEmpty)
+		if (options.isEmpty) {
 			println(s"No company matching '$companyName'")
+			None
+		}
 		else
 			options.find { _.details.name ~== companyName }
 				.orElse { ActionUtils.selectFrom(options.map { c => c -> c.nameAndYCode },
 					"companies", "edit", skipQuestion = true) }
-				.foreach { company =>
+				.flatMap { company =>
 					// Asks the user to provide new company information
 					val oldAddress = company.details.addressAccess.full.get
 					
@@ -242,7 +245,10 @@ object CompanyActions
 							newTaxCode.orElse(company.details.taxCode).filterNot { _ == "-" }, Some(userId),
 							isOfficial = isOfficial))
 						println(s"${ newDetails.name } updated")
+						Some(newDetails)
 					}
+					else
+						None
 				}
 	}
 	

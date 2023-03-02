@@ -364,7 +364,16 @@ object ArbiterCommandsApp extends App
 					"Empty will cancel edit. Ok?")
 					.foreach { companyName =>
 						connectionPool { implicit c =>
-							CompanyActions.edit(userId, companyName)
+							// Finds and modifies a company
+							CompanyActions.edit(userId, companyName).foreach { newDetails =>
+								// If the currently selected company was targeted, updates the applicable pointer, also
+								companyPointer.mapCurrent { company =>
+									if (company.id == newDetails.companyId)
+										company.copy(details = newDetails)
+									else
+										company
+								}
+							}
 						}
 					}
 			case "product" =>
