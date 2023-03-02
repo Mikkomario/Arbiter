@@ -75,9 +75,9 @@ object InvoiceActions
 		// Completes invoices and lists invoice information
 		val fullInvoices = DbInvoices.complete(invoices).toVector.sortBy { _.created }
 		println(f"Found ${fullInvoices.size} invoices. Total of ${
-			fullInvoices.foldLeft(0.0) { _ + _.totalPrice }}%1.2f € (without VAT)")
+			fullInvoices.foldLeft(0.0) { _ + _.price }}%1.2f € (without VAT)")
 		fullInvoices.reverseIterator.foreach { i =>
-			println(s"\t- ${i.date}: ${i.id} ${i.recipientCompany.details.name} ${i.totalPrice} € (${i.referenceCode})")
+			println(s"\t- ${i.date}: ${i.id} ${i.recipientCompany.details.name} ${i.price} € (${i.referenceCode})")
 		}
 	}
 	
@@ -103,12 +103,45 @@ object InvoiceActions
 	}
 	
 	/**
-	 * Finds an invoice and cancels it
-	 * @param senderCompanyId Id of the company who sent the invoice
+	 * Finds an invoice and describes it on the console
+	 * @param senderCompanyId Id of the company that sent the invoice
+	 * @param filter Search filter, which may be company name part, invoice index or reference number (optional)
 	 * @param connection Implicit DB Connection
 	 */
-	def findAndCancel(senderCompanyId: Int)(implicit connection: Connection) =
-		findAnd(senderCompanyId) { (invoice, _) =>
+	def findAndDescribe(senderCompanyId: Int, filter: String = "")(implicit connection: Connection) =
+		findFullAnd(senderCompanyId, filter) { invoice =>
+			// Prints information about the invoice
+			println(s"\n----- INVOICE -----")
+			println(s"Id: ${ invoice.id }")
+			println(s"Reference Number: ${ invoice.referenceCode }")
+			println(s"Date: ${ invoice.date }")
+			println(s"Payment Duration: ${ invoice.paymentDuration }")
+			println(s"Payment Deadline: ${ invoice.paymentDeadline }")
+			println(s"Services Delivered: ${ invoice.productDeliveryDates }")
+			println("----- SENDER -----")
+			CompanyActions.describe(invoice.senderCompany)
+			println("----- RECIPIENT -----")
+			CompanyActions.describe(invoice.recipientCompany)
+			println("----- ITEMS ------")
+			invoice.items.foreachWithIndex { (item, index) =>
+				println(s"- ${ index + 1 }: ${ item.description } (${ item.product.name }): ${item.unitsSold} ${
+					item.unit.abbreviation} * ${item.pricePerUnit} €/${ item.unit.abbreviation } = ${item.price} € + ${
+					(item.product.taxModifier * 100).toInt}% VAT (${ item.tax } €) = ${item.totalPrice} €")
+			}
+			println(s"-----\nTotal of ${ invoice.price } € + ${ invoice.tax } € VAT = ${ invoice.totalPrice }")
+			println("----- BANK -----")
+			println(invoice.senderBankAccount)
+			println("-----")
+		}
+	
+	/**
+	 * Finds an invoice and cancels it
+	 * @param senderCompanyId Id of the company who sent the invoice
+	 * @param filter Search filter, which may be company name part, invoice index or reference number (optional)
+	 * @param connection Implicit DB Connection
+	 */
+	def findAndCancel(senderCompanyId: Int, filter: String = "")(implicit connection: Connection) =
+		findAnd(senderCompanyId, filter) { (invoice, _) =>
 			println("Invoice information:")
 			println(s"Invoice number: ${invoice.id}")
 			println(s"Date: ${invoice.date}")
@@ -128,24 +161,11 @@ object InvoiceActions
 	/**
 	 * Finds an invoice and prints it
 	 * @param senderCompanyId Id of the company who sent the invoice
+	 * @param filter Search filter, which may be company name part, invoice index or reference number (optional)
 	 * @param connection Implicit DB Connection
 	 */
-	def findAndPrint(userId: Int, senderCompanyId: Int)(implicit connection: Connection) =
-		findAnd(senderCompanyId) { (invoice, senderDetails) =>
-			invoice.recipientDetailsAccess.full.foreach { recipientDetails =>
-				val companiesById = DbCompanies(
-					Set(senderDetails.companyId, recipientDetails.companyId)).pull
-					.map { c => c.id -> c }.toMap
-				invoice.bankAccountAccess.full.foreach { bank =>
-					val items = invoice.access.items.fullInLanguageWithId(invoice.languageId)
-					val sender = FullyDetailedCompany(companiesById(senderDetails.companyId),
-						senderDetails)
-					val recipient = FullyDetailedCompany(
-						companiesById(recipientDetails.companyId), recipientDetails)
-					print(userId, FullInvoice(invoice, sender, recipient, bank, items))
-				}
-			}
-		}
+	def findAndPrint(userId: Int, senderCompanyId: Int, filter: String = "")(implicit connection: Connection) =
+		findFullAnd(senderCompanyId, filter) { invoice => print(userId, invoice) }
 	
 	/**
 	 * Prints an invoice
@@ -210,43 +230,74 @@ object InvoiceActions
 			}
 	}
 	
-	private def findAnd[U](senderCompanyId: Int)
+	private def findFullAnd[U](senderCompanyId: Int, filter: String = "")(action: FullInvoice => U)
+	                          (implicit connection: Connection) = {
+		// Finds the invoice
+		findAnd(senderCompanyId, filter) { (invoice, senderDetails) =>
+			// Loads recipient information
+			invoice.recipientDetailsAccess.full.foreach { recipientDetails =>
+				// Loads company information
+				val companiesById = DbCompanies(
+					Set(senderDetails.companyId, recipientDetails.companyId)).pull
+					.map { c => c.id -> c }.toMap
+				// Loads banking information
+				invoice.bankAccountAccess.full.foreach { bank =>
+					// Loads invoice items
+					val items = invoice.access.items.fullInLanguageWithId(invoice.languageId)
+					// Combines information together
+					val sender = FullyDetailedCompany(companiesById(senderDetails.companyId), senderDetails)
+					val recipient = FullyDetailedCompany(
+						companiesById(recipientDetails.companyId), recipientDetails)
+					// Performs the actual action
+					action(FullInvoice(invoice, sender, recipient, bank, items))
+				}
+			}
+		}
+	}
+	
+	private def findAnd[U](senderCompanyId: Int, filter: String = "")
 	                      (action: (Invoice, FullCompanyDetails) => U)
 	                      (implicit connection: Connection) =
 	{
 		println("Which key you want to search with?")
 		ActionUtils.selectFrom(Vector(1 -> "Invoice index", 2 -> "Reference number", 3 -> "Customer name"),
 			"search keys", "use", skipQuestion = true).foreach { searchKey =>
-			val searchKeyName = if (searchKey == 1) "invoice index" else if (searchKey == 2) "reference number" else
-				"customer name"
-			StdIn.readNonEmptyLine(s"What's the $searchKeyName you want to find?").foreach { searched =>
-				// Finds the invoice with the searched key
-				val invoice = {
-					import utopia.flow.generic.casting.ValueConversions._
-					if (searchKey == 1)
-						searched.int match {
-							case Some(invoiceId) => DbInvoice(invoiceId).pull
-							case None =>
-								println(s"$searched is not a valid invoice index")
-								None
-						}
-					else if (searchKey == 2)
-						DbInvoice.withReferenceCode(searched)
-					else
-						CompanyActions.findAndSelectOne(searched).flatMap { recipientCompany =>
-							val invoices = DbInvoices.betweenCompanies(senderCompanyId, recipientCompany.id)
-							ActionUtils.selectFrom(invoices.map { i => i -> s"${i.date}: ${i.id} / ${i.referenceCode}" })
-						}
-				}
-				invoice.foreach { invoice =>
-					// Reads associated data
-					// The invoice must belong to the sender company
-					invoice.senderDetailsAccess.full.filter { _.companyId == senderCompanyId } match
-					{
-						case Some(senderDetails) => action(invoice, senderDetails)
-						case None => println("This invoice doesn't belong to your company")
+			val searchKeyName = {
+				if (searchKey == 1)
+					"invoice index"
+				else if (searchKey == 2)
+					"reference number"
+				else
+					"customer name"
+			}
+			filter.notEmpty.orElse { StdIn.readNonEmptyLine(s"What's the $searchKeyName you want to find?") }
+				.foreach { searched =>
+					// Finds the invoice with the searched key
+					val invoice = {
+						import utopia.flow.generic.casting.ValueConversions._
+						if (searchKey == 1)
+							searched.int match {
+								case Some(invoiceId) => DbInvoice(invoiceId).pull
+								case None =>
+									println(s"$searched is not a valid invoice index")
+									None
+							}
+						else if (searchKey == 2)
+							DbInvoice.withReferenceCode(searched)
+						else
+							CompanyActions.findAndSelectOne(searched).flatMap { recipientCompany =>
+								val invoices = DbInvoices.betweenCompanies(senderCompanyId, recipientCompany.id)
+								ActionUtils.selectFrom(invoices.map { i => i -> s"${i.date}: ${i.id} / ${i.referenceCode}" })
+							}
 					}
-				}
+					invoice.foreach { invoice =>
+						// Reads associated data
+						// The invoice must belong to the sender company
+						invoice.senderDetailsAccess.full.filter { _.companyId == senderCompanyId } match {
+							case Some(senderDetails) => action(invoice, senderDetails)
+							case None => println("This invoice doesn't belong to your company")
+						}
+					}
 			}
 		}
 	}
@@ -314,7 +365,7 @@ object InvoiceActions
 			
 			// Creates / prepares the invoice items
 			val lastProductPointer = new PointerWithEvents[Option[FullCompanyProduct]](None)
-			lastProductPointer.addContinuousListener { _.newValue.flatMap { _(Name) }
+			lastProductPointer.addContinuousListener { _.newValue.flatMap { _(Name).notEmpty }
 				.foreach { n => println(s"Using product $n for the this invoice item") } }
 			// Collected info: product id + description + amount + price per unit
 			val invoiceItemData = Iterator.iterate(1) { _ + 1 }.map { index =>
@@ -325,14 +376,13 @@ object InvoiceActions
 					val product: Option[FullCompanyProduct] = lastProductPointer.value
 						// Option A: Use same product as for the last line
 						.filter { product =>
-							StdIn.ask(s"Is the next item of the same product (${
-								product(Name).getOrElse(s"Unnamed product #${product.id}") })?")
+							StdIn.ask(s"Is the next item of the same product (${ product.name })?")
 						}
 						// Option B: Selects from existing products or creates a new product
 						.orElse {
 							println("Please select or insert the product to use in this invoice item")
-							ActionUtils.selectOrInsert(existingProducts.map { case (p, fullP) =>
-								fullP -> p(Name).getOrElse(s"Unnamed product #${p.id}") }, "product") {
+							ActionUtils.selectOrInsert(
+								existingProducts.map { case (p, fullP) =>  fullP -> p.name }, "product") {
 								val newProduct = createProduct(userId, senderCompany.id, invoiceLanguage, units)
 								// Adds the product to selectable options
 								newProduct.foreach { p => existingProducts :+= (p.describedProduct, Lazy(p)) }
@@ -343,8 +393,8 @@ object InvoiceActions
 					lastProductPointer.value = product
 					product.map { product =>
 						// Collects invoice item information
-						val productName = product(Name).getOrElse(s"Unnamed product #${product.id}")
-						val unitName = product.unit(Name, Abbreviation).getOrElse("unit")
+						val productName = product.name
+						val unitName = product.unit.name
 						println("Please add a short description for this invoice item")
 						println(s"Leaving this empty will yield: $productName")
 						val description = StdIn.readNonEmptyLine().getOrElse(productName)
@@ -420,7 +470,7 @@ object InvoiceActions
 		// Case: Product doesn't have a name in the correct language => asks for one
 		else
 			StdIn.readNonEmptyLine(s"What's the name of ${
-				product(Name).getOrElse("this product")} in ${language.name}?") match
+				product(Name).nonEmptyOrElse("this product")} in ${language.name}?") match
 			{
 				case Some(newName) =>
 					val newDescription = CoreDescriptionLinkModel.companyProduct
@@ -440,12 +490,11 @@ object InvoiceActions
 		val retryPrompt = "This information is required. Leaving empty will cancel invoice creation."
 		StdIn.readNonEmptyLine(s"What's the name of this new product in ${language.name}?", retryPrompt).flatMap { name =>
 			println("What's the unit in which this product is sold (select from below)")
-			ActionUtils.selectFrom(units.map { u => u -> u(Name).getOrElse(u(Abbreviation).getOrElse("?")) },
+			ActionUtils.selectFrom(units.map { u => u -> u.apply(Name, Abbreviation).nonEmptyOrElse("?") },
 				skipQuestion = true).map { selectedUnit =>
 				val defaultPrice = StdIn.read(
 					s"What's the default price (€) of this product for one ${
-						selectedUnit(Name).getOrElse(selectedUnit(Abbreviation).getOrElse("unit"))
-					}? (optional)").double
+						selectedUnit.name }? (optional)").double
 				val taxModifier = StdIn.read(
 					"What's the tax percentage applied for this product? (default = 24%)")
 					.double.map { _ / 100.0 }.getOrElse(0.24)
@@ -596,9 +645,8 @@ object InvoiceActions
 			private val taxPercent = "tax"
 			private val totalPrice = "price-taxed"
 			
-			def from(item: FullInvoiceItem, index: Int) =
-			{
-				val unitName = item.product.unit(Abbreviation, Name).getOrElse("")
+			def from(item: FullInvoiceItem, index: Int) = {
+				val unitName = item.product.unit.abbreviation
 				val taxMod = item.product.product.taxModifier
 				
 				val prefix = s"p${index + 1}-"
@@ -616,8 +664,8 @@ object InvoiceActions
 		
 		def from(invoice: FullInvoice) =
 		{
-			val price = invoice.totalPrice
-			val tax = invoice.totalTax
+			val price = invoice.price
+			val tax = invoice.tax
 			val priceWithTax = round(price + tax) + " €"
 			val dl = dateFormat.format(invoice.paymentDeadline)
 			

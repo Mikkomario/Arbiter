@@ -304,6 +304,23 @@ object ArbiterCommandsApp extends App
 			}
 	}
 	// Creates company-dependent commands
+	private def seeCommand(companyId: Option[Int]) = Command("see", "show",
+		help = "Lists information concerning a company or an invoice")(
+		ArgumentSchema("target", "t", "company", help = "The targeted item type: company | invoice"),
+		ArgumentSchema("filter", "f", help = "Targeted item, such as company name part (optional)")) { args =>
+		connectionPool { implicit c =>
+			args("target").getString.toLowerCase.take(3) match {
+				case "com" => CompanyActions.findAndDescribeOne(args("filter").getString)
+				case "inv" =>
+					companyId match {
+						case Some(senderCompanyId) =>
+							InvoiceActions.findAndDescribe(senderCompanyId, args("filter").getString)
+						case None => println("Please select your own company first")
+					}
+				case o => println(s"Unrecognized target $o, please specify either 'company' or 'invoice'")
+			}
+		}
+	}
 	// TODO: Add support for other data types
 	private def listCommand(companyId: Int) = Command("list", "l", help = "Lists data")(
 		ArgumentSchema("target", "t", "invoice", "The targeted item group (currently only 'invoice' is supported)"),
@@ -327,12 +344,17 @@ object ArbiterCommandsApp extends App
 		implicit val languageIds: LanguageIds = languageIdsPointer.value
 		connectionPool { implicit c => InvoiceActions.listLatest(companyId, filter, duration) }
 	}
-	private def cancelInvoiceCommand(companyId: Int) = Command
-		.withoutArguments("cancel", "delete", help = "Cancels an existing invoice") {
-			connectionPool { implicit c => InvoiceActions.findAndCancel(companyId) }
+	private def cancelInvoiceCommand(companyId: Int) = Command("cancel", "delete",
+		help = "Cancels an existing invoice")(
+		ArgumentSchema("target", "filter",
+			help = "Invoice index, reference number or company name (partial and optional)")) { args =>
+			connectionPool { implicit c => InvoiceActions.findAndCancel(companyId, args("target").getString) }
 		}
-	private def printInvoiceCommand(userId: Int, companyId: Int) = Command.withoutArguments("print",
-		help = "Prints an invoice") { connectionPool { implicit c => InvoiceActions.findAndPrint(userId, companyId) } }
+	private def printInvoiceCommand(userId: Int, companyId: Int) = Command("print", help = "Prints an invoice")(
+		ArgumentSchema("target", "filter",
+			help = "Invoice id, reference number or company name (partial and optional)")) { args =>
+		connectionPool { implicit c => InvoiceActions.findAndPrint(userId, companyId, args("target").getString) }
+	}
 	private def editCommand(userId: Int, companyId: Option[Int]) = Command("edit", help = "Edits a company's information")(
 		ArgumentSchema("target", defaultValue = "company")) { args =>
 		args("target").getString.toLowerCase match {
@@ -393,8 +415,7 @@ object ArbiterCommandsApp extends App
 	
 	// Updates the available commands when the user logs in / selects a company
 	private val commandsPointer = userSettingsPointer.lazyMergeWith(companyPointer) { (user, company) =>
-		val userStatefulCommands = user match
-		{
+		val userStatefulCommands = user match {
 			case Some(user) =>
 				Vector(selectCompanyCommand(user.userId), claimCompanyCommand(user.userId),
 					editCommand(user.userId, company.map { _.id })) ++
@@ -409,8 +430,8 @@ object ArbiterCommandsApp extends App
 				Vector(listCommand(company.id), cancelInvoiceCommand(company.id), exportDataCommand(company.details))
 			case None => Vector()
 		}
-		(Vector(registerCommand, backupCommand, importCommand, debugCommand, clearAllCommand) ++ userStatefulCommands ++
-			companyStatefulCommands).sortBy { _.name }
+		(Vector(registerCommand, seeCommand(company.map { _.id }), backupCommand, importCommand, debugCommand,
+			clearAllCommand) ++ userStatefulCommands ++ companyStatefulCommands).sortBy { _.name }
 	}
 	
 	// Starts the console

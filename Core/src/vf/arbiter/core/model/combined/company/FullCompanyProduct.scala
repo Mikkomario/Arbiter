@@ -19,6 +19,11 @@ case class FullCompanyProduct(describedProduct: DescribedCompanyProduct, unit: D
 	def id = describedProduct.id
 	
 	/**
+	 * @return Tax modifier [0, 1] used with this product
+	 */
+	def taxModifier = product.taxModifier
+	
+	/**
 	 * @return Product information
 	 */
 	def product = describedProduct.wrapped

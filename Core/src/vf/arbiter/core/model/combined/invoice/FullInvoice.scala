@@ -24,11 +24,15 @@ case class FullInvoice(invoice: Invoice, senderCompany: FullyDetailedCompany, re
 	/**
 	 * @return Total price of this invoice, without applying any taxes
 	 */
-	def totalPrice = items.map { _.price }.sum
+	def price = items.map { _.price }.sum
 	/**
 	 * @return Total amount of tax to pay on top of this invoice's price
 	 */
-	def totalTax = items.map { _.totalTax }.sum
+	def tax = items.map { _.tax }.sum
+	/**
+	 * @return Total price of this invoice, including taxes
+	 */
+	def totalPrice = price + tax
 	
 	
 	// IMPLEMENTED  --------------------------------

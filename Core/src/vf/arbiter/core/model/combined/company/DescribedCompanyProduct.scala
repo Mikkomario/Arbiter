@@ -1,5 +1,7 @@
 package vf.arbiter.core.model.combined.company
 
+import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
+import utopia.flow.util.StringExtensions._
 import utopia.metropolis.model.combined.description.{DescribedFactory, DescribedWrapper, LinkedDescription, SimplyDescribed}
 import utopia.metropolis.model.stored.description.DescriptionRole
 import vf.arbiter.core.model.combined.invoice.DescribedItemUnit
@@ -16,6 +18,18 @@ object DescribedCompanyProduct extends DescribedFactory[CompanyProduct, Describe
 case class DescribedCompanyProduct(companyProduct: CompanyProduct, descriptions: Set[LinkedDescription]) 
 	extends DescribedWrapper[CompanyProduct] with SimplyDescribed
 {
+	// COMPUTED ------------------------
+	
+	/**
+	 * @return Id of this product
+	 */
+	def id = companyProduct.id
+	/**
+	 * @return Name of this product
+	 */
+	def name = apply(Name).nonEmptyOrElse(s"Unnamed product #$id")
+	
+	
 	// IMPLEMENTED	--------------------
 	
 	override def wrapped = companyProduct

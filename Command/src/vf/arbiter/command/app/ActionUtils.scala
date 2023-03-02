@@ -120,28 +120,24 @@ object ActionUtils
 	def selectFrom[A](options: Seq[(A, String)], target: String = "items", verb: String = "select",
 	                  skipQuestion: Boolean = false): Option[A] =
 	{
-		if (options.isEmpty)
-		{
+		if (options.isEmpty) {
 			println(s"No $target found")
 			None
 		}
-		else if (options.size == 1)
-		{
-			if (StdIn.ask(s"Found ${options.head._2}. Do you want to $verb it?"))
+		else if (options hasSize 1) {
+			if (StdIn.ask(s"Found ${options.head._2}. Do you want to $verb it?", default = true))
 				Some(options.head._1)
 			else
 				None
 		}
-		else
-		{
+		else {
 			if (skipQuestion)
 				_selectFrom(options, None)
-			else
-			{
+			else {
 				val bestNameMatches = options.map { _._2 }.sortBy { _.length }.take(3)
 				println(s"Found ${options.size} $target: ${bestNameMatches.mkString(", ")}${
 					if (options.size > bestNameMatches.size) "..." else ""}")
-				if (StdIn.ask(s"Do you want to $verb one of these $target?"))
+				if (StdIn.ask(s"Do you want to $verb one of these $target?", default = true))
 					_selectFrom(options, None)
 				else
 					None

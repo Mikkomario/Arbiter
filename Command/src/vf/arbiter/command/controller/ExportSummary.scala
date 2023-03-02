@@ -1,12 +1,11 @@
 package vf.arbiter.command.controller
 
-import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
+import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.collection.immutable.Pair
 import utopia.flow.operator.DoubleLike
+import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.Today
-import utopia.flow.collection.CollectionExtensions._
-import utopia.flow.parse.file.FileExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.vault.database.Connection
 import vf.arbiter.core.database.access.many.company.{DbCompanies, DbCompanyProducts, DbManyCompanyDetails}
@@ -75,7 +74,7 @@ object ExportSummary
 							i.items.groupMap { i => productPerId(i.productId) } { _.price }
 								.map { case (product, prices) => (product, month, prices.sum) }
 						}.groupMap { _._1 } { case (_, m, p) => m -> p }
-							.map { case (product, prices) => product(Name).getOrElse(s"Product #${product.id}") ->
+							.map { case (product, prices) => product.name ->
 								prices.groupMapReduce { _._1 } { _._2 } { _ + _ } })
 				}
 		}

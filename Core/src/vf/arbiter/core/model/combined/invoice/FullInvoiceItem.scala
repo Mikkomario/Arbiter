@@ -20,9 +20,22 @@ case class FullInvoiceItem(item: InvoiceItem, product: FullCompanyProduct) exten
 	def id = item.id
 	
 	/**
+	 * @return Unit used with this invoice item
+	 */
+	def unit = product.unit
+	
+	/**
+	 * @return Tax modifier used with this invoice item
+	 */
+	def taxModifier = product.taxModifier
+	/**
 	 * @return Total amount of tax to apply on top of this item's price
 	 */
-	def totalTax = item.price * product.product.taxModifier
+	def tax = item.price * taxModifier
+	/**
+	 * @return The price of this item, including taxes
+	 */
+	def totalPrice = item.price * (1 + taxModifier)
 	
 	
 	// IMPLEMENTED  ----------------------------

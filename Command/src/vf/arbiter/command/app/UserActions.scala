@@ -10,8 +10,9 @@ import utopia.citadel.database.model.description.CitadelDescriptionLinkModel
 import utopia.citadel.database.model.user.{UserLanguageLinkModel, UserModel, UserSettingsModel}
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.citadel.util.MetropolisAccessExtensions._
-import utopia.flow.parse.string.Regex
 import utopia.flow.collection.CollectionExtensions._
+import utopia.flow.parse.string.Regex
+import utopia.flow.util.StringExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.partial.description.DescriptionData
@@ -202,7 +203,7 @@ object UserActions
 				}
 			}.getOrElse(languageCode)
 			val proficiencyOptions = availableProficiencies(userId).sortBy { _.wrapped.orderIndex }.map { p =>
-				p -> p(Name).getOrElse(p.wrapped.orderIndex.toString)
+				p -> p(Name).nonEmptyOrElse(p.wrapped.orderIndex.toString)
 			}
 			println(s"How proficient are you in $languageName?")
 			ActionUtils.selectFrom(proficiencyOptions) match
@@ -264,7 +265,7 @@ object UserActions
 		}.toMap
 		implicit val languageIds: LanguageIds = LanguageIds(languages.map { _.id })
 		val proficiencyOptions = availableProficiencies(userId).sortBy { _.wrapped.orderIndex }.map { p =>
-			p -> p(Name).getOrElse(p.wrapped.orderIndex.toString)
+			p -> p(Name).nonEmptyOrElse(p.wrapped.orderIndex.toString)
 		}
 		val newProficiencyData = languages.map { language =>
 			println(s"How proficient are you in ${languageNames(language.id)} (${language.isoCode})?")

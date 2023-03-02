@@ -10,7 +10,9 @@ import utopia.citadel.model.enumeration.CitadelUserRole.Owner
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.operator.EqualsExtensions._
 import utopia.flow.time.Now
+import utopia.flow.time.TimeExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
+import utopia.flow.util.StringExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.vault.database.Connection
@@ -21,7 +23,7 @@ import vf.arbiter.core.database.access.single.company.DbCompany
 import vf.arbiter.core.database.access.single.location.{DbCounty, DbPostalCode, DbStreetAddress}
 import vf.arbiter.core.database.model.CoreDescriptionLinkModel
 import vf.arbiter.core.database.model.company.{CompanyDetailsModel, CompanyProductModel}
-import vf.arbiter.core.model.combined.company.DetailedCompany
+import vf.arbiter.core.model.combined.company.{DetailedCompany, FullyDetailedCompany}
 import vf.arbiter.core.model.enumeration.ArbiterDescriptionRoleId.Abbreviation
 import vf.arbiter.core.model.partial.company.{CompanyDetailsData, CompanyProductData}
 import vf.arbiter.core.model.partial.location.StreetAddressData
@@ -77,6 +79,31 @@ object CompanyActions
 	def selectOneFromOwn(userId: Int)(implicit connection: Connection) =
 		ActionUtils.selectFrom(DbDetailedCompanies.linkedWithUserWithId(userId).map { c => c -> c.details.name },
 			"companies")
+	
+	/**
+	 * Selects a company and lists its basic information
+	 * @param nameSearch Name search input
+	 * @param connection Implicit DB Connection
+	 */
+	def findAndDescribeOne(nameSearch: String)(implicit connection: Connection) =
+		findAndSelectOne(nameSearch).foreach { company =>
+			// Loads address details and prints company information
+			println("-----")
+			describe(company.pullFull)
+			println("----")
+		}
+	
+	/**
+	 * Prints information about a company
+	 * @param company A company
+	 */
+	def describe(company: FullyDetailedCompany) = {
+		println(s"Name: ${company.details.name}")
+		println(s"Code: ${company.yCode}")
+		println(s"Tax Code: ${company.details.taxCode.getOrElse("No tax code")}")
+		println(s"Address: ${company.details.address}")
+		println(s"Last Updated: ${company.details.created.toLocalDateTime}")
+	}
 	
 	/**
 	 * Offers the user a chance to join a company based on a search
@@ -230,7 +257,7 @@ object CompanyActions
 	{
 		// Finds the product to edit
 		val products = DbCompany(companyId).products.described
-		ActionUtils.selectFrom(products.map { p => p -> p(Name).getOrElse(s"Unnamed product #${p.id}") },
+		ActionUtils.selectFrom(products.map { p => p -> p(Name).nonEmptyOrElse(s"Unnamed product #${p.id}") },
 			"products", "edit", skipQuestion = true).foreach { product =>
 			// Reads product unit data
 			val unit = product.wrapped.unitAccess.describedWith(Name, Abbreviation)
@@ -256,9 +283,8 @@ object CompanyActions
 					None
 			}
 			// May edit product unit
-			val currentUnitName = unit match
-			{
-				case Some(unit) => unit(Name, Abbreviation).getOrElse(s"Unnamed unit ${unit.id}")
+			val currentUnitName = unit match {
+				case Some(unit) => unit.name
 				case None => s"Unnamed unit ${product.wrapped.unitId}"
 			}
 			val newUnit = {
@@ -266,16 +292,14 @@ object CompanyActions
 					s"Do you want to edit the unit in which this product is sold (currently $currentUnitName)?"))
 				{
 					val units = DbItemUnits.described.filter { u => u.has(Name) || u.has(Abbreviation) }
-					ActionUtils.selectFrom(units.map { u => u -> u(Name, Abbreviation).get }, "units",
-						skipQuestion = true)
+					ActionUtils.selectFrom(units.map { u => u -> u.name }, "units", skipQuestion = true)
 				}
 				else
 					None
 			}
 			// May edit default price per unit
-			val updatedUnitName = newUnit match
-			{
-				case Some(unit) => unit(Name, Abbreviation).get
+			val updatedUnitName = newUnit match {
+				case Some(unit) => unit.name
 				case None => currentUnitName
 			}
 			val newDefaultPrice = StdIn.readValidOrEmpty(

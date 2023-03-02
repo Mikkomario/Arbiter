@@ -30,6 +30,8 @@ case class FullStreetAddress(address: StreetAddress, postalCode: FullPostalCode)
 	
 	// IMPLEMENTED  --------------------------
 	
+	override def toString = s"$address, $postalCode"
+	
 	override def wrapped = address.data
 	
 	override def toExportModel =

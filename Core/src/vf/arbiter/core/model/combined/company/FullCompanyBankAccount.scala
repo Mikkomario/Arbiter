@@ -25,6 +25,8 @@ case class FullCompanyBankAccount(account: CompanyBankAccount, bank: Bank)
 	
 	// IMPLEMENTED	--------------------
 	
+	override def toString = s"${ account.address }, ${ bank.name }"
+	
 	override def wrapped = account.data
 	
 	override def toExportModel = Constant("bic", bank.bic) +: account.toExportModel
