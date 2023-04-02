@@ -3,6 +3,7 @@
 ## v1.3.1 (in development)
 ### New Features
 - Added `see` command
+- Invoice filling now proposes last price as the default price per unit
 
 ## v1.2 - 27.2.2022
 ### New Features

@@ -364,7 +364,8 @@ object InvoiceActions
 			// Creates / prepares the invoice items
 			val lastProductPointer = new PointerWithEvents[Option[FullCompanyProduct]](None)
 			lastProductPointer.addContinuousListener { _.newValue.flatMap { _(Name).notEmpty }
-				.foreach { n => println(s"Using product $n for the this invoice item") } }
+				.foreach { n => println(s"Using product $n for this invoice item") } }
+			var lastProductPrice: Option[Double] = None
 			// Collected info: product id + description + amount + price per unit
 			val invoiceItemData = Iterator.iterate(1) { _ + 1 }.map { index =>
 				// Asks whether to stop iterating
@@ -399,13 +400,13 @@ object InvoiceActions
 						println("Hint: Allows for decimal numbers")
 						val amount = StdIn.read().doubleOr(1.0)
 						println(s"What's the price of a single $unitName of $productName (without applying any taxes)?")
-						val pricePerUnit = product.product.defaultUnitPrice match
-						{
+						val pricePerUnit = lastProductPrice.orElse(product.product.defaultUnitPrice) match {
 							case Some(default) =>
 								println(s"Default = $default €/$unitName")
 								StdIn.read().doubleOr(default)
 							case None => StdIn.readIterator.flatMap { _.double }.next()
 						}
+						lastProductPrice = Some(pricePerUnit)
 						// Collects the information together
 						(product, description, pricePerUnit, amount)
 					}
