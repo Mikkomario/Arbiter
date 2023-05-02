@@ -38,6 +38,8 @@ trait ManyCompanyDetailsAccess
 	
 	// IMPLEMENTED	--------------------
 	
+	override def self = this
+	
 	override def factory = CompanyDetailsFactory
 	
 	override def filter(additionalCondition: Condition): ManyCompanyDetailsAccess = 

@@ -3,5 +3,6 @@ Core/data/coder-build
 Command/data/coder-build
 Command/data/invoice-forms
 Command/data/test-output
+Client/data/coder-build
 .idea/workspace.xml
 .idea/shelf

@@ -82,6 +82,8 @@ trait ManyStreetAddressesAccess
 	
 	// IMPLEMENTED	--------------------
 	
+	override def self = this
+	
 	override def factory = StreetAddressFactory
 	
 	override def filter(additionalCondition: Condition): ManyStreetAddressesAccess = 

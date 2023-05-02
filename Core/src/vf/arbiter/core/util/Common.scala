@@ -26,7 +26,7 @@ object Common
 	/**
 	 * Execution context used in this project
 	 */
-	implicit val executionContext: ExecutionContext = threadPool.executionContext
+	implicit val executionContext: ExecutionContext = threadPool
 	/**
 	 * Connection pool used for establishing database connections in this project
 	 */

@@ -2,7 +2,6 @@ package vf.arbiter.core.database.access.many.company
 
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.nosql.view.{NonDeprecatedView, UnconditionalView}
-import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.model.combined.company.FullCompanyDetails
 
 /**

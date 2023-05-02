@@ -23,6 +23,8 @@ trait ManyFullCompanyDetailsAccess
 	extends ManyCompanyDetailsAccessLike[FullCompanyDetails, ManyFullCompanyDetailsAccess]
 		with ManyRowModelAccess[FullCompanyDetails]
 {
+	override def self = this
+	
 	override def factory = FullCompanyDetailsFactory
 	
 	override def filter(additionalCondition: Condition): ManyFullCompanyDetailsAccess =

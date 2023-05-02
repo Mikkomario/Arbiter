@@ -6,7 +6,6 @@ import utopia.metropolis.model.cached.LanguageIds
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.view.{ChronoRowFactoryView, SubView}
-import utopia.vault.sql.SqlExtensions._
 import utopia.vault.sql.{Condition, Select, Where}
 import vf.arbiter.core.database.access.many.company.{DbCompanies, DbFullCompanyBankAccounts, DbManyCompanyDetails}
 import vf.arbiter.core.database.factory.invoice.InvoiceFactory
@@ -43,6 +42,8 @@ trait ManyInvoicesAccess
 	
 	
 	// IMPLEMENTED	--------------------
+	
+	override def self = this
 	
 	override def factory = InvoiceFactory
 	

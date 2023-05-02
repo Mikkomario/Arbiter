@@ -86,6 +86,8 @@ trait ManyCompanyProductsAccess
 	
 	// IMPLEMENTED	--------------------
 	
+	override def self = this
+	
 	override def factory = CompanyProductFactory
 	
 	override protected def describedFactory = DescribedCompanyProduct

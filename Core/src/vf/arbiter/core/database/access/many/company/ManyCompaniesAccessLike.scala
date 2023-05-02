@@ -8,7 +8,6 @@ import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.FilterableView
 import utopia.vault.sql.{Select, Where}
-import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.model.company.{CompanyModel, OrganizationCompanyModel}
 
 import java.time.Instant

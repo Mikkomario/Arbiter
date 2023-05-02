@@ -62,6 +62,8 @@ trait ManyBanksAccess extends ManyRowModelAccess[Bank] with Indexed with Filtera
 	
 	// IMPLEMENTED	--------------------
 	
+	override def self = this
+	
 	override def factory = BankFactory
 	
 	override def filter(additionalCondition: Condition): ManyBanksAccess = 

@@ -32,6 +32,8 @@ trait ManyDetailedCompaniesAccess extends ManyCompaniesAccessLike[DetailedCompan
 	
 	// IMPLEMENTED  --------------------------
 	
+	override def self = this
+	
 	override def factory = DetailedCompanyFactory
 	
 	override def filter(additionalCondition: Condition): ManyDetailedCompaniesAccess =

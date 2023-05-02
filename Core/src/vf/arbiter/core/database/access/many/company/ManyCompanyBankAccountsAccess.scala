@@ -42,6 +42,8 @@ trait ManyCompanyBankAccountsAccess
 	
 	// IMPLEMENTED	--------------------
 	
+	override def self = this
+	
 	override def factory = CompanyBankAccountFactory
 	
 	override def _filter(additionalCondition: Condition): ManyCompanyBankAccountsAccess =

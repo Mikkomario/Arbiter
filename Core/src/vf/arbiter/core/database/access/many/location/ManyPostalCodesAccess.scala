@@ -7,7 +7,6 @@ import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.{FilterableView, SubView}
 import utopia.vault.sql.Condition
-import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.factory.location.PostalCodeFactory
 import vf.arbiter.core.database.model.location.PostalCodeModel
 import vf.arbiter.core.model.stored.location.PostalCode
@@ -64,6 +63,8 @@ trait ManyPostalCodesAccess
 	
 	
 	// IMPLEMENTED	--------------------
+	
+	override def self = this
 	
 	override def factory = PostalCodeFactory
 	

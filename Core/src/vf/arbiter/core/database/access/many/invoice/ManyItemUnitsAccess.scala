@@ -54,6 +54,8 @@ trait ManyItemUnitsAccess
 	
 	// IMPLEMENTED	--------------------
 	
+	override def self = this
+	
 	override def factory = ItemUnitFactory
 	
 	override protected def describedFactory = DescribedItemUnit

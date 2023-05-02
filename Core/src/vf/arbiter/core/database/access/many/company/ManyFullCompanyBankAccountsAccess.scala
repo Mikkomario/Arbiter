@@ -22,6 +22,8 @@ object ManyFullCompanyBankAccountsAccess
 trait ManyFullCompanyBankAccountsAccess
 	extends ManyCompanyBankAccountsAccessLike[FullCompanyBankAccount, ManyFullCompanyBankAccountsAccess]
 {
+	override def self = this
+	
 	override def factory = FullCompanyBankAccountFactory
 	
 	override protected def _filter(condition: Condition): ManyFullCompanyBankAccountsAccess =

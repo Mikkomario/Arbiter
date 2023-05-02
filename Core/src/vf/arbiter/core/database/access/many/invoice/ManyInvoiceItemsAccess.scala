@@ -7,7 +7,6 @@ import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.{FilterableView, SubView}
 import utopia.vault.sql.Condition
-import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.access.many.company.DbCompanyProducts
 import vf.arbiter.core.database.factory.invoice.InvoiceItemFactory
 import vf.arbiter.core.database.model.invoice.InvoiceItemModel
@@ -91,6 +90,8 @@ trait ManyInvoiceItemsAccess
 	
 	
 	// IMPLEMENTED	--------------------
+	
+	override def self = this
 	
 	override def factory = InvoiceItemFactory
 	

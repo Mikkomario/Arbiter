@@ -1,0 +1,28 @@
+{
+  "project": "ArbiterClient",
+  "author": "Mikko Hilpinen",
+  "package": "vf.arbiter.client",
+  "version": "v2.0",
+  "classes": {
+    "auth": [
+      {
+        "name": "Session",
+        "doc": "Represents a local user-session",
+        "props": [
+          {
+            "ref": "user",
+            "doc": "Id of the logged-in user"
+          },
+          {
+            "type": "creation",
+            "doc": "Time when this session was opened"
+          },
+          {
+            "type": "deprecation",
+            "doc": "Time when this session was closed"
+          }
+        ]
+      }
+    ]
+  }
+}

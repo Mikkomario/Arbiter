@@ -52,6 +52,8 @@ trait ManyDescriptionImportsAccess
 	
 	// IMPLEMENTED	--------------------
 	
+	override def self = this
+	
 	override def factory = DescriptionImportFactory
 	
 	override def filter(additionalCondition: Condition): ManyDescriptionImportsAccess = 

@@ -60,6 +60,8 @@ trait ManyInvoiceFormsAccess
 	
 	// IMPLEMENTED	--------------------
 	
+	override def self = this
+	
 	override def factory = InvoiceFormFactory
 	
 	override def filter(additionalCondition: Condition): ManyInvoiceFormsAccess = 

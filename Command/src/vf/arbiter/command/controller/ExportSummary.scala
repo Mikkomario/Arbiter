@@ -45,7 +45,7 @@ object ExportSummary
 			val invoices = DbInvoices.during(year).sentByCompanyWithId(companyId)
 			// Reads associated data (items, products, recipient companies)
 			val invoiceIds = invoices.map { _.id }.toSet
-			val items = DbInvoiceItems.forAnyOfInvoices(invoiceIds)
+			val items = DbInvoiceItems.forAnyOfInvoices(invoiceIds).pull
 			val products = DbCompanyProducts(items.map { _.productId }.toSet).described
 			val customerDetails = DbManyCompanyDetails(invoices.map { _.recipientCompanyDetailsId }.toSet).pull
 			val customers = DbCompanies(customerDetails.map { _.companyId }.toSet).detailed.pull

@@ -70,6 +70,8 @@ trait ManyInvoicePaymentsAccess
 	
 	// IMPLEMENTED	--------------------
 	
+	override def self = this
+	
 	override def factory = InvoicePaymentFactory
 	
 	override def filter(additionalCondition: Condition): ManyInvoicePaymentsAccess = 

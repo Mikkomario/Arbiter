@@ -7,7 +7,6 @@ import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.{FilterableView, SubView}
 import utopia.vault.sql.Condition
-import utopia.vault.sql.SqlExtensions._
 import vf.arbiter.core.database.factory.location.CountyFactory
 import vf.arbiter.core.database.model.location.CountyModel
 import vf.arbiter.core.model.stored.location.County
@@ -57,6 +56,8 @@ trait ManyCountiesAccess extends ManyRowModelAccess[County] with Indexed with Fi
 	
 	
 	// IMPLEMENTED	--------------------
+	
+	override def self = this
 	
 	override def factory = CountyFactory
 	
