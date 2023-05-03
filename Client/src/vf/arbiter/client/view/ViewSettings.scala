@@ -1,6 +1,6 @@
 package vf.arbiter.client.view
 
-import utopia.firmament.context.{BaseContext, WindowContext}
+import utopia.firmament.context.{BaseContext, ScrollingContext, WindowContext}
 import utopia.firmament.image.SingleColorIconCache
 import utopia.firmament.localization.{Localizer, NoLocalization}
 import utopia.firmament.model.Margins
@@ -66,6 +66,11 @@ object ViewSettings
 	 */
 	val actorHandler = ActorHandler()
 	private val actorLoop = new ActorLoop(actorHandler)
+	
+	/**
+	 * Settings for constructing scroll views
+	 */
+	implicit val scrollContext: ScrollingContext = ScrollingContext.withDarkRoundedBar(actorHandler)
 	
 	
 	// INITIAL CODE ---------------------------
@@ -189,8 +194,28 @@ object ViewSettings
 		// COMPUTED ------------------------
 		
 		/**
+		 * @return Access to drop-down icons
+		 */
+		def drop = DdIcons
+		
+		/**
 		 * @return An icon for closing action (X)
 		 */
 		def close = cache("close")
+		
+		
+		// NESTED   -----------------------
+		
+		object DdIcons
+		{
+			/**
+			 * @return Drop down icon
+			 */
+			def down = cache("drop-down")
+			/**
+			 * @return Drop up icon
+			 */
+			def up = cache("drop-up")
+		}
 	}
 }
