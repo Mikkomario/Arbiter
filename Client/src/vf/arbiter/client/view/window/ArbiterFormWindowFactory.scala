@@ -65,7 +65,7 @@ trait ArbiterFormWindowFactory[A, N] extends InputWindowFactory[A, N]
 		
 		// Places each component (group) into a framing
 		def frame[R](framingF: ContextualFramingFactory[_], component: OpenComponent[ReachComponentLike, R]) =
-			framingF.withoutContext.apply(component, insets, Vector(BackgroundDrawer(bg)))
+			framingF.withInsets(insets).withCustomDrawer(BackgroundDrawer(bg)).apply(component)
 		
 		// Uses a different container based on content
 		content.oneOrMany match {
@@ -74,10 +74,10 @@ trait ArbiterFormWindowFactory[A, N] extends InputWindowFactory[A, N]
 			case Right(components) =>
 				// Case: Many components where there are no visibility changes => Stack
 				if (content.forall { _.result.isAlwaysTrue })
-					factories(Stack).build(Framing).column() { framingF => components.map { c => frame(framingF, c) } }
+					factories(Stack).build(Framing) { framingF => components.map { c => frame(framingF, c) } }
 				// Case: Many components with visibility changes => View Stack
 				else
-					factories(ViewStack).build(Framing).withFixedStyle() { framingF =>
+					factories(ViewStack).build(Framing) { framingF =>
 						components.map { c => frame(framingF.next(), c).parentAndResult }
 					}
 		}

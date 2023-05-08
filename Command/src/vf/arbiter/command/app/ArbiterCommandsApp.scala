@@ -5,6 +5,7 @@ import utopia.citadel.database.Tables
 import utopia.citadel.util.CitadelContext
 import utopia.flow.async.context.CloseHook
 import utopia.flow.collection.CollectionExtensions._
+import utopia.flow.collection.immutable.range.Span
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.parse.json.JsonParser
@@ -28,7 +29,7 @@ import vf.arbiter.core.model.stored.company.CompanyDetails
 import vf.arbiter.core.util.Common._
 
 import java.nio.file.{Path, Paths}
-import java.time.{Instant, Year}
+import java.time.{Instant, Month, Year}
 import scala.concurrent.duration.Duration
 import scala.io.StdIn
 import scala.util.{Failure, Success}
@@ -391,8 +392,17 @@ object ArbiterCommandsApp extends App
 	private def exportDataCommand(senderCompanyDetails: CompanyDetails) = Command("export", "summary",
 		help = "Generates summary csv documents from company invoice data")(
 		ArgumentSchema("year", defaultValue = Today.year.getValue, help = "Year from which data is collected"),
+		ArgumentSchema("first", defaultValue = 1, help = "The first month to include in the summary [1,12]"),
+		ArgumentSchema("last", defaultValue = Today.month.value, help = "The last month to include in the summary [1,12]"),
 		ArgumentSchema("directory", "to", help = "Directory where reports will be generated (optional)")) { args =>
 		val year = Year.of(args("year").getInt)
+		val months = Span.numeric(args("first").getInt, args("last").getInt)
+			.overlapWith(Span.numeric(1, 12))
+			.getOrElse {
+				println("The specified range of months was not within the allowed limit [1,12]. Uses the default range.")
+				Span(1, Today.month.value)
+			}
+			.map(Month.of)
 		val path = args("to").string match {
 			case Some(str) => str: Path
 			case None =>
@@ -404,7 +414,7 @@ object ArbiterCommandsApp extends App
 		connectionPool { implicit connection =>
 			implicit val languageIds: LanguageIds = languageIdsPointer.value
 			println(s"Exporting summary to ${path.toAbsolutePath}...")
-			ExportSummary.asCsv(senderCompanyDetails.companyId, path, year) match {
+			ExportSummary.asCsv(senderCompanyDetails.companyId, path, year, months) match {
 				case Success(_) =>
 					println("Summaries written")
 					path.openInDesktop()

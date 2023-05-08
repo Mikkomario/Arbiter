@@ -118,15 +118,15 @@ class ArbiterDropDownFactory(hierarchy: ComponentHierarchy, override val context
 	 */
 	def simple[A](contentPointer: Changing[Vector[A]],
 	              valuePointer: PointerWithEvents[Option[A]] = PointerWithEvents.empty(),
-	              displayFunction: DisplayFunction[Option[A]] = DisplayFunction.rawOption,
+	              displayFunction: DisplayFunction[A] = DisplayFunction.raw,
 	              fieldName: LocalizedString = LocalizedString.empty, prompt: LocalizedString = LocalizedString.empty,
 	              noOptionsText: => LocalizedString = LocalizedString.empty,
 	              hintPointer: Changing[LocalizedString] = LocalizedString.alwaysEmpty,
 	              errorMessagePointer: Changing[LocalizedString] = LocalizedString.alwaysEmpty,
 	              highlightStylePointer: Changing[Option[ColorRole]] = Fixed(None),
 	              sameItemCheck: Option[EqualsFunction[A]] = None) =
-		apply(contentPointer, valuePointer, displayFunction, fieldName, prompt, hintPointer, errorMessagePointer,
-			highlightStylePointer, SingleColorIcon.alwaysEmpty,
+		apply(contentPointer, valuePointer, DisplayFunction.option(displayFunction), fieldName, prompt, hintPointer,
+			errorMessagePointer, highlightStylePointer, SingleColorIcon.alwaysEmpty,
 			noOptionsText.notEmpty.map { text => { (hierarchy, context, _) =>
 				TextLabel(hierarchy).withContext(context).apply(text, isHint = true)
 			} }, sameItemCheck = sameItemCheck) { (hierarchy, context, item) =>

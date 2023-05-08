@@ -2,6 +2,7 @@ package vf.arbiter.command.controller
 
 import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.collection.immutable.Pair
+import utopia.flow.collection.immutable.range.Span
 import utopia.flow.operator.DoubleLike
 import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.time.TimeExtensions._
@@ -33,16 +34,19 @@ object ExportSummary
 	 * @param companyId Id of the company whose data is exported
 	 * @param directory Directory where the data will be exported to
 	 * @param year Year from which data is collected (default = current)
+	 * @param months The months from which the data is collected
+	 *               (default = all months up till and including the current month)
 	 * @param connection Implicit DB Connection
 	 * @param languageIds Language ids to use
 	 * @return Success or failure
 	 */
-	def asCsv(companyId: Int, directory: Path = "summaries", year: Year = Today.year)
+	def asCsv(companyId: Int, directory: Path = "summaries", year: Year = Today.year,
+	          months: Span[Month] = Span(Month.JANUARY, Today.month))
 	         (implicit connection: Connection, languageIds: LanguageIds) =
 	{
 		directory.createDirectories().flatMap { directory =>
 			// Collects all invoice data concerning this company (for the targeted year)
-			val invoices = DbInvoices.during(year).sentByCompanyWithId(companyId)
+			val invoices = DbInvoices.during(months.map { year/_ }).sentByCompanyWithId(companyId)
 			// Reads associated data (items, products, recipient companies)
 			val invoiceIds = invoices.map { _.id }.toSet
 			val items = DbInvoiceItems.forAnyOfInvoices(invoiceIds).pull

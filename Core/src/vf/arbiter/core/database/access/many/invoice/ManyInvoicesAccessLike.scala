@@ -1,16 +1,18 @@
 package vf.arbiter.core.database.access.many.invoice
 
+import utopia.flow.collection.immutable.range.{HasEnds, Span}
 import utopia.flow.generic.casting.ValueConversions._
-import utopia.flow.time.{Days, Now}
 import utopia.flow.time.TimeExtensions._
+import utopia.flow.time.{Days, Now}
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.FilterableView
+import utopia.vault.sql.Condition
 import vf.arbiter.core.database.model.company.CompanyDetailsModel
 import vf.arbiter.core.database.model.invoice.InvoiceModel
 
-import java.time.{Instant, LocalDate, Year}
+import java.time.{Instant, LocalDate, Year, YearMonth}
 
 /**
   * A common trait for access points which target multiple invoices or similar instances at a time
@@ -105,9 +107,24 @@ trait ManyInvoicesAccessLike[+A, +Repr <: ManyModelAccess[A]]
 	 * @param year Targeted year
 	 * @return A copy of this access point, limited to invoices created during that year
 	 */
-	def during(year: Year) =
-		filter(model.createdColumn.isBetween(year.firstDay.atStartOfDay(),
-			year.lastDay.tomorrow.atStartOfDay()))
+	def during(year: Year): Repr = during(year.dates)
+	/**
+	 * @param months Targeted months
+	 * @return A copy of this access point, limited to invoices created during those months
+	 */
+	def during(months: Span[YearMonth]): Repr = during(Span(months.start.firstDay, months.end.lastDay))
+	/**
+	 * @param dates Targeted date range
+	 * @return A copy of this access point, limited to invoices created during those dates
+	 */
+	def during(dates: HasEnds[LocalDate]) = {
+		if (dates.isEmpty)
+			filter(Condition.alwaysFalse)
+		else {
+			val last = if (dates.isInclusive) dates.end.tomorrow else dates.end
+			filter(model.createdColumn.isBetween(dates.start.atStartOfDay(), last.atStartOfDay()))
+		}
+	}
 	
 	/**
 	  * Updates the cancelled afters of the targeted invoices
