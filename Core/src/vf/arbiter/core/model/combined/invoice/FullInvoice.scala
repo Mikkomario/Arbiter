@@ -34,6 +34,11 @@ case class FullInvoice(invoice: Invoice, senderCompany: FullyDetailedCompany, re
 	 */
 	def totalPrice = price + tax
 	
+	/**
+	 * @return Copy of this invoice without all data included
+	 */
+	def toInvoiceWithItems = InvoiceWithItems(invoice, items.map { _.item })
+	
 	
 	// IMPLEMENTED  --------------------------------
 	

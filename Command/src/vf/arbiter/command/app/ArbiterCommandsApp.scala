@@ -14,7 +14,7 @@ import utopia.flow.time.Today
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.console.{ArgumentSchema, Command, CommandArguments, Console}
 import utopia.flow.view.mutable.Pointer
-import utopia.flow.view.mutable.eventful.PointerWithEvents
+import utopia.flow.view.mutable.eventful.EventfulPointer
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.stored.user.UserSettings
 import utopia.trove.controller.LocalDatabase
@@ -117,7 +117,7 @@ object ArbiterCommandsApp extends App
 	}
 	
 	// Sets up the user and company tracking
-	private val userSettingsPointer = new PointerWithEvents[Option[UserSettings]](None)
+	private val userSettingsPointer = new EventfulPointer[Option[UserSettings]](None)
 	private def userSettings = userSettingsPointer.value
 	private def userSettings_=(newUser: UserSettings) = userSettingsPointer.value = Some(newUser)
 	userSettingsPointer.addContinuousListener { _.newValue.foreach { u => println(s"Welcome, ${u.name}") } }
@@ -127,7 +127,7 @@ object ArbiterCommandsApp extends App
 		case None => LanguageIds(Vector())
 	}
 	
-	private val companyPointer = new PointerWithEvents[Option[DetailedCompany]](None)
+	private val companyPointer = new EventfulPointer[Option[DetailedCompany]](None)
 	def company = companyPointer.value
 	def company_=(newCompany: Option[DetailedCompany]) = companyPointer.value = newCompany
 	def company_=(newCompany: DetailedCompany) = companyPointer.value = Some(newCompany)
@@ -356,9 +356,21 @@ object ArbiterCommandsApp extends App
 			help = "Invoice id, reference number or company name (partial and optional)")) { args =>
 		connectionPool { implicit c => InvoiceActions.findAndPrint(userId, companyId, args("target").getString) }
 	}
-	private def editCommand(userId: Int, companyId: Option[Int]) = Command("edit", help = "Edits a company's information")(
-		ArgumentSchema("target", defaultValue = "company")) { args =>
+	private def editCommand(userId: Int, companyId: Option[Int]) = Command("edit",
+		help = "Edits company/product/invoice information")(
+		ArgumentSchema("target", defaultValue = "invoice",
+			help = "Type of item targeted with this edit. Valid values are: 'invoice', 'company' and 'product'."),
+		ArgumentSchema("filter", "f", help = "Filter applied in order to find the targeted item")) { args =>
 		args("target").getString.toLowerCase match {
+			case "invoice" =>
+				companyId match {
+					case Some(companyId) =>
+						connectionPool { implicit c =>
+							implicit val languageIds: LanguageIds = languageIdsPointer.value
+							InvoiceActions.findAndEdit(userId, companyId, args("filter").getString)
+						}
+					case None => println("Please select a company first")
+				}
 			case "company" =>
 				println("Which company do you want to edit?")
 				StdIn.readNonEmptyLine("Instruction: Write full or partial company name",

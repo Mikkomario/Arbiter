@@ -64,7 +64,7 @@ object ActionUtils
 				case "this month" => Some(Today.yearMonth.dates)
 				case "last month" => Some(Today.yearMonth.previous.dates)
 				case _ =>
-					val (startPart, endPart) = input.splitAtFirst("-")
+					val (startPart, endPart) = input.splitAtFirst("-").map { _.trim }.toTuple
 					val endDate = dateFromString(endPart)
 					val startDate = dateFromString(startPart, endDate.getOrElse(Today.toLocalDate).yearMonth)
 					startDate match {
@@ -95,8 +95,7 @@ object ActionUtils
 	def selectOrInsert[A](options: Seq[(A, String)], target: String = "item", skipInsertQuestion: Boolean = false)
 	                     (insert: => Option[A]) =
 	{
-		if (options.isEmpty)
-		{
+		if (options.isEmpty) {
 			if (skipInsertQuestion || StdIn.ask(s"Do you want to create a new $target?", default = true))
 				insert
 			else
@@ -207,13 +206,10 @@ object ActionUtils
 	
 	// This variant of select allows for cancelling
 	// Options mustn't be empty
-	private def _selectFrom[A](options: Seq[(A, String)], insert: Option[() => Option[A]]): Option[A] =
-	{
-		def _narrow(filter: String): Option[A] =
-		{
+	private def _selectFrom[A](options: Seq[(A, String)], insert: Option[() => Option[A]]): Option[A] = {
+		def _narrow(filter: String): Option[A] = {
 			val narrowed = options.filter { _._2.toLowerCase.contains(filter) }
-			if (narrowed.isEmpty)
-			{
+			if (narrowed.isEmpty) {
 				println("No results could be found with that filter, please try again")
 				_selectFrom(options, insert)
 			}
@@ -221,11 +217,9 @@ object ActionUtils
 				narrowed.find { _._2 ~== filter }.map { _._1 }.orElse { _selectFrom(narrowed, insert) }
 		}
 		
-		if (options.size == 1)
-		{
+		if (options.size == 1) {
 			val (result, resultName) = options.head
-			insert match
-			{
+			insert match {
 				case Some(insert) =>
 					if (StdIn.ask(s"Do you want to select $resultName?", default = true))
 						Some(result)
@@ -238,15 +232,13 @@ object ActionUtils
 					Some(result)
 			}
 		}
-		else if (options.size > 10)
-		{
+		else if (options.size > 20) {
 			println(s"Found ${options.size} options")
 			println("Please narrow the selection by specifying an additional filter (empty cancels)")
 			if (insert.nonEmpty)
 				println("Hint: you can also insert a new item by typing 'new'")
 			StdIn.readNonEmptyLine().flatMap { filter =>
-				insert match
-				{
+				insert match {
 					case Some(insert) =>
 						if (filter.toLowerCase == "new")
 							insert()
@@ -264,16 +256,14 @@ object ActionUtils
 				println("0: Create new")
 			println("Please select the correct index or narrow the selection by typing text (empty cancels)")
 			StdIn.readIterator.findMap { input =>
-				input.int match
-				{
+				input.int match {
 					// Case: User typed a row index => makes sure it is in range
 					case Some(index) =>
 						if (index == 0 && insert.isDefined)
 							Some(Some(Right(index)))
 						else if (index > 0 && index <= options.size)
 							Some(Some(Right(index)))
-						else
-						{
+						else {
 							println("That index is out of range, please select a new one")
 							None
 						}

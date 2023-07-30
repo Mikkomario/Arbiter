@@ -1,35 +1,21 @@
 package vf.arbiter.client.view.component
 
-import utopia.firmament.component.display.Refreshable
 import utopia.firmament.context.TextContext
-import utopia.firmament.image.SingleColorIcon
-import utopia.firmament.localization.{DisplayFunction, LocalizedString}
-import utopia.firmament.model.enumeration.StackLayout.Leading
-import utopia.flow.operator.EqualsFunction
-import utopia.flow.view.immutable.eventful.Fixed
-import utopia.flow.view.mutable.eventful.PointerWithEvents
-import utopia.flow.view.template.eventful.Changing
-import utopia.paradigm.color.{Color, ColorRole}
 import utopia.reach.component.factory.FromContextComponentFactoryFactory.Ccff
-import utopia.reach.component.factory.TextContextualFactory
 import utopia.reach.component.hierarchy.ComponentHierarchy
-import utopia.reach.component.input.selection.DropDown
-import utopia.reach.component.label.text.{MutableViewTextLabel, TextLabel}
-import utopia.reach.component.template.ReachComponentLike
-import vf.arbiter.client.view.ViewSettings._
-import vf.arbiter.core.util.Common._
 
 /**
  * Used for constructing drop down lists
  * @author Mikko Hilpinen
  * @since 2.5.2023, v2.0
  */
-object ArbiterDropDown extends Ccff[TextContext, ArbiterDropDownFactory]
+object ArbiterDropDown /*extends Ccff[TextContext, ArbiterDropDownFactory]
 {
 	override def withContext(hierarchy: ComponentHierarchy, context: TextContext): ArbiterDropDownFactory =
 		new ArbiterDropDownFactory(hierarchy, context)
-}
+}*/
 
+/*
 class ArbiterDropDownFactory(hierarchy: ComponentHierarchy, override val context: TextContext)
 	extends TextContextualFactory[ArbiterDropDownFactory]
 {
@@ -132,4 +118,4 @@ class ArbiterDropDownFactory(hierarchy: ComponentHierarchy, override val context
 			} }, sameItemCheck = sameItemCheck) { (hierarchy, context, item) =>
 			MutableViewTextLabel(hierarchy).withContext(context).apply(item, displayFunction)
 		}
-}
+}*/

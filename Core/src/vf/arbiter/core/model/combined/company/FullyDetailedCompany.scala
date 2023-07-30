@@ -18,6 +18,11 @@ case class FullyDetailedCompany(company: Company, details: FullCompanyDetails) e
 	 */
 	def id = company.id
 	
+	/**
+	 * @return Copy of this company without all details included
+	 */
+	def toDetailedCompany = company + details.details
+	
 	
 	// IMPLEMENTED  -------------------
 	

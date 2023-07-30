@@ -3,14 +3,15 @@ package vf.arbiter.command.app
 import utopia.citadel.database.access.single.description.DbLanguageDescription
 import utopia.citadel.database.access.single.language.DbLanguage
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
-import utopia.flow.view.immutable.caching.Lazy
-import utopia.flow.view.mutable.eventful.PointerWithEvents
-import utopia.flow.time.{Days, Now}
-import utopia.flow.time.TimeExtensions._
 import utopia.flow.collection.CollectionExtensions._
-import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.parse.file.FileExtensions._
+import utopia.flow.time.TimeExtensions._
+import utopia.flow.time.{Days, Now}
 import utopia.flow.util.StringExtensions._
+import utopia.flow.util.console.ConsoleExtensions._
+import utopia.flow.view.immutable.caching.Lazy
+import utopia.flow.view.mutable.Pointer
+import utopia.flow.view.mutable.eventful.EventfulPointer
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.vault.database.Connection
@@ -27,8 +28,8 @@ import vf.arbiter.core.database.access.single.invoice.{DbInvoice, DbItemUnit}
 import vf.arbiter.core.database.model.CoreDescriptionLinkModel
 import vf.arbiter.core.database.model.company.CompanyProductModel
 import vf.arbiter.core.database.model.invoice.{InvoiceItemModel, InvoiceModel}
-import vf.arbiter.core.model.combined.company.{DescribedCompanyProduct, DetailedCompany, FullCompanyBankAccount, FullCompanyDetails, FullCompanyProduct, FullyDetailedCompany}
-import vf.arbiter.core.model.combined.invoice.{DescribedItemUnit, FullInvoice, FullInvoiceItem}
+import vf.arbiter.core.model.combined.company._
+import vf.arbiter.core.model.combined.invoice.{DescribedItemUnit, FullInvoice, FullInvoiceItem, InvoiceWithItems}
 import vf.arbiter.core.model.enumeration.ArbiterDescriptionRoleId.Abbreviation
 import vf.arbiter.core.model.partial.company.CompanyProductData
 import vf.arbiter.core.model.partial.invoice.{InvoiceData, InvoiceItemData}
@@ -97,7 +98,7 @@ object InvoiceActions
 			// Asks for basic information
 			println("What language this invoice is in?")
 			UserActions.selectOrAddKnownLanguage(userId).flatMap { language =>
-				_create(userId, senderCompany, targetCompany, language, languageIds)
+				createOrEdit(userId, senderCompany, targetCompany, language, languageIds)
 			}
 		}
 	}
@@ -159,6 +160,28 @@ object InvoiceActions
 		}
 	
 	/**
+	 * Finds an invoice and edits it
+	 * @param userId Id of the user who's performing the edits
+	 * @param senderCompanyId Id of the company who's sending the invoice
+	 * @param filter Search filter, which may be company name part, invoice index or reference number (optional)
+	 * @param connection Implicit DB connection
+	 * @param languageIds Implicit list of user's preferred languages
+	 */
+	def findAndEdit(userId: Int, senderCompanyId: Int, filter: String = "")
+	               (implicit connection: Connection, languageIds: LanguageIds) =
+		findFullAnd(senderCompanyId, filter) { invoice =>
+			// Reads required data
+			// TODO: Handle thrown error
+			// TODO: Add support for new language selection
+			val languageName = DbLanguage(invoice.languageId).description.inLanguageWithId(invoice.languageId)
+				.name.text.getOrElse("")
+			println(s"Editing invoice ${invoice.id} for company ${invoice.recipientCompany.details.name}")
+			createOrEdit(userId, invoice.senderCompany.toDetailedCompany,
+				invoice.recipientCompany.toDetailedCompany, SelectedLanguage(invoice.languageId, languageName),
+				languageIds, Some(invoice.toInvoiceWithItems))
+		}
+	
+	/**
 	 * Finds an invoice and prints it
 	 * @param senderCompanyId Id of the company who sent the invoice
 	 * @param filter Search filter, which may be company name part, invoice index or reference number (optional)
@@ -211,7 +234,7 @@ object InvoiceActions
 						// Allows the user to flatten the document afterwards
 						if (StdIn.ask("Do you want to flatten this document so that it's no longer editable?")) {
 							val flatPath = outputPath.withMappedFileName { name =>
-								val (namePart, extension) = name.splitAtLast(".")
+								val (namePart, extension) = name.splitAtLast(".").toTuple
 								s"$namePart-flat.$extension"
 							}
 							FillPdfForm.flatten(outputPath, flatPath) match {
@@ -302,18 +325,33 @@ object InvoiceActions
 		}
 	}
 	
-	private def _create(userId: Int, senderCompany: DetailedCompany, recipientCompany: DetailedCompany,
-	                    invoiceLanguage: SelectedLanguage, otherLanguageIds: LanguageIds)
-	                   (implicit connection: Connection) =
+	private def createOrEdit(userId: Int, senderCompany: DetailedCompany, recipientCompany: DetailedCompany,
+	                         invoiceLanguage: SelectedLanguage, otherLanguageIds: LanguageIds,
+	                         editedInvoice: Option[InvoiceWithItems] = None)
+	                        (implicit connection: Connection) =
 	{
 		implicit val appliedLanguageIds: LanguageIds = otherLanguageIds.preferringLanguageWithId(invoiceLanguage.id)
 		
-		val duration = Days(StdIn.read(
-			"How many days does the company have time to pay this bill? (default = 30)")
-			.intOr(30))
-		println("When were the services or items delivered for the customer?")
-		println("Leave empty if not applicable")
-		val deliveryDate = ActionUtils.readDateRange()
+		// Requests the payment duration & product delivery dates -information
+		val (duration, deliveryDate) = editedInvoice.map { i => i.paymentDuration -> i.productDeliveryDates }
+			// Editing: Asks if the user wants to change these
+			.filter { case (duration, delivery) =>
+				val datesStr = delivery match {
+					case Some(d) => d.toString
+					case None => "N/A"
+				}
+				StdIn.ask(s"Do you want to keep the previous payment duration (${
+					duration.length} days) and delivery dates ($datesStr)?", default = true)
+			}
+			.getOrElse {
+				val duration = Days(StdIn.read(
+						"How many days does the company have time to pay this bill? (default = 30)")
+					.intOr(30))
+				println("When were the services or items delivered for the customer?")
+				println("Leave empty if not applicable")
+				val deliveryDate = ActionUtils.readDateRange()
+				duration -> deliveryDate
+			}
 		
 		// Prepares information for the next phase
 		// Units must have some kind of description available
@@ -344,7 +382,8 @@ object InvoiceActions
 						s"What's the name of $unitPlaceholderName in ${invoiceLanguage.name}")
 					val newAbbreviation = if (hasAbbreviation) None else
 						StdIn.readNonEmptyLine(s"What's the abbreviation of ${
-							newName.getOrElse(unitPlaceholderName)} in ${invoiceLanguage.name}?")
+							newName.getOrElse(unitPlaceholderName)
+						} in ${invoiceLanguage.name}?")
 					val newDescriptionData = (newName.map { _ -> Name.id } ++
 						newAbbreviation.map { _ -> Abbreviation.id })
 						.map { case (text, roleId) => DescriptionData(roleId, invoiceLanguage.id, text, Some(userId)) }
@@ -358,99 +397,156 @@ object InvoiceActions
 				}
 			}
 			// [Product -> filled product] - separated because filled product may require user interaction
-			var existingProducts = DbCompany(senderCompany.id).products.described
-				.map { p => p -> Lazy { fillProduct(userId, p, invoiceLanguage, units) } }
+			val existingProductsPointer = Pointer(DbCompany(senderCompany.id).products.described
+				.map { p => p -> Lazy { fillProduct(userId, p, invoiceLanguage, units) } })
 			
 			// Creates / prepares the invoice items
-			val lastProductPointer = new PointerWithEvents[Option[FullCompanyProduct]](None)
-			lastProductPointer.addContinuousListener { _.newValue.flatMap { _(Name).notEmpty }
-				.foreach { n => println(s"Using product $n for this invoice item") } }
+			val lastProductPointer = new EventfulPointer[Option[FullCompanyProduct]](None)
+			lastProductPointer.addContinuousListener {
+				_.newValue.flatMap { _(Name).notEmpty }
+					.foreach { n => println(s"Using product $n for this invoice item") }
+			}
 			var lastProductPrice: Option[Double] = None
-			// Collected info: product id + description + amount + price per unit
-			val invoiceItemData = Iterator.iterate(1) { _ + 1 }.map { index =>
-				// Asks whether to stop iterating
-				if (index <= 1 || StdIn.ask("Do you want to add another item to this invoice?")) {
-					// Selects the product to use
-					val product: Option[FullCompanyProduct] = lastProductPointer.value
-						// Option A: Use same product as for the last line
-						.filter { product =>
-							StdIn.ask(s"Is the next item of the same product (${ product.name })?")
+			
+			// Edits, keeps or removes the existing invoice items (editing mode only)
+			val keptItems = editedInvoice match {
+				case Some(i) =>
+					i.items.flatMap { item =>
+						StdIn.printAndReadLine(s"Do you want to keep (K), edit (e) or remove (r) ${
+							item.description}?").headOption.getOrElse('k').toLower match
+						{
+							case 'r' => None
+							case 'e' =>
+								requestInvoiceItem(userId, senderCompany.id, invoiceLanguage,
+									existingProductsPointer.value.find { _._1.id == item.productId }.map { _._2.value },
+									Some(item.pricePerUnit), existingProductsPointer, units, Some(item.data))
+									.map { Left(_) }
+							case _ => Some(Right(item))
 						}
-						// Option B: Selects from existing products or creates a new product
-						.orElse {
-							println("Please select or insert the product to use in this invoice item")
-							ActionUtils.selectOrInsert(
-								existingProducts.map { case (p, fullP) =>  fullP -> p.name }, "product") {
-								val newProduct = createProduct(userId, senderCompany.id, invoiceLanguage, units)
-								// Adds the product to selectable options
-								newProduct.foreach { p => existingProducts :+= (p.describedProduct, Lazy(p)) }
-								newProduct.map { Lazy(_) }
-							}.map { _.value }
-						}
-					
-					lastProductPointer.value = product
-					product.map { product =>
-						// Collects invoice item information
-						val productName = product.name
-						val unitName = product.unit.name
-						println("Please add a short description for this invoice item")
-						println(s"Leaving this empty will yield: $productName")
-						val description = StdIn.readNonEmptyLine().getOrElse(productName)
-						println(s"How many units ($unitName) of $productName were sold? (default = 1.0)")
-						println("Hint: Allows for decimal numbers")
-						val amount = StdIn.read().doubleOr(1.0)
-						println(s"What's the price of a single $unitName of $productName (without applying any taxes)?")
-						val pricePerUnit = lastProductPrice.orElse(product.product.defaultUnitPrice) match {
-							case Some(default) =>
-								println(s"Default = $default €/$unitName")
-								StdIn.read().doubleOr(default)
-							case None => StdIn.readIterator.flatMap { _.double }.next()
-						}
-						lastProductPrice = Some(pricePerUnit)
-						// Collects the information together
-						(product, description, pricePerUnit, amount)
 					}
+				case None => Vector()
+			}
+			
+			// Collected info: product id + description + amount + price per unit
+			val newInvoiceItemData = Iterator.iterate(1) { _ + 1 }.map { index =>
+				// Asks whether to stop iterating
+				if ((index <= 1 && keptItems.isEmpty) ||
+					StdIn.ask("Do you want to add another item to this invoice?"))
+				{
+					val itemData = requestInvoiceItem(userId, senderCompany.id, invoiceLanguage,
+						lastProductPointer.value, lastProductPrice, existingProductsPointer, units)
+					// Keeps track of the latest selected product & price in order to provide better defaults
+					itemData.foreach { case (product, _, _, price) =>
+						lastProductPointer.value = Some(product)
+						lastProductPrice = Some(price)
+					}
+					itemData
 				}
 				else
 					None
 			}.takeWhile { _.isDefined }.toVector.flatten
 			
 			// Saves the invoice
-			if (invoiceItemData.nonEmpty ||
+			if (newInvoiceItemData.nonEmpty || keptItems.nonEmpty ||
 				StdIn.ask("You didn't register any invoice items. Do you still want to save this invoice?"))
 			{
-				BankActions.selectOrCreateBankAccount(userId, senderCompany.id).map { bankAccount =>
-					// TODO: Should check whether reference code is a duplicate
-					val invoice = InvoiceModel.insert(InvoiceData(senderCompany.details.id, recipientCompany.details.id,
-						bankAccount.id, invoiceLanguage.id,
-						ReferenceCode(userId, senderCompany.id, recipientCompany.id, Random.nextInt(1000)),
-						duration, deliveryDate, Some(userId)))
-					val invoiceItems = InvoiceItemModel.insert(invoiceItemData
-						.map { case (product, description, pricePerUnit, amount) =>
-							InvoiceItemData(invoice.id, product.id, description, pricePerUnit, amount) })
-					
-					// May print the invoice afterwards
-					if (StdIn.ask("Do you want to export this invoice into a pdf?")) {
-						// Creates full invoice data
-						senderCompany.details.addressAccess.full.flatMap { senderAddress =>
-							recipientCompany.details.addressAccess.full.map { recipientAddress =>
-								val fullInvoiceItems = invoiceItems.zip(invoiceItemData)
-									.map { case (item, (product, _, _, _)) => item + product }
-								FullInvoice(invoice, senderCompany + senderAddress,
-									recipientCompany + recipientAddress, bankAccount, fullInvoiceItems)
-							}
-						} match
-						{
-							case Some(invoice) => print(userId, invoice)
-							case None => println("Some required data was missing (inform the developer of this problem)")
-						}
+				// Selects a bank account
+				editedInvoice.flatMap { _.bankAccountAccess.full }
+					.filter { account =>
+						StdIn.ask(s"Do you want to use the same bank account (in ${account.bank.name})?",
+							default = true)
 					}
-					
-					invoice -> invoiceItems
-				}
+					.orElse { BankActions.selectOrCreateBankAccount(userId, senderCompany.id) }
+					.map { bankAccount =>
+						// Cancels the old invoice version, if applicable
+						editedInvoice.foreach { i => DbInvoice(i.id).cancel() }
+						// TODO: Should check whether reference code is a duplicate
+						val invoice = InvoiceModel.insert(InvoiceData(senderCompany.details.id, recipientCompany.details.id,
+							bankAccount.id, invoiceLanguage.id,
+							ReferenceCode(userId, senderCompany.id, recipientCompany.id, Random.nextInt(1000)),
+							duration, deliveryDate, Some(userId)))
+						val fullInvoiceItemData = keptItems.map {
+							case Right(item) => item.data.copy(invoiceId = invoice.id)
+							case Left((product, description, pricePerUnit, amount)) =>
+								InvoiceItemData(invoice.id, product.id, description, pricePerUnit, amount)
+						} ++ newInvoiceItemData
+							.map { case (product, description, pricePerUnit, amount) =>
+								InvoiceItemData(invoice.id, product.id, description, pricePerUnit, amount)
+							}
+						val invoiceItems = InvoiceItemModel.insert(fullInvoiceItemData)
+						
+						// May print the invoice afterwards
+						if (StdIn.ask("Do you want to export this invoice into a pdf?")) {
+							// Creates full invoice data
+							senderCompany.details.addressAccess.full.flatMap { senderAddress =>
+								recipientCompany.details.addressAccess.full.map { recipientAddress =>
+									val fullInvoiceItems = invoiceItems.zip(newInvoiceItemData)
+										.map { case (item, (product, _, _, _)) => item + product }
+									FullInvoice(invoice, senderCompany + senderAddress,
+										recipientCompany + recipientAddress, bankAccount, fullInvoiceItems)
+								}
+							} match {
+								case Some(invoice) => print(userId, invoice)
+								case None => println("Some required data was missing (inform the developer of this problem)")
+							}
+						}
+						
+						invoice.withItems(invoiceItems)
+					}
 			}
 			else
 				None
+		}
+	}
+	
+	// Returns product + description + units sold + price per unit
+	private def requestInvoiceItem(userId: Int, senderCompanyId: Int, language: SelectedLanguage,
+	                               defaultProduct: Option[FullCompanyProduct], defaultPrice: Option[Double],
+	                               existingProductsPointer: Pointer[Vector[(DescribedCompanyProduct, Lazy[FullCompanyProduct])]],
+	                               units: Vector[DescribedItemUnit], editedItem: Option[InvoiceItemData] = None)
+	                              (implicit connection: Connection) =
+	{
+		// Selects the product to use
+		val product: Option[FullCompanyProduct] = defaultProduct
+			// Option A: Use same product as for the last line
+			.filter { product =>
+				StdIn.ask(s"Is the next item of the same product (${product.name})?")
+			}
+			// Option B: Selects from existing products or creates a new product
+			.orElse {
+				println("Please select or insert the product to use in this invoice item")
+				ActionUtils.selectOrInsert(
+					existingProductsPointer.value.map { case (p, fullP) => fullP -> p.name }, "product") {
+					val newProduct = createProduct(userId, senderCompanyId, language, units)
+					// Adds the product to selectable options
+					newProduct.foreach { p => existingProductsPointer.update { _ :+ (p.describedProduct, Lazy(p)) } }
+					newProduct.map(Lazy.initialized)
+				}.map { _.value }
+			}
+		
+		product.map { product =>
+			// Collects invoice item information
+			val productName = product.name
+			val unitName = product.unit.name
+			val (defaultDescription, defaultUnitsSold) = editedItem match {
+				case Some(i) => (i.description, i.unitsSold)
+				case None => (productName, 1.0)
+			}
+			println("Please add a short description for this invoice item")
+			println(s"Leaving this empty will yield: $defaultDescription")
+			val description = StdIn.readNonEmptyLine().getOrElse(defaultDescription)
+			println(s"How many units ($unitName) of $productName were sold? (default = $defaultUnitsSold)")
+			println("Hint: Allows for decimal numbers")
+			val amount = StdIn.read().doubleOr(defaultUnitsSold)
+			println(s"What's the price of a single $unitName of $productName (without applying any taxes)?")
+			val pricePerUnit = defaultPrice.orElse(product.product.defaultUnitPrice) match {
+				case Some(default) =>
+					println(s"Default = $default €/$unitName")
+					StdIn.read().doubleOr(default)
+				case None => StdIn.readIterator.flatMap { _.double }.next()
+			}
+			// Collects the information together
+			(product, description, pricePerUnit, amount)
 		}
 	}
 	
