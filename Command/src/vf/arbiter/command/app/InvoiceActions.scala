@@ -21,7 +21,7 @@ import vf.arbiter.command.model.cached.SelectedLanguage
 import vf.arbiter.command.model.partial.device.InvoiceFormData
 import vf.arbiter.core.controller.pdf.FillPdfForm
 import vf.arbiter.core.database.access.many.company.DbCompanies
-import vf.arbiter.core.database.access.many.invoice.{DbInvoices, DbItemUnits}
+import vf.arbiter.core.database.access.many.invoice.{DbInvoiceItems, DbInvoices, DbItemUnits}
 import vf.arbiter.core.database.access.single.company.{DbCompany, DbCompanyDetails}
 import vf.arbiter.core.database.access.single.description.DbCompanyProductDescription
 import vf.arbiter.core.database.access.single.invoice.{DbInvoice, DbItemUnit}
@@ -436,7 +436,7 @@ object InvoiceActions
 					val itemData = requestInvoiceItem(userId, senderCompany.id, invoiceLanguage,
 						lastProductPointer.value, lastProductPrice, existingProductsPointer, units)
 					// Keeps track of the latest selected product & price in order to provide better defaults
-					itemData.foreach { case (product, _, _, price) =>
+					itemData.foreach { case (product, _, price, _) =>
 						lastProductPointer.value = Some(product)
 						lastProductPrice = Some(price)
 					}
@@ -480,8 +480,7 @@ object InvoiceActions
 							// Creates full invoice data
 							senderCompany.details.addressAccess.full.flatMap { senderAddress =>
 								recipientCompany.details.addressAccess.full.map { recipientAddress =>
-									val fullInvoiceItems = invoiceItems.zip(newInvoiceItemData)
-										.map { case (item, (product, _, _, _)) => item + product }
+									val fullInvoiceItems = DbInvoiceItems(invoiceItems.map { _.id }.toSet).full
 									FullInvoice(invoice, senderCompany + senderAddress,
 										recipientCompany + recipientAddress, bankAccount, fullInvoiceItems)
 								}
