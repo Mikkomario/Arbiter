@@ -15,7 +15,9 @@ import utopia.paradigm.color.{ColorScheme, ColorSet}
 import utopia.paradigm.generic.ParadigmDataType
 import utopia.paradigm.measurement.DistanceExtensions._
 import utopia.paradigm.measurement.Ppi
-import utopia.paradigm.shape.shape2d.{Insets, Point, Size}
+import utopia.paradigm.shape.shape2d.insets.Insets
+import utopia.paradigm.shape.shape2d.vector.point.Point
+import utopia.paradigm.shape.shape2d.vector.size.Size
 import utopia.reach.container.RevalidationStyle.Delayed
 import utopia.reach.context.{ReachContentWindowContext, ReachWindowContext}
 import utopia.reach.cursor.{CursorSet, CursorType}

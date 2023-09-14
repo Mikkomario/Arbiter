@@ -3,7 +3,7 @@ package vf.arbiter.command.controller
 import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.collection.immutable.Pair
 import utopia.flow.collection.immutable.range.Span
-import utopia.flow.operator.DoubleLike
+import utopia.flow.operator.{DoubleLike, Sign, SignOrZero}
 import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.Today
@@ -184,16 +184,27 @@ object ExportSummary
 	
 	case class Total(invoiceCount: Int, price: Double, tax: Double) extends DoubleLike[Total]
 	{
-		override def self: Total = this
-		override def isZero = price == 0
-		override def length = price
-		override def compareTo(o: Total) = price.compareTo(o.price)
-		override def zero = Total.zero
-		override def *(mod: Double) = Total(invoiceCount, price * mod, tax * mod)
-		override def isPositive = price > 0
+		// ATTRIBUTES   ----------------------
+		
+		override lazy val sign: SignOrZero = Sign.of(price)
+		
+		
+		// COMPUTED --------------------------
 		
 		def priceWithTax = price + tax
 		
+		
+		// IMPLEMENTED  ----------------------
+		
+		override def self: Total = this
+		override def zero = Total.zero
+		
+		override def length = price
+		
+		override def compareTo(o: Total) = price.compareTo(o.price)
+		
 		def +(other: Total) = Total(invoiceCount + other.invoiceCount, price + other.price, tax + other.tax)
+		override def *(mod: Double) = Total(invoiceCount, price * mod, tax * mod)
+		
 	}
 }
