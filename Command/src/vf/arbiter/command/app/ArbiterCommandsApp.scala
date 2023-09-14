@@ -56,20 +56,21 @@ object ArbiterCommandsApp extends App
 	), args.toVector)
 	
 	// Sets up database access
-	if (startArguments("connect").getBoolean)
-	{
+	// Case: Connecting to a custom database
+	if (startArguments("connect").getBoolean) {
 		Connection.modifySettings { _.copy(user = startArguments("user").getString,
 			password = startArguments("password").getString, charsetName = "utf8",
 			charsetCollationName = "utf8_general_ci") }
+		
+		// FIXME: Length rules and descriptions are not initialized
 	}
-	else
-	{
+	// Case: Connecting to a self-hosted database
+	else {
 		val listener = new ArbiterDbSetupListener()
 		println("Configuring the database...")
 		LocalDatabase.setup("data/sql", "arbiter_db", "database_version",
 			Tables("arbiter_db", "database_version"), Some(listener), Some("utf8"), Some("utf8_general_ci"))
-		if (listener.failed)
-		{
+		if (listener.failed) {
 			println("Shutting down the database and quitting...")
 			LocalDatabase.shutDown() match {
 				case Success(_) => println("Database shut down")
@@ -79,8 +80,7 @@ object ArbiterCommandsApp extends App
 			}
 			System.exit(1)
 		}
-		else
-		{
+		else {
 			// Applies length rules
 			Paths.get("data/length-rules")
 				.iterateChildren { _.filter { _.fileType == "json" }
@@ -93,8 +93,7 @@ object ArbiterCommandsApp extends App
 					ImportDescriptions.all()
 				else
 					ImportDescriptions.ifModified()
-			}.flatten match
-			{
+			}.flatten match {
 				case Success(_) => println("Descriptions imported successfully!")
 				case Failure(error) =>
 					error.printStackTrace()

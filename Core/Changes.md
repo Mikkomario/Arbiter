@@ -1,6 +1,7 @@
 # Arbiter App - List of Changes
 
-## v1.3.1 (in development)
+## v1.4 (in development)
+Developing the gold interface
 ### New Features
 - Added `see` command
 - Invoice filling now proposes last price as the default price per unit

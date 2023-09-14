@@ -1,0 +1,82 @@
+{
+  "project": "ArbiterGold",
+  "author": "Mikko Hilpinen",
+  "package": "vf.arbiter.gold",
+  "version": "v1.4",
+  "enums": [
+    {
+      "name": "Metal",
+      "default": "Gold",
+      "doc": "Represents a type of valuable metal used in trading",
+      "values": [
+        {
+          "name": "Gold"
+        },
+        {
+          "name": "Silver"
+        }
+      ]
+    },
+    {
+      "name": "Currency",
+      "default": "Euro",
+      "doc": "Represents a monetary currency used in trading",
+      "values": [
+        {
+          "name": "Euro",
+          "doc": "Euro; Used in the European Union"
+        },
+        {
+          "name": "Usd",
+          "doc": "US dollar; Used in the United States and in other countries as well"
+        }
+      ]
+    },
+    {
+      "name": "WeightUnit",
+      "doc": "Represents a unit used when measuring weights",
+      "values": [
+        {
+          "name": "Gram",
+          "doc": "1000th of a kilogram. Used in the metric system."
+        },
+        {
+          "name": "Kilogram",
+          "doc": "1000 grams. Used in the metric system."
+        },
+        {
+          "name": "TroyOunce"
+        }
+      ]
+    }
+  ],
+  "classes": {
+    "price": [
+      {
+        "name": "MetalPrice",
+        "doc": "Documents a metal's (average) price on a specific date",
+        "combo_index": ["metal", "currency", "date"],
+        "props": [
+          {
+            "type": "Enum[Metal]",
+            "doc": "Metal who's price is recorded"
+          },
+          {
+            "type": "Enum[Currency]",
+            "doc": "The currency in which the price is given"
+          },
+          {
+            "name": "date",
+            "type": "LocalDate",
+            "doc": "Date on which the price was used"
+          },
+          {
+            "name": "pricePerTroyOunce",
+            "type": "Double",
+            "doc": "Price of the specified metal in the specified currency. Per one troy ounce of metal."
+          }
+        ]
+      }
+    ]
+  }
+}
