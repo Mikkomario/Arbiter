@@ -3,6 +3,7 @@ package vf.arbiter.gold.model.enumeration
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.generic.model.immutable.Value
 import utopia.flow.generic.model.template.ValueConvertible
+import vf.arbiter.gold.controller.price.MetalPrices
 
 /**
   * Represents a type of valuable metal used in trading
@@ -17,7 +18,6 @@ sealed trait Metal extends ValueConvertible
 	  * id used to represent this metal in database and json
 	  */
 	def id: Int
-	
 	/**
 	 * @return A code used for this metal in the metal price API
 	 */
@@ -27,6 +27,15 @@ sealed trait Metal extends ValueConvertible
 	// IMPLEMENTED	--------------------
 	
 	override def toValue = id
+	
+	
+	// OTHER    -----------------------
+	
+	/**
+	 * @param currency Targeted monetary currency
+	 * @return Access to this metal's prices in that currency
+	 */
+	def pricesIn(currency: Currency) = MetalPrices(this, currency)
 }
 
 object Metal

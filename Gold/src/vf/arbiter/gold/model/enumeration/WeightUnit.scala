@@ -21,6 +21,11 @@ sealed trait WeightUnit extends ValueConvertible
 	def id: Int
 	
 	/**
+	 * @return Abbreviation used for this unit
+	 */
+	def abbreviation: String
+	
+	/**
 	 * @param other Another unit of weight
 	 * @return A modifier that must be applied to a value given in the 'other' unit when converting it to this unit
 	 */
@@ -30,6 +35,8 @@ sealed trait WeightUnit extends ValueConvertible
 	// IMPLEMENTED	--------------------
 	
 	override def toValue = id
+	
+	override def toString = abbreviation
 	
 	
 	// OTHER    ------------------------
@@ -58,6 +65,11 @@ object WeightUnit
 	  * @return weight unit matching the specified id. None if the id didn't match any weight unit
 	  */
 	def findForId(id: Int) = values.find { _.id == id }
+	/**
+	 * @param str A string
+	 * @return Weight unit represented by that string, if found. None otherwise.
+	 */
+	def findForString(str: String) = values.find { _.abbreviation ~== str }
 	
 	/**
 	  * @param id id matching a weight unit
@@ -65,13 +77,23 @@ object WeightUnit
 	  */
 	def forId(id: Int) = 
 		findForId(id).toTry { new NoSuchElementException(s"No value of WeightUnit matches id '$id'") }
+	/**
+	 * @param str A string
+	 * @return A weight unit matching that string. Failure if no matching unit was found.
+	 */
+	def forString(str: String) =
+		findForString(str).toTry { new NoSuchElementException(s"No value of WeightUnit matches '$str'") }
 	
 	/**
-	  * @param value A value representing an weight unit id
+	  * @param value A value representing an weight unit id or abbreviation (String)
 	  * @return weight unit matching the specified value, 
-	  * when the value is interpreted as an weight unit id. Failure if no matching value was found.
+	  * when the value is interpreted as an weight unit id or abbreviation.
+	 * Failure if no matching value was found.
 	  */
-	def fromValue(value: Value) = forId(value.getInt)
+	def fromValue(value: Value) = value.int match {
+		case Some(id) => forId(id)
+		case None => forString(value.getString)
+	}
 	
 	
 	// NESTED	--------------------
@@ -85,6 +107,7 @@ object WeightUnit
 		// ATTRIBUTES	--------------------
 		
 		override val id = 1
+		override val abbreviation: String = "g"
 		
 		override def conversionModifierFrom(other: WeightUnit): Double = other match {
 			case Gram => 1.0
@@ -102,6 +125,7 @@ object WeightUnit
 		// ATTRIBUTES	--------------------
 		
 		override val id = 2
+		override val abbreviation: String = "Kg"
 		
 		override def conversionModifierFrom(other: WeightUnit): Double = other match {
 			case Kilogram => 1.0
@@ -115,6 +139,7 @@ object WeightUnit
 		// ATTRIBUTES	--------------------
 		
 		override val id = 3
+		override val abbreviation: String = "oz"
 		
 		override def conversionModifierFrom(other: WeightUnit): Double = other match {
 			case TroyOunce => 1.0

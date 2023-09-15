@@ -1,14 +1,27 @@
 package vf.arbiter.gold.controller.price
 
+import utopia.flow.async.AsyncExtensions._
+import utopia.flow.async.TryFuture
 import utopia.flow.time.DateRange
 import utopia.flow.util.TryCatch
 import utopia.vault.database.ConnectionPool
 import vf.arbiter.gold.database.access.many.price.DbMetalPrices
 import vf.arbiter.gold.database.model.price.MetalPriceModel
+import vf.arbiter.gold.model.cached.price.WeightPrice
 import vf.arbiter.gold.model.enumeration.{Currency, Metal}
-import vf.arbiter.gold.model.partial.price.MetalPriceData
 
 import scala.concurrent.ExecutionContext
+import scala.util.Success
+
+object MetalPrices
+{
+	/**
+	 * @param metal Targeted type of metal
+	 * @param currency Targeted type of currency
+	 * @return Access to price data concerning the targeted metal in the targeted currency
+	 */
+	def apply(metal: Metal, currency: Currency) = new MetalPrices(metal, currency)
+}
 
 /**
  * An interface for accessing the values of precious metals
@@ -17,12 +30,25 @@ import scala.concurrent.ExecutionContext
  */
 class MetalPrices(metal: Metal, currency: Currency)
 {
-	lazy val access = DbMetalPrices.of(metal).in(currency)
+	// ATTRIBUTES   -----------------------
 	
-	// TODO: Add support for partial successes
+	private lazy val access = DbMetalPrices.of(metal).in(currency)
+	
+	
+	// OTHER    ---------------------------
+	
+	/**
+	 * @param dates Targeted dates
+	 * @param cPool Implicit connection pool
+	 * @param exc Implicit execution context
+	 * @return A future that resolves into the average price in this metal + currency pair during the targeted dates.
+	 *         Contains a full failure if no data could be read.
+	 *         Contains a partial failure if some of the data could be read, but the whole of the date range
+	 *         was not covered.
+	 */
 	def averageDuring(dates: DateRange)(implicit cPool: ConnectionPool, exc: ExecutionContext) = {
 		// Checks the cached prices first
-		cPool.tryWith { implicit c => access.during(dates).pull.map { p => p.date -> p.pricePerTroyOunce }.toMap }
+		cPool.tryWith { implicit c => access.during(dates).pull.map { p => p.date -> p.price }.toMap }
 			.flatMap { cachedPrices =>
 				// Finds the first and the last date not covered by the cached price data
 				dates.iterator.find { !cachedPrices.contains(_) } match {
@@ -41,17 +67,23 @@ class MetalPrices(metal: Metal, currency: Currency)
 												//  In a very busy environment there is a risk for those
 												MetalPriceModel.insert(newPriceData)
 											}
+										TryCatch.Success(
+											averageOf(newPriceData.map { _.price } ++ cachedPrices.valuesIterator),
+											errors)
 										
-									// Case: Request failed
+									// Case: Request failed => Recovers using cached data, if possible
 									case TryCatch.Failure(error) =>
+										if (cachedPrices.isEmpty)
+											TryCatch.Failure(error)
+										else
+											TryCatch.Success(averageOf(cachedPrices.values), Vector(error))
 								}
 						}
-					case None => ???
+					// Case: Cached data covers the whole range of targeted dates => Calculates average based on those
+					case None => Success(TryFuture.successCatching(averageOf(cachedPrices.values)))
 				}
-			}
+			}.flattenToFuture
 	}
 	
-	private def averageOf(prices: Iterable[MetalPriceData]) = {
-		???
-	}
+	private def averageOf(prices: Iterable[WeightPrice]) = prices.sum / prices.size
 }

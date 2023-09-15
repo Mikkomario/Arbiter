@@ -7,8 +7,10 @@ import utopia.flow.generic.model.mutable.DataType.DoubleType
 import utopia.flow.generic.model.mutable.DataType.IntType
 import utopia.flow.generic.model.mutable.DataType.LocalDateType
 import utopia.flow.generic.model.template.ModelConvertible
+import vf.arbiter.gold.model.cached.price.WeightPrice
 import vf.arbiter.gold.model.enumeration.Currency.Euro
 import vf.arbiter.gold.model.enumeration.Metal.Gold
+import vf.arbiter.gold.model.enumeration.WeightUnit.TroyOunce
 import vf.arbiter.gold.model.enumeration.{Currency, Metal}
 
 import java.time.LocalDate
@@ -44,6 +46,14 @@ object MetalPriceData extends FromModelFactoryWithSchema[MetalPriceData]
 case class MetalPriceData(metal: Metal, currency: Currency, date: LocalDate, pricePerTroyOunce: Double) 
 	extends ModelConvertible
 {
+	// ATTRIBUTES   --------------------
+	
+	/**
+	 * @return The price of the specified metal on the selected date
+	 */
+	def price = WeightPrice(pricePerTroyOunce, TroyOunce)
+	
+	
 	// IMPLEMENTED	--------------------
 	
 	override def toModel = 

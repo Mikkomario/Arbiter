@@ -29,7 +29,7 @@ import scala.io.StdIn
  */
 object UserActions
 {
-	private val notLetterRegex = !Regex.alpha
+	private val notLetterRegex = !Regex.letter
 	
 	/**
 	 * Registers a new user, if possible

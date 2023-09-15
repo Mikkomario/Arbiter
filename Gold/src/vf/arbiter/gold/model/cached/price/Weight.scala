@@ -49,7 +49,7 @@ case class Weight(value: Double, unit: WeightUnit) extends DoubleLike[Weight]
 	override def self = this
 	override def zero = Weight.zero
 	
-	override def length = value
+	override def length = grams
 	
 	override def compareTo(o: Weight) = value.compareTo(o.in(unit))
 	
