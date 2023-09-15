@@ -51,6 +51,8 @@ case class Weight(value: Double, unit: WeightUnit) extends DoubleLike[Weight]
 	
 	override def length = grams
 	
+	override def toString = s"$value $unit"
+	
 	override def compareTo(o: Weight) = value.compareTo(o.in(unit))
 	
 	override def +(other: Weight) = copy(value + other.in(unit))

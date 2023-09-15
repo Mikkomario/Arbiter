@@ -110,7 +110,8 @@ case class CommonSettingModel(id: Option[Int] = None, key: String = "", value: V
 	
 	override def valueProperties = {
 		import CommonSettingModel._
-		Vector("id" -> id, keyAttName -> key, valueAttName -> value.toJson, lastUpdatedAttName -> lastUpdated)
+		Vector("id" -> id, keyAttName -> key, valueAttName -> value.mapIfNotEmpty { _.toJson },
+			lastUpdatedAttName -> lastUpdated)
 	}
 	
 	

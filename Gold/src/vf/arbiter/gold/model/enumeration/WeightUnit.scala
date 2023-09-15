@@ -111,7 +111,7 @@ object WeightUnit
 		
 		override def conversionModifierFrom(other: WeightUnit): Double = other match {
 			case Gram => 1.0
-			case Kilogram => 0.001
+			case Kilogram => 1000
 			case TroyOunce => 31.10348
 		}
 	}
@@ -129,8 +129,8 @@ object WeightUnit
 		
 		override def conversionModifierFrom(other: WeightUnit): Double = other match {
 			case Kilogram => 1.0
-			case Gram => 1000
-			case o => Gram.conversionModifierFrom(o) * 1000
+			case Gram => 0.001
+			case o => Gram.conversionModifierFrom(o) * 0.001
 		}
 	}
 	

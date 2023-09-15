@@ -108,6 +108,13 @@ case class WeightPrice(price: Double, perUnit: WeightUnit) extends DoubleLike[We
 	def per(unit: WeightUnit) = price / unit.conversionModifierFrom(perUnit)
 	
 	/**
+	 * @param money Some amount of money
+	 * @return The amount of metal (weight) that may be purchased at this price using the specified amount of money.
+	 *         Assumes that the specified amount is in the same currency as this price.
+	 */
+	def weightForMoney(money: Double) = Weight(money / price, perUnit)
+	
+	/**
 	 * @param other Another price
 	 * @return The ratio between these prices
 	 */

@@ -9,6 +9,7 @@ import utopia.flow.time.{DateRange, Days, Today}
 import utopia.flow.util.TryCatch
 import utopia.vault.database.ConnectionPool
 import vf.arbiter.gold.model.cached.auth.ApiKey
+import vf.arbiter.gold.model.cached.price.InflationCorrectedPrice
 import vf.arbiter.gold.model.enumeration.{Currency, Metal}
 
 import java.time.LocalDate
@@ -52,7 +53,7 @@ object CorrectInflation
 		// Case: No metals are used for checking inflation, or no time has passed since the contract was formed =>
 		// No need to check for metal prices
 		if (metals.isEmpty || contractDate.isToday)
-			TryFuture.successCatching(originalPrice)
+			TryFuture.successCatching(InflationCorrectedPrice.notCorrected(originalPrice, contractDate, currency))
 		else {
 			// TODO: Optimize by potentially pulling both dates simultaneously, if close together
 			// Retrieves average price data for both the contract date and the current date
@@ -63,12 +64,12 @@ object CorrectInflation
 				cPool.tryWith { implicit c =>
 					// Retrieves all required prices one by one in order to avoid duplicate queries
 					metals.toVector.map { metal =>
-						dateRanges.map { dates => metal.pricesIn(currency).averageDuring(dates).waitForResult() }
+						metal -> dateRanges.map { dates => metal.pricesIn(currency).averageDuring(dates).waitForResult() }
 					}
 				}.flatMapCatching { results =>
 					val partialFailuresBuilder = new VectorBuilder[Throwable]()
-					// Determines the rate of inflation based on collected data
-					val (failures, suggestedPrices) = results.map { prices =>
+					// Handles possible failure cases
+					val (failures, metalPrices) = results.map { case (metal, prices) =>
 						// Checks whether price check failed for either side
 						prices.findMap { _.failure } match {
 							// Case: Price check failed for one or both sides => Can't determine the rate of inflation
@@ -76,6 +77,14 @@ object CorrectInflation
 							// Case: Price check succeeded at least partially for both sides =>
 							// Determines the rate of inflation
 							case None =>
+								// The average metal prices then and now
+								val averageMetalPrices = prices.map { p =>
+									// Remembers partial failures
+									partialFailuresBuilder ++= p.partialFailures
+									p.get
+								}
+								Success(metal -> averageMetalPrices)
+								/*
 								val suggestedPrice = prices
 									.map { p =>
 										// Remembers partial failures
@@ -85,16 +94,28 @@ object CorrectInflation
 									// Calculates the price of the original agreement, according to the rate of inflation
 									.merge { (priceThen, priceNow) => originalPrice * (priceNow / priceThen) }
 								Success(suggestedPrice)
+								 */
 						}
 					}.divided
-					// Case: No rate of inflation could be acquired for any targeted metal => Fails
-					if (suggestedPrices.isEmpty)
+					// Case: No prices could be acquired for any metal => Fails
+					if (metalPrices.isEmpty)
 						TryCatch.Failure(failures.headOption.getOrElse { partialFailuresBuilder.result().head })
-					// Case: Inflation could be acquired =>
+					// Case: Prices could be acquired =>
 					// Determines the final price and returns with encountered non-critical failures
-					else
-						TryCatch.Success(suggestedPrices.sum / suggestedPrices.size,
-							failures ++ partialFailuresBuilder.result())
+					else {
+						// (type of metal, original value in weight, current value in fiat)
+						val data = metalPrices.map { case (metal, prices) =>
+							// Amount of correction that needs to be applied to the original fiat value
+							// in order to reflect that same value today
+							val correctionMod = prices.second / prices.first
+							val weightThen = prices.first.weightForMoney(originalPrice)
+							(metal, weightThen, originalPrice * correctionMod)
+						}
+						val corrected = InflationCorrectedPrice(originalPrice, contractDate,
+							data.map { case (metal, wt, _) => metal -> wt }.toMap, data.map { _._3 }.sum / data.size,
+							currency)
+						TryCatch.Success(corrected, failures ++ partialFailuresBuilder.result())
+					}
 				}
 			}
 		}

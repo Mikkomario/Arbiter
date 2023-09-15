@@ -11,6 +11,7 @@ import vf.arbiter.gold.controller.settings.ArbiterGoldSettings
 import vf.arbiter.gold.model.cached.auth.ApiKey
 import vf.arbiter.gold.model.enumeration.Currency.Euro
 import vf.arbiter.gold.model.enumeration.Metal.{Gold, Silver}
+import vf.arbiter.gold.model.enumeration.WeightUnit
 
 import java.time.LocalDate
 import scala.io.StdIn
@@ -66,7 +67,16 @@ object GoldActions
 										error.printStackTrace()
 										println(s"Some of the price requests failed (${failures.size} failures in total)")
 									}
-									println(s"$originalDate's $originalEuros € is now worth $price €")
+									println("\nResult:")
+									println(s"$originalDate's $originalEuros € would now be worth ${price.currentPrice} €")
+									price.metalValues.foreachEntry { (metal, weight) =>
+										println(s"Original value in $metal")
+										WeightUnit.values.foreach { unit =>
+											println(s"\t- ${weight in unit} $unit")
+										}
+									}
+									println(s"Value of Euro has suffered ${(price.inflation * 100).round}% inflation since ${
+										price.originalDate}")
 								case TryCatch.Failure(error) =>
 									error.printStackTrace()
 									println("Failed to determine price changes. See the error above.")
