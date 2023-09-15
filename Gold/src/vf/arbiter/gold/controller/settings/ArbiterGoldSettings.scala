@@ -1,13 +1,10 @@
 package vf.arbiter.gold.controller.settings
 
-import utopia.bunnymunch.jawn.JsonBunny
-import utopia.flow.generic.model.immutable.ModelDeclaration
-import utopia.flow.generic.model.mutable.DataType.StringType
-import utopia.flow.parse.json.JsonParser
-import utopia.flow.parse.string.Regex
-import utopia.flow.util.JsonSettingsAccess
-import utopia.flow.util.StringExtensions._
-import vf.arbiter.core.util.Common.log
+import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
+import utopia.vault.database.Connection
+import vf.arbiter.gold.database.access.single.settings.common_setting.DbCommonSetting
+import vf.arbiter.gold.model.cached.auth.ApiKey
 
 /**
  * An interface used for accessing settings concerning gold-related features
@@ -16,41 +13,15 @@ import vf.arbiter.core.util.Common.log
  */
 object ArbiterGoldSettings
 {
-	// ATTRIBUTES   ----------------------------
-	
-	implicit val jsonParser: JsonParser = JsonBunny
-	
-	private val access = new JsonSettingsAccess(
-		fileNameRegex = Regex("arbiter") + Regex.any + Regex("settings") + Regex.any,
-		schema = ModelDeclaration("apiKey" -> StringType))
-		
-	private lazy val apiModel = access.required("api").map { _.getModel }
-	
 	/**
-	 * The currency used in metal price API requests. Default = EUR
+	 * @param connection Implicit DB Connection
+	 * @return API-key that's currently specified in the settings.
+	 *         None if no API-key is specified at this time.
 	 */
-	lazy val currencyUnit = access("currency").stringOr("EUR")
-	/**
-	 * The metal unit used in API requests. Default = AUX (i.e. gold)
-	 */
-	lazy val metalUnit = access("metal").stringOr("AUX")
-		
+	def apiKey(implicit connection: Connection) = apply("metal-price-api-key").string.map(ApiKey.apply)
+	def apiKey_=(newKey: String)(implicit connection: Connection) = update("metal-price-api-key", newKey)
 	
-	// COMPUTED -------------------------------
-	
-	/**
-	 * @return The root path / domain of the metal price API
-	 */
-	def apiRoot = access("api")("root").stringOr("https://api.metalpriceapi.com")
-	/**
-	 * @return The API-key used for accessing the gold price API.
-	 */
-	def apiKey = apiModel.flatMap { _("key").tryString }
-	/**
-	 * @return API version used (default = v1)
-	 */
-	def apiVersion = access("api")("version").string match {
-		case Some(s) => s.startingWith("v")
-		case None => "v1"
-	}
+	private def apply(key: String)(implicit connection: Connection) = DbCommonSetting(key).value
+	private def update(key: String, value: Value)(implicit connection: Connection) =
+		DbCommonSetting(key).value = value
 }

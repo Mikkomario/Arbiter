@@ -43,8 +43,7 @@ object CompanyActions
 	 * @param connection Implicit DB Connection
 	 * @return Found company. None if no company was found or selected.
 	 */
-	def findAndSelectOne(nameSearch: String)(implicit connection: Connection) =
-	{
+	def findAndSelectOne(nameSearch: String)(implicit connection: Connection) = {
 		val options = DbDetailedCompanies.matchingName(nameSearch)
 		options.find { _.details.name ~== nameSearch }
 			.orElse { ActionUtils.selectFrom(
@@ -57,8 +56,7 @@ object CompanyActions
 	 * @param connection Implicit DB Connection
 	 * @return Found or created company
 	 */
-	def findOrCreateOne(userId: Int, nameSearch: String)(implicit connection: Connection) =
-	{
+	def findOrCreateOne(userId: Int, nameSearch: String)(implicit connection: Connection) = {
 		// Finds existing companies matching that name
 		val existingOptions = DbDetailedCompanies.matchingName(nameSearch)
 		// Checks for an exact name match

@@ -13,6 +13,12 @@ object ArbiterGoldTables
 	// COMPUTED	--------------------
 	
 	/**
+	  * Table that contains common settings (Represents a single (mutable) setting key-value pair used
+	  *  in common configurations)
+	  */
+	def commonSetting = apply("common_setting")
+	
+	/**
 	  * Table that contains metal prices (Documents a metal's (average) price on a specific date)
 	  */
 	def metalPrice = apply("metal_price")

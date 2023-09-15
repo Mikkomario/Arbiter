@@ -1,12 +1,12 @@
 package vf.arbiter.gold.controller.price
 
-import utopia.flow.async.AsyncExtensions._
 import utopia.flow.async.TryFuture
 import utopia.flow.time.DateRange
 import utopia.flow.util.TryCatch
 import utopia.vault.database.{Connection, ConnectionPool}
 import vf.arbiter.gold.database.access.many.price.DbMetalPrices
 import vf.arbiter.gold.database.model.price.MetalPriceModel
+import vf.arbiter.gold.model.cached.auth.ApiKey
 import vf.arbiter.gold.model.cached.price.WeightPrice
 import vf.arbiter.gold.model.enumeration.{Currency, Metal}
 
@@ -41,6 +41,7 @@ class MetalPrices(metal: Metal, currency: Currency)
 	 * @param dates Targeted dates
 	 * @param cPool Implicit connection pool
 	 * @param exc Implicit execution context
+	 * @param apiKey Implicit API-key used when accessing the metal price API
 	 * @param connection Implicit connection used for pulling the initial cached data
 	 * @return A future that resolves into the average price in this metal + currency pair during the targeted dates.
 	 *         Contains a full failure if no data could be read.
@@ -48,7 +49,7 @@ class MetalPrices(metal: Metal, currency: Currency)
 	 *         was not covered.
 	 */
 	def averageDuring(dates: DateRange)
-	                 (implicit cPool: ConnectionPool, exc: ExecutionContext,
+	                 (implicit cPool: ConnectionPool, exc: ExecutionContext, apiKey: ApiKey,
 	                  connection: Connection): Future[TryCatch[WeightPrice]] =
 	{
 		// Checks the cached prices first
@@ -64,32 +65,30 @@ class MetalPrices(metal: Metal, currency: Currency)
 	}
 	
 	private def pullAverageDuring(targetDates: DateRange, cachedPrices: Map[LocalDate, WeightPrice])
-	                             (implicit cPool: ConnectionPool, exc: ExecutionContext) = {
+	                             (implicit cPool: ConnectionPool, exc: ExecutionContext, apiKey: ApiKey) = {
 		// Requests price data for the missing dates
-		MetalPriceApi.initialized.map { api =>
-			api.pricesDuring(metal, currency, targetDates)
-				.map {
-					// Case: Price request succeeded => Stores the read prices and produces the average
-					case TryCatch.Success(priceData, errors) =>
-						val newPriceData = priceData.filterNot { p => cachedPrices.contains(p.date) }
-						if (newPriceData.nonEmpty)
-							cPool.tryWith { implicit c =>
-								// TODO: Doesn't check for duplicates.
-								//  In a very busy environment there is a risk for those
-								MetalPriceModel.insert(newPriceData)
-							}
-						TryCatch.Success(
-							averageOf(newPriceData.map { _.price } ++ cachedPrices.valuesIterator),
-							errors)
-					
-					// Case: Request failed => Recovers using cached data, if possible
-					case TryCatch.Failure(error) =>
-						if (cachedPrices.isEmpty)
-							TryCatch.Failure(error)
-						else
-							TryCatch.Success(averageOf(cachedPrices.values), Vector(error))
-				}
-		}.flattenToFuture
+		MetalPriceApi.pricesDuring(metal, currency, targetDates)
+			.map {
+				// Case: Price request succeeded => Stores the read prices and produces the average
+				case TryCatch.Success(priceData, errors) =>
+					val newPriceData = priceData.filterNot { p => cachedPrices.contains(p.date) }
+					if (newPriceData.nonEmpty)
+						cPool.tryWith { implicit c =>
+							// TODO: Doesn't check for duplicates.
+							//  In a very busy environment there is a risk for those
+							MetalPriceModel.insert(newPriceData)
+						}
+					TryCatch.Success(
+						averageOf(newPriceData.map { _.price } ++ cachedPrices.valuesIterator),
+						errors)
+				
+				// Case: Request failed => Recovers using cached data, if possible
+				case TryCatch.Failure(error) =>
+					if (cachedPrices.isEmpty)
+						TryCatch.Failure(error)
+					else
+						TryCatch.Success(averageOf(cachedPrices.values), Vector(error))
+			}
 	}
 	
 	private def averageOf(prices: Iterable[WeightPrice]) = prices.sum / prices.size

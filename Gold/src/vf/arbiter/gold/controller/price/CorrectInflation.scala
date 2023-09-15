@@ -8,6 +8,7 @@ import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.{DateRange, Days, Today}
 import utopia.flow.util.TryCatch
 import utopia.vault.database.ConnectionPool
+import vf.arbiter.gold.model.cached.auth.ApiKey
 import vf.arbiter.gold.model.enumeration.{Currency, Metal}
 
 import java.time.LocalDate
@@ -41,7 +42,7 @@ object CorrectInflation
 	 */
 	def apply(originalPrice: Double, currency: Currency, contractDate: LocalDate, metals: Set[Metal],
 	          referenceDuration: Days)
-	         (implicit cPool: ConnectionPool, exc: ExecutionContext) =
+	         (implicit cPool: ConnectionPool, exc: ExecutionContext, apiKey: ApiKey) =
 	{
 		if (contractDate.isFuture)
 			throw new IllegalArgumentException("Can't correct inflation from the future")

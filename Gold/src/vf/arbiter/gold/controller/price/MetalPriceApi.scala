@@ -8,27 +8,40 @@ import utopia.disciple.apache.Gateway
 import utopia.disciple.controller.RequestInterceptor
 import utopia.disciple.http.request.{Body, Request, StringBody}
 import utopia.flow.collection.CollectionExtensions._
+import utopia.flow.collection.immutable.caching.cache.Cache
 import utopia.flow.generic.casting.ValueConversions._
-import utopia.flow.generic.factory.SureFromModelFactory
 import utopia.flow.generic.model.immutable.{Constant, Model, Value}
-import utopia.flow.generic.model.template.{ModelLike, Property}
 import utopia.flow.time.DateRange
 import utopia.flow.util.logging.Logger
 import vf.arbiter.core.util.Common
 import vf.arbiter.core.util.Common.executionContext
 import vf.arbiter.gold.controller.price.MetalPriceApi.InsertApiKeyInterceptor
-import vf.arbiter.gold.controller.settings.ArbiterGoldSettings
+import vf.arbiter.gold.model.cached.auth.ApiKey
 import vf.arbiter.gold.model.enumeration.{Currency, Metal}
 import vf.arbiter.gold.model.partial.price.MetalPriceData
+
+import scala.annotation.unused
+import scala.language.implicitConversions
 
 object MetalPriceApi
 {
 	// ATTRIBUTES   -----------------------
 	
+	private val cache = Cache { apiKey: String => new MetalPriceApi(apiKey) }
+	
+	
+	// IMPLICIT ---------------------------
+	
+	implicit def usingImplicitKey(@unused a: MetalPriceApi.type)(implicit key: ApiKey): MetalPriceApi = using(key.key)
+	
+	
+	// OTHER    ---------------------------
+	
 	/**
-	 * API instance. Failure if the API-key was not found from the settings.
+	 * @param apiKey API-key to use for authorizing the requests
+	 * @return API-access that uses that key
 	 */
-	lazy val initialized = ArbiterGoldSettings.apiKey.map { new MetalPriceApi(_) }
+	def using(apiKey: String) = cache(apiKey)
 	
 	
 	// NESTED   ---------------------------
@@ -38,13 +51,6 @@ object MetalPriceApi
 		override def intercept(request: Request): Request =
 			request.copy(params = request.params + Constant("api_key", apiKey))
 	}
-	
-	private object RatesResponseBody extends SureFromModelFactory[RatesResponseBody]
-	{
-		override def parseFrom(model: ModelLike[Property]): RatesResponseBody =
-			new RatesResponseBody(model("rates").getModel)
-	}
-	private class RatesResponseBody(ratesModel: Model)
 }
 
 /**
@@ -59,7 +65,7 @@ class MetalPriceApi(apiKey: String) extends Api
 	override protected lazy val gateway: Gateway = Gateway(Vector(JsonBunny),
 		requestInterceptors = Vector(new InsertApiKeyInterceptor(apiKey)),
 		allowJsonInUriParameters = false, allowBodyParameters = false)
-	override protected lazy val rootPath: String = s"${ArbiterGoldSettings.apiRoot}/${ArbiterGoldSettings.apiVersion}"
+	override protected lazy val rootPath: String = "https://api.metalpriceapi.com/v1"
 	
 	
 	// IMPLEMENTED  ---------------------

@@ -7,5 +7,6 @@ Class-Path: scala-library-2.13.7.jar scala-reflect-2.13.7.jar scala-libr
  4.RELEASE.jar spring-jcl-5.1.4.RELEASE.jar mariaDB4j-db-linux64-10.2.11
  .jar mariaDB4j-db-win32-10.2.11.jar mariaDB4j-db-mac64-10.2.11.jar mari
  adb-java-client-1.5.9.jar commons-logging-1.2.jar pdfbox-2.0.25.jar fon
- tbox-2.0.25.jar
+ tbox-2.0.25.jar commons-codec-1.15.jar httpclient5-5.1.2.jar httpcore5-
+ 5.1.2.jar httpcore5-h2-5.1.2.jar
 

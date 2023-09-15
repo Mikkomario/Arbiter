@@ -15,6 +15,10 @@
         <element id="module-output" name="BunnyMunch" />
         <element id="module-output" name="Trove" />
         <element id="module-output" name="Citadel-Description-Importer" />
+        <element id="module-output" name="Access" />
+        <element id="module-output" name="Annex" />
+        <element id="module-output" name="Disciple" />
+        <element id="module-output" name="Gold" />
       </element>
       <element id="library" level="project" name="ch.vorburger.mariaDB4j:mariaDB4j:2.4.0" />
       <element id="library" level="project" name="mariadb-java-client-1" />
@@ -33,6 +37,7 @@
       <element id="library" level="application" name="scala-sdk-2.13.7" />
       <element id="library" level="project" name="commons-logging" />
       <element id="library" level="project" name="pdfbox-2" />
+      <element id="library" level="project" name="apache.httpcomponents.client5.httpclient5" />
     </root>
   </artifact>
 </component>

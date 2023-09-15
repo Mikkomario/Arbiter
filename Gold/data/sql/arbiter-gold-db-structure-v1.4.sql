@@ -24,3 +24,19 @@ CREATE TABLE `metal_price`(
 	INDEX mp_combo_1_idx (metal_id, currency_id, `date`)
 )Engine=InnoDB DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
 
+
+--	Settings	----------
+
+-- Represents a single (mutable) setting key-value pair used in common configurations
+-- key:          Key that represents this setting's target / function
+-- value:        Value given for this setting
+-- last_updated: Time when this setting was last modified
+CREATE TABLE `common_setting`(
+	`id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	`key` VARCHAR(255) NOT NULL,
+	`value` VARCHAR(255),
+	`last_updated` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	INDEX cs_key_idx (`key`),
+	INDEX cs_last_updated_idx (`last_updated`)
+)Engine=InnoDB DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+

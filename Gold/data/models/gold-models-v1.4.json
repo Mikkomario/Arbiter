@@ -77,6 +77,29 @@
           }
         ]
       }
+    ],
+    "settings": [
+      {
+        "name": "CommonSetting",
+        "doc": "Represents a single (mutable) setting key-value pair used in common configurations",
+        "props": [
+          {
+            "name": "key",
+            "type": "NonEmptyString(16-64)",
+            "index": true,
+            "doc": "Key that represents this setting's target / function"
+          },
+          {
+            "name": "value",
+            "type": "Value",
+            "doc": "Value given for this setting"
+          },
+          {
+            "type": "updated",
+            "doc": "Time when this setting was last modified"
+          }
+        ]
+      }
     ]
   }
 }
