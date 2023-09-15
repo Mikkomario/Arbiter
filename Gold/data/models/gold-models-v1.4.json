@@ -85,13 +85,15 @@
         "props": [
           {
             "name": "key",
-            "type": "NonEmptyString(16-64)",
+            "type": "NonEmptyString(16)",
+            "limit": 64,
             "index": true,
             "doc": "Key that represents this setting's target / function"
           },
           {
             "name": "value",
-            "type": "Value",
+            "type": "Value(32)",
+            "limit": 1024,
             "doc": "Value given for this setting"
           },
           {

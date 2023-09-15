@@ -1,5 +1,6 @@
 package vf.arbiter.command.app
 
+import utopia.access.http.Status
 import utopia.bunnymunch.jawn.JsonBunny
 import utopia.citadel.database.Tables
 import utopia.citadel.util.CitadelContext
@@ -42,6 +43,7 @@ import scala.util.{Failure, Success}
 object ArbiterCommandsApp extends App
 {
 	// Sets up the program environment
+	Status.setup()
 	CitadelContext.setup(executionContext, connectionPool, "arbiter_db")
 	ErrorHandling.defaultPrinciple = Throw
 	implicit val jsonParser: JsonParser = JsonBunny

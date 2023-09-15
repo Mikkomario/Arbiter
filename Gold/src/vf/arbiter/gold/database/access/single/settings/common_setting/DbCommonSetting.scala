@@ -1,11 +1,14 @@
 package vf.arbiter.gold.database.access.single.settings.common_setting
 
+import utopia.flow.generic.model.immutable.Value
+import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.template.Indexed
 import utopia.vault.nosql.view.UnconditionalView
 import utopia.vault.sql.Condition
 import vf.arbiter.gold.database.factory.settings.CommonSettingFactory
 import vf.arbiter.gold.database.model.settings.CommonSettingModel
+import vf.arbiter.gold.model.partial.settings.CommonSettingData
 import vf.arbiter.gold.model.stored.settings.CommonSetting
 
 /**
@@ -41,6 +44,18 @@ object DbCommonSetting extends SingleRowModelAccess[CommonSetting] with Uncondit
 	 * @return Access to that setting
 	 */
 	def apply(key: String) = filterDistinct(model.withKey(key).toCondition)
+	/**
+	 * @param key Targeted key
+	 * @param value Value to assign for that key
+	 * @param connection Implicit DB Connection
+	 */
+	def update(key: String, value: Value)(implicit connection: Connection): Unit = {
+		// Attempts update first
+		val updateSucceeded = apply(key).value = value
+		// If there was no row to update, performs an insert
+		if (!updateSucceeded)
+			model.insert(CommonSettingData(key, value))
+	}
 	
 	/**
 	  * @param condition Filter condition to apply in addition to this root view's condition. Should yield

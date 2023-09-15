@@ -22,6 +22,5 @@ object ArbiterGoldSettings
 	def apiKey_=(newKey: String)(implicit connection: Connection) = update("metal-price-api-key", newKey)
 	
 	private def apply(key: String)(implicit connection: Connection) = DbCommonSetting(key).value
-	private def update(key: String, value: Value)(implicit connection: Connection) =
-		DbCommonSetting(key).value = value
+	private def update(key: String, value: Value)(implicit connection: Connection) = DbCommonSetting(key) = value
 }
