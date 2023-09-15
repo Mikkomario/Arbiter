@@ -26,10 +26,10 @@ object WeightPrice
 	
 	object WeightPriceIsFractional extends Fractional[WeightPrice]
 	{
-		override def div(x: WeightPrice, y: WeightPrice): WeightPrice = x / y
+		override def div(x: WeightPrice, y: WeightPrice): WeightPrice = WeightPrice(x / y, x.perUnit)
 		override def plus(x: WeightPrice, y: WeightPrice): WeightPrice = x + y
 		override def minus(x: WeightPrice, y: WeightPrice): WeightPrice = x - y
-		override def times(x: WeightPrice, y: WeightPrice): WeightPrice = x * y
+		override def times(x: WeightPrice, y: WeightPrice): WeightPrice = x * y.per(x.perUnit)
 		
 		override def negate(x: WeightPrice): WeightPrice = -x
 		
@@ -107,6 +107,9 @@ case class WeightPrice(price: Double, perUnit: WeightUnit) extends DoubleLike[We
 	 */
 	def per(unit: WeightUnit) = price / unit.conversionModifierFrom(perUnit)
 	
-	def *(other: WeightPrice): WeightPrice = this * (other per perUnit)
-	def /(other: WeightPrice): WeightPrice = this / (other per perUnit)
+	/**
+	 * @param other Another price
+	 * @return The ratio between these prices
+	 */
+	def /(other: WeightPrice): Double = price / (other per perUnit)
 }
