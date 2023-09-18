@@ -135,6 +135,8 @@ object ArbiterCommandsApp extends App
 	companyPointer.addContinuousListener { _.newValue.foreach { c => println(s"Using company ${c.details.name}") } }
 	userSettingsPointer.addAnyChangeListener { company = None }
 	
+	// TODO: Move specific commands, such as invoicing commands to separate files
+	
 	// Creates the basic commands
 	private val loginCommand = Command("login", help = "Logs you in as a specific user, enabling other actions")(
 		ArgumentSchema("username", "name", help = "Your username")) { args =>
@@ -254,30 +256,6 @@ object ArbiterCommandsApp extends App
 					println(s"Data import process failed unexpectedly: ${error.getMessage}")
 				}
 			}
-		}
-	}
-	private val correctPriceCommand = Command("correct", "cor",
-		help = "Corrects the value of a previously agreed sum against inflation using gold (and possibly silver) price data.")(
-		ArgumentSchema("original", "o", help = "The original amount in Euros"),
-		ArgumentSchema("date", "d", help = "Date when the specified Euro amount was valid"),
-		ArgumentSchema("averagePeriod", "t", 30,
-			help = "Number of days for which the average metal values are calculated now and then"),
-		ArgumentSchema.flag("includeSilver", "S",
-			"Whether both gold and silver should be used for determining the rate of inflation (by default, only gold is used)")) { args =>
-		args("original").double
-			.orElse {
-				StdIn.read("Please specify the original value in Euros to convert to current date value").double
-			} match
-		{
-			case Some(originalEuros) =>
-				args("date").localDate
-					.orElse { StdIn.read("Please specify the date on which that price was valid").localDate } match
-				{
-					case Some(originalDate) => GoldActions.determineCurrentPrice(originalEuros, originalDate,
-						args("averagePeriod").intOr(30).days, includeSilver = args("includeSilver").getBoolean)
-					case None => println("Cancelled")
-				}
-			case None => println("Cancelled")
 		}
 	}
 	private val debugCommand = Command("debug", help = "Command that prints debugging information")(
@@ -486,8 +464,10 @@ object ArbiterCommandsApp extends App
 				Vector(listCommand(company.id), cancelInvoiceCommand(company.id), exportDataCommand(company.details))
 			case None => Vector()
 		}
-		(Vector(registerCommand, seeCommand(company.map { _.id }), backupCommand, importCommand, correctPriceCommand,
-			debugCommand, clearAllCommand) ++ userStatefulCommands ++ companyStatefulCommands).sortBy { _.name }
+		(Vector(registerCommand, seeCommand(company.map { _.id }), backupCommand, importCommand,
+			debugCommand, clearAllCommand) ++ GoldCommands.all ++ userStatefulCommands ++
+			companyStatefulCommands)
+			.sortBy { _.name }
 	}
 	
 	// Starts the console
