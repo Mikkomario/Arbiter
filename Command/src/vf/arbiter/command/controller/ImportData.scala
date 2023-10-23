@@ -131,7 +131,7 @@ object ImportData
 		val existingIdPerCode = DbLanguages.pull.map { lang => lang.isoCode -> lang.id }.toMap
 		// Divides the submitted data to new and existing cases
 		val (newCases, existingCases) = descriptionModelsPerCode
-			.divideBy { case (code, _) => existingIdPerCode.contains(code) }
+			.divideBy { case (code, _) => existingIdPerCode.contains(code) }.toTuple
 		// Imports new languages, if there are any
 		val newLanguages = LanguageModel.insert((descriptionModelsPerCode.keySet -- existingIdPerCode.keySet).toVector
 			.map { LanguageData(_) })

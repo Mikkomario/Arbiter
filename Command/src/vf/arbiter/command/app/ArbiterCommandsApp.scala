@@ -417,7 +417,7 @@ object ArbiterCommandsApp extends App
 				println("The specified range of months was not within the allowed limit [1,12]. Uses the default range.")
 				Span(1, Today.month.value)
 			}
-			.map(Month.of)
+			.mapTo(Month.of)
 		val path = args("to").string match {
 			case Some(str) => str: Path
 			case None =>

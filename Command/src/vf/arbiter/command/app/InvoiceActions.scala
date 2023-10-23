@@ -611,18 +611,17 @@ object InvoiceActions
 		// Finds the existing form records
 		val storedForms = DbInvoiceForms.forUserWithId(userId).withLanguageId(language.id).pull
 		// Checks which of the forms still exists and removes the others
-		val (notExistingForms, existingForms) = storedForms.divideBy { _.path.exists }
+		val (notExistingForms, existingForms) = storedForms.divideBy { _.path.exists }.toTuple
 		if (notExistingForms.nonEmpty)
 			DbInvoiceForms(notExistingForms.map { _.id }).delete()
 		
-		val (notMyCompanyForms, myCompanyForms) = existingForms.divideBy { _.companyId.contains(companyId) }
+		val (notMyCompanyForms, myCompanyForms) = existingForms.divideBy { _.companyId.contains(companyId) }.toTuple
 		// May offer an existing path if there is only one option available
 		if (myCompanyForms.size == 1 && _ask(myCompanyForms.head.path))
 			Some(myCompanyForms.head)
-		else
-		{
+		else {
 			// Allows the user to select or create a new form path
-			val (generalForms, otherCompanyForms) = notMyCompanyForms.divideBy { _.companyId.isDefined }
+			val (generalForms, otherCompanyForms) = notMyCompanyForms.divideBy { _.companyId.isDefined }.toTuple
 			val orderedForms = myCompanyForms.sortBy { _.path.toString } ++ generalForms.sortBy { _.path.toString } ++
 				otherCompanyForms.sortBy { _.path.toString }
 			val newForm = ActionUtils.selectOrInsert(orderedForms.map { f => f -> f.path.toString }, "form",
@@ -631,15 +630,13 @@ object InvoiceActions
 				val root: Path = ""
 				println(s"Hint: The path may be absolute or relative to ${root.toAbsolutePath}")
 				val somePaths = root.allChildrenIterator.flatMap { _.toOption }.filter { _.fileType == "pdf" }.take(5)
-				if (somePaths.nonEmpty)
-				{
+				if (somePaths.nonEmpty) {
 					println("Some paths that were found:")
 					somePaths.foreach { p => println("- " + root.relativize(p)) }
 				}
 				StdIn.readValidOrEmpty() { v =>
 					val path: Path = v.getString
-					if (path.exists)
-					{
+					if (path.exists) {
 						if (path.fileType == "pdf")
 							Right(path)
 						else

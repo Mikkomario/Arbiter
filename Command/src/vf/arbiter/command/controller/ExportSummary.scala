@@ -46,7 +46,7 @@ object ExportSummary
 	{
 		directory.createDirectories().flatMap { directory =>
 			// Collects all invoice data concerning this company (for the targeted year)
-			val invoices = DbInvoices.during(months.map { year/_ }).sentByCompanyWithId(companyId)
+			val invoices = DbInvoices.during(months.mapTo { year/_ }).sentByCompanyWithId(companyId)
 			// Reads associated data (items, products, recipient companies)
 			val invoiceIds = invoices.map { _.id }.toSet
 			val items = DbInvoiceItems.forAnyOfInvoices(invoiceIds).pull
