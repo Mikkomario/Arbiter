@@ -619,7 +619,9 @@ Just saying. Consider yourself notified.)
 This software uses the following libraries:
 - [Utopia library](https://github.com/Mikkomario/Utopia-Scala) - MIT license
 - [Apache HttpClient](https://hc.apache.org/httpcomponents-client-5.2.x/) - Apache 2.0 license
+- [Apache Pdfbox](https://pdfbox.apache.org/) - Apache 2.0 license
 - [MariaDB4j](https://github.com/MariaDB4j/MariaDB4j) - Apache 2.0 license
+- [MariaDB Java Client](https://mariadb.com/kb/en/installing-mariadb-connectorj/) - [CC BY-SA / Gnu FDL License](https://mariadb.com/kb/en/installing-mariadb-connectorj/+license/)
 
 This software is available under the **MIT license**, with the **following additions**:
 
