@@ -1,6 +1,6 @@
 # Arbiter App - List of Changes
 
-## v1.4 (in development)
+## v1.4 - 23.10.2023
 Minor improvements and new gold-related features
 ### New Features
 - Added a number of gold-related commands
