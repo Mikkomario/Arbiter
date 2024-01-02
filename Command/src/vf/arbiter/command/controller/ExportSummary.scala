@@ -3,7 +3,8 @@ package vf.arbiter.command.controller
 import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.collection.immutable.Pair
 import utopia.flow.collection.immutable.range.Span
-import utopia.flow.operator.{DoubleLike, Sign, SignOrZero}
+import utopia.flow.operator.numeric.DoubleLike
+import utopia.flow.operator.sign.{Sign, SignOrZero}
 import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.Today

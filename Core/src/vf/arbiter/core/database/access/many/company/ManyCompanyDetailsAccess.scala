@@ -29,7 +29,7 @@ trait ManyCompanyDetailsAccess
 	/**
 	 * @return A copy of this access point which includes full address information
 	 */
-	def full = globalCondition match {
+	def full = accessCondition match {
 		// Doesn't repeat the non-deprecated condition
 		case Some(condition) => DbManyFullCompanyDetails.includingHistory.filter(condition)
 		case None => DbManyFullCompanyDetails.includingHistory

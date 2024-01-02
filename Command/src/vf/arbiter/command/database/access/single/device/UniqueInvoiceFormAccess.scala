@@ -60,7 +60,7 @@ trait UniqueInvoiceFormAccess
 	 * @return Whether this item was updated
 	 */
 	def generalize()(implicit connection: Connection) = connection(
-		Update(table, model.companyIdAttName, Value.empty) + globalCondition.map { Where(_) }).updatedRows
+		Update(table, model.companyIdAttName, Value.empty) + accessCondition.map { Where(_) }).updatedRows
 	
 	/**
 	  * Updates the companyId of the targeted InvoiceForm instance(s)

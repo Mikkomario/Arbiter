@@ -25,6 +25,6 @@ object DbFullCompanyBankAccounts
 	
 	class DbFullCompanyBankAccountsSubSet(_ids: Iterable[Int]) extends ManyFullCompanyBankAccountsAccess
 	{
-		override def globalCondition = Some(index in _ids)
+		override def accessCondition = Some(index in _ids)
 	}
 }

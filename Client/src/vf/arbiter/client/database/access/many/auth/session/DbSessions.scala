@@ -36,7 +36,7 @@ object DbSessions extends ManySessionsAccess with NonDeprecatedView[Session]
 	{
 		// IMPLEMENTED	--------------------
 		
-		override def globalCondition = Some(index in targetIds)
+		override def accessCondition = Some(index in targetIds)
 	}
 }
 

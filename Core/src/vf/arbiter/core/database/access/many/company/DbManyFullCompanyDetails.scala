@@ -34,6 +34,6 @@ object DbManyFullCompanyDetails extends ManyFullCompanyDetailsAccess with NonDep
 	
 	class DbFullCompanyDetailsSubSet(_ids: Iterable[Int]) extends ManyFullCompanyDetailsAccess
 	{
-		override def globalCondition = Some(index in _ids)
+		override def accessCondition = Some(index in _ids)
 	}
 }

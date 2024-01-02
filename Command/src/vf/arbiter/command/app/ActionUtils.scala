@@ -1,6 +1,6 @@
 package vf.arbiter.command.app
 
-import utopia.flow.operator.EqualsExtensions._
+import utopia.flow.operator.equality.EqualsExtensions._
 import utopia.flow.time.{DateRange, Today}
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.collection.CollectionExtensions._

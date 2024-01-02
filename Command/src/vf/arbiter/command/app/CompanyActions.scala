@@ -8,7 +8,7 @@ import utopia.citadel.database.model.description.DescriptionModel
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.citadel.model.enumeration.CitadelUserRole.Owner
 import utopia.flow.generic.casting.ValueConversions._
-import utopia.flow.operator.EqualsExtensions._
+import utopia.flow.operator.equality.EqualsExtensions._
 import utopia.flow.time.Now
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.util.console.ConsoleExtensions._

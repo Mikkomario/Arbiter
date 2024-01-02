@@ -33,7 +33,7 @@ trait ManyCompanyBankAccountsAccess
 	/**
 	 * @return An access point to "full" versions of these accounts (include bank information)
 	 */
-	def full = globalCondition match
+	def full = accessCondition match
 	{
 		case Some(condition) => DbFullCompanyBankAccounts.filter(condition)
 		case None => DbFullCompanyBankAccounts

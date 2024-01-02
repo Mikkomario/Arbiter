@@ -2,7 +2,8 @@ package vf.arbiter.gold.model.cached.price
 
 import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.generic.casting.ValueConversions._
-import utopia.flow.operator.{DoubleLike, Sign}
+import utopia.flow.operator.numeric.DoubleLike
+import utopia.flow.operator.sign.Sign
 import utopia.flow.parse.string.Regex
 import vf.arbiter.gold.model.enumeration.WeightUnit
 import vf.arbiter.gold.model.enumeration.WeightUnit.{Gram, Kilogram, TroyOunce}

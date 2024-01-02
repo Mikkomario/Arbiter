@@ -32,7 +32,7 @@ trait ManyCompaniesAccess extends ManyCompaniesAccessLike[Company, ManyCompanies
 	/**
 	 * @return A copy of this access point which includes latest details for each accessible company
 	 */
-	def detailed = globalCondition match {
+	def detailed = accessCondition match {
 		case Some(c) => DbDetailedCompanies.filter(c)
 		case None => DbDetailedCompanies
 	}

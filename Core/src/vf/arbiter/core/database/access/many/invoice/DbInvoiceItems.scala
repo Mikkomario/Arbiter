@@ -25,7 +25,7 @@ object DbInvoiceItems extends ManyInvoiceItemsAccess with UnconditionalView
 	{
 		// IMPLEMENTED	--------------------
 		
-		override def globalCondition = Some(index in targetIds)
+		override def accessCondition = Some(index in targetIds)
 	}
 }
 
