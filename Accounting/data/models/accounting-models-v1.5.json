@@ -1,0 +1,138 @@
+{
+  "project": "ArbiterAccounting",
+  "version": "v1.5",
+  "author": "Mikko Hilpinen",
+  "package": "vf.arbiter.accounting",
+  "classes": {
+    "transaction": [
+      {
+        "name": "TransactionType",
+        "doc": "Represents a category or a type of transaction",
+        "described": true,
+        "description_link": "type_id",
+        "props": [
+          {
+            "ref": "transaction_type",
+            "type": "Option[Int]",
+            "doc": "Id of the parent type of this type. None if this is a root/main category."
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Reference to the user that created this transaction type"
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "PartyEntry",
+        "name_plural": "RecipientEntries",
+        "doc": "Represents a transaction party as described on a bank statement",
+        "props": [
+          {
+            "name": "name",
+            "type": "NonEmptyString(16-255)",
+            "doc": "Name of this entity, just as it appeared on a bank statement",
+            "index": true
+          },
+          {
+            "type": "creation",
+            "index": false
+          }
+        ]
+      },
+      {
+        "name": "Transaction",
+        "doc": "Represents a transaction from or to a bank account. Only includes data from a bank statement.",
+        "described": true,
+        "description_link": "transaction_id",
+        "props": [
+          {
+            "name": "accountId",
+            "ref": "company_bank_account",
+            "doc": "Id of the account on which this transaction was made"
+          },
+          {
+            "name": "date",
+            "type": "LocalDate",
+            "doc": "Date when this transaction occurred (e.g. date of purchase)"
+          },
+          {
+            "name": "recordDate",
+            "type": "LocalDate",
+            "doc": "Date when this transaction was recorded / actuated on the bank account."
+          },
+          {
+            "name": "amount",
+            "type": "Double",
+            "doc": "The size of the transaction in €. Positive amounts indicate balance added to the account. Negative values indicate withdrawals or purchases."
+          },
+          {
+            "name": "otherPartyEntryId",
+            "ref": "party_entry",
+            "doc": "Id of the other party of this transaction, as it appears on this original statement."
+          },
+          {
+            "name": "referenceCode",
+            "type": "String(8-128)",
+            "doc": "Reference code mentioned on the transaction"
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who added this entry. None if unknown or if not applicable."
+          },
+          {
+            "type": "creation",
+            "index": false
+          },
+          {
+            "type": "deprecation",
+            "doc": "Time when this entry was cancelled / removed. None while valid."
+          }
+        ]
+      },
+      {
+        "name": "TransactionEvaluation",
+        "doc": "Lists information that's added on top of a raw transaction record. Typically based on user input.",
+        "props": [
+          {
+            "ref": "transaction",
+            "doc": "Id of the described transaction."
+          },
+          {
+            "name": "typeId",
+            "ref": "transaction_type",
+            "doc": "Id of the assigned type of this transaction"
+          },
+          {
+            "name": "vatRatio",
+            "type": "Double",
+            "default": 0.0,
+            "doc": "Ratio of VAT applied to this transaction, where 0.5 is 50% and 1.0 is 100%."
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who added this evaluation. None if unknown or if not applicable."
+          },
+          {
+            "type": "deprecation",
+            "doc": "Time when this evaluation was replaced or cancelled. None while valid."
+          },
+          {
+            "name": "manual",
+            "type": "Boolean",
+            "doc": "Whether this evaluation is manually performed by a human. False if performed by an algorithm."
+          }
+        ]
+      }
+    ]
+  }
+}

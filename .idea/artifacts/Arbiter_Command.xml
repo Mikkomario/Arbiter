@@ -35,11 +35,12 @@
           <element id="dir-copy" path="$PROJECT_DIR$/Command/data/length-rules" />
         </element>
       </element>
-      <element id="library" level="application" name="scala-sdk-2.13.7" />
       <element id="library" level="project" name="commons-logging" />
       <element id="library" level="project" name="pdfbox-2" />
       <element id="library" level="project" name="apache.httpcomponents.client5.httpclient5" />
       <element id="file-copy" path="$PROJECT_DIR$/README.md" />
+      <element id="library" level="application" name="scala-sdk-2.13.12" />
+      <element id="library" level="project" name="slf4j-1" />
     </root>
   </artifact>
 </component>
