@@ -4,6 +4,38 @@
   "author": "Mikko Hilpinen",
   "package": "vf.arbiter.accounting",
   "classes": {
+    "account": [
+      {
+        "name": "AccountBalance",
+        "doc": "Represents a balance (monetary amount) on a bank account at a specific time",
+        "props": [
+          {
+            "name": "accountId",
+            "ref": "company_bank_account",
+            "doc": "Id of the described bank account"
+          },
+          {
+            "name": "balance",
+            "type": "Double",
+            "doc": "The amount of € on this account in this instance"
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who provided this information. None if not known or if not applicable."
+          },
+          {
+            "type": "creation",
+            "doc": "Time when this value was specified. Also represents the time when this value was accurate."
+          },
+          {
+            "type": "deprecation",
+            "doc": "Time when this statement was cancelled. None while valid."
+          }
+        ]
+      }
+    ],
     "transaction": [
       {
         "name": "TransactionType",
@@ -12,6 +44,7 @@
         "description_link": "type_id",
         "props": [
           {
+            "name": "parentId",
             "ref": "transaction_type",
             "type": "Option[Int]",
             "doc": "Id of the parent type of this type. None if this is a root/main category."
@@ -25,12 +58,18 @@
           {
             "type": "creation",
             "index": false
+          },
+          {
+            "name": "preApplied",
+            "name_plural": "preApplied",
+            "type": "Boolean",
+            "doc": "Whether these transaction types should be immediately as income or expense, before targets are applied. \nE.g. some expenses may be deducted from income instead of considered additional spending. \nMain input sources should also be pre-applied."
           }
         ]
       },
       {
         "name": "PartyEntry",
-        "name_plural": "RecipientEntries",
+        "name_plural": "PartyEntries",
         "doc": "Represents a transaction party as described on a bank statement",
         "props": [
           {
@@ -47,6 +86,13 @@
       },
       {
         "name": "Transaction",
+        "combo": {
+          "name": "EvaluatedTransaction",
+          "child": "TransactionEvaluation",
+          "is_always_linked": true,
+          "child_alias": "evaluation",
+          "doc": "Combines a transaction with its evaluation. This represents a complete transaction."
+        },
         "doc": "Represents a transaction from or to a bank account. Only includes data from a bank statement.",
         "described": true,
         "description_link": "transaction_id",
@@ -59,7 +105,8 @@
           {
             "name": "date",
             "type": "LocalDate",
-            "doc": "Date when this transaction occurred (e.g. date of purchase)"
+            "doc": "Date when this transaction occurred (e.g. date of purchase)",
+            "index": true
           },
           {
             "name": "recordDate",
@@ -79,7 +126,7 @@
           {
             "name": "referenceCode",
             "type": "String(8-128)",
-            "doc": "Reference code mentioned on the transaction"
+            "doc": "Reference code mentioned on the transaction. May be empty."
           },
           {
             "name": "creatorId",
@@ -117,10 +164,19 @@
             "doc": "Ratio of VAT applied to this transaction, where 0.5 is 50% and 1.0 is 100%."
           },
           {
+            "name": "otherPartyAlias",
+            "type": "String(8-255)",
+            "doc": "An alias given to the other party of this transaction. Empty if no alias has been specified."
+          },
+          {
             "name": "creatorId",
             "ref": "user",
             "type": "Option[Int]",
             "doc": "Id of the user who added this evaluation. None if unknown or if not applicable."
+          },
+          {
+            "type": "creation",
+            "index": false
           },
           {
             "type": "deprecation",
@@ -128,8 +184,122 @@
           },
           {
             "name": "manual",
+            "name_plural": "areManual",
             "type": "Boolean",
             "doc": "Whether this evaluation is manually performed by a human. False if performed by an algorithm."
+          }
+        ]
+      },
+      {
+        "name": "InvoicePayment",
+        "has_combos": true,
+        "doc": "Links an invoice with the transaction where it was paid",
+        "props": [
+          {
+            "ref": "invoice",
+            "doc": "Id of the paid invoice"
+          },
+          {
+            "ref": "transaction",
+            "doc": "Id of the transaction that paid the linked invoice"
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who registered this connection"
+          },
+          {
+            "type": "creation",
+            "index": false,
+            "doc": "Time when this link was registered"
+          },
+          {
+            "name": "manual",
+            "name_plural": "areManual",
+            "type": "Boolean",
+            "doc": "Whether this connection was made manually (true), or whether it was determined by an automated algorithm (false)"
+          }
+        ]
+      }
+    ],
+    "target": [
+      {
+        "name": "AllocationTarget",
+        "name_plural": "AllocationTargets",
+        "doc": "Represents a goal or a target for money-allocation",
+        "combo": {
+          "name": "DetailedAllocationTarget",
+          "children": "TypeSpecificAllocationTarget",
+          "parent_alias": "target",
+          "child_alias": "specificTarget",
+          "children_alias": "specificTargets",
+          "doc": "Contains the full target, including type-specific values"
+        },
+        "combo_index": ["deprecatedAfter", "appliedUntil", "appliedSince"],
+        "props": [
+          {
+            "ref": "company",
+            "doc": "Id of the company for which these targets apply"
+          },
+          {
+            "name": "capitalRatio",
+            "type": "Double",
+            "doc": "The targeted (minimum) capital ratio of the income (possibly after certain expenses) [0,1]."
+          },
+          {
+            "name": "appliedSince",
+            "name_plural": "firstApplyTimes",
+            "type": "Instant",
+            "doc": "The first time from which this target is applied"
+          },
+          {
+            "name": "appliedUntil",
+            "name_plural": "applyEndTimes",
+            "type": "Option[Instant]",
+            "doc": "Time until which this target was applied. None if applied indefinitely (or until changed)."
+          },
+          {
+            "name": "creatorId",
+            "ref": "user",
+            "type": "Option[Int]",
+            "doc": "Id of the user who specified these targets"
+          },
+          {
+            "type": "creation",
+            "doc": "Time when this target was specified",
+            "index": false
+          },
+          {
+            "type": "deprecation",
+            "doc": "Time when this target was cancelled / deprecated. Deprecated targets don't apply, not even in post."
+          }
+        ]
+      },
+      {
+        "name": "TypeSpecificAllocationTarget",
+        "doc": "Represents an allocation / target for a specific transaction-type",
+        "props": [
+          {
+            "name": "parentId",
+            "ref": "allocation_target",
+            "doc": "Id of the target to which this specific value belongs"
+          },
+          {
+            "name": "typeId",
+            "ref": "transaction_type",
+            "doc": "Id of the allocated transaction type"
+          },
+          {
+            "name": "ratio",
+            "type": "Double",
+            "doc": "The targeted ratio of total after-expenses income that should be allocated into this transaction type. \nIf a ratio has been specified for a parent transaction type, this ratio is applied to the parent's portion (E.g. ratio of 1.0 would allocate 100% of the parent's share to this child type). \n[0,1]"
+          },
+          {
+            "name": "isMaximum",
+            "name_plural": "areMaximums",
+            "type": "Boolean",
+            "doc": "Whether this target represents the largest allowed value. False if this represents the minimum target."
           }
         ]
       }

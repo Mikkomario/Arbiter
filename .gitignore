@@ -1,6 +1,7 @@
 out/
 Core/data/coder-build
 Gold/data/coder-build
+Accounting/data/coder-build
 Command/data/coder-build
 Command/data/invoice-forms
 Command/data/test-output
