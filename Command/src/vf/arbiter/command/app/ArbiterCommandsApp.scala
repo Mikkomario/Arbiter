@@ -118,7 +118,7 @@ object ArbiterCommandsApp extends App
 	}
 	
 	// Sets up the user and company tracking
-	private val userSettingsPointer = new EventfulPointer[Option[UserSettings]](None)
+	private val userSettingsPointer = EventfulPointer.empty[UserSettings]()
 	private def userSettings = userSettingsPointer.value
 	private def userSettings_=(newUser: UserSettings) = userSettingsPointer.value = Some(newUser)
 	userSettingsPointer.addContinuousListener { _.newValue.foreach { u => println(s"Welcome, ${u.name}") } }
@@ -128,7 +128,7 @@ object ArbiterCommandsApp extends App
 		case None => LanguageIds(Vector())
 	}
 	
-	private val companyPointer = new EventfulPointer[Option[DetailedCompany]](None)
+	private val companyPointer = EventfulPointer.empty[DetailedCompany]()
 	def company = companyPointer.value
 	def company_=(newCompany: Option[DetailedCompany]) = companyPointer.value = newCompany
 	def company_=(newCompany: DetailedCompany) = companyPointer.value = Some(newCompany)

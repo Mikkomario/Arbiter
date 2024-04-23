@@ -18,7 +18,7 @@
     <orderEntry type="module" module-name="Vault" />
     <orderEntry type="module" module-name="BunnyMunch" />
     <orderEntry type="module" module-name="Trove" />
-    <orderEntry type="library" name="ch.vorburger.mariaDB4j:mariaDB4j:2.4.0" level="project" />
+    <orderEntry type="library" name="ch.vorburger.mariaDB4j:mariaDB4j" level="project" />
     <orderEntry type="module" module-name="Citadel-Description-Importer" />
     <orderEntry type="library" name="commons-logging" level="project" />
     <orderEntry type="library" name="pdfbox-2" level="project" />

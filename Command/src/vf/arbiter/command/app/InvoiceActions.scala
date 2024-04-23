@@ -401,7 +401,7 @@ object InvoiceActions
 				.map { p => p -> Lazy { fillProduct(userId, p, invoiceLanguage, units) } })
 			
 			// Creates / prepares the invoice items
-			val lastProductPointer = new EventfulPointer[Option[FullCompanyProduct]](None)
+			val lastProductPointer = EventfulPointer.empty[FullCompanyProduct]()
 			lastProductPointer.addContinuousListener {
 				_.newValue.flatMap { _(Name).notEmpty }
 					.foreach { n => println(s"Using product $n for this invoice item") }

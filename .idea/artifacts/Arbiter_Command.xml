@@ -20,7 +20,7 @@
         <element id="module-output" name="Disciple" />
         <element id="module-output" name="Gold" />
       </element>
-      <element id="library" level="project" name="ch.vorburger.mariaDB4j:mariaDB4j:2.4.0" />
+      <element id="library" level="project" name="ch.vorburger.mariaDB4j:mariaDB4j" />
       <element id="library" level="project" name="mariadb-java-client-1" />
       <element id="directory" name="data">
         <element id="directory" name="descriptions">

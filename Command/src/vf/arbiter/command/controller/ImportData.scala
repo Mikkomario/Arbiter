@@ -124,7 +124,7 @@ object ImportData
 	private def importLanguages(languageModels: Vector[Model], descriptionRoles: Iterable[DescriptionRole])
 	                           (implicit connection: Connection) = {
 		// Validates proposed models
-		val (failures, validModels) = languageModels.map { languageSchema.validate(_).toTry }.divided
+		val (failures, validModels) = languageModels.map { languageSchema.validate(_) }.divided
 		val descriptionModelsPerCode = validModels
 			.map { model => model("code").getString -> model("descriptions").getVector.flatMap { _.model } }.toMap
 		// Reads existing languages
@@ -158,7 +158,7 @@ object ImportData
 	
 	private def importUsers(userModels: Vector[Model])(implicit connection: Connection) = {
 		// Validates proposed models
-		val (failures, validModels) = userModels.map { userSchema.validate(_).toTry }.divided
+		val (failures, validModels) = userModels.map { userSchema.validate(_) }.divided
 		if (validModels.isEmpty)
 			Map[Int, Int]() -> failures
 		else {
@@ -190,7 +190,7 @@ object ImportData
 	
 	private def importBanks(bankModels: Vector[Model])(implicit connection: Connection) = {
 		// Banks are identified using their BIC
-		val (failures, validModels) = bankModels.map { bankSchema.validate(_).toTry }.divided
+		val (failures, validModels) = bankModels.map { bankSchema.validate(_) }.divided
 		val nameForBic = validModels.map { model => model("bic").getString -> model("name").getString }.toMap
 		// Reads existing bank data (name for BIC)
 		val existingIdForBic = DbBanks.pull.map { bank => bank.bic -> bank.id }.toMap
@@ -204,7 +204,7 @@ object ImportData
 	private def importCompanies(companyModels: Vector[Model], bankIdPerBid: Map[String, Int])
 	                           (implicit connection: Connection, context: DescriptionContext) =
 	{
-		val (failures, validModels) = companyModels.map { companySchema.validate(_).toTry }.divided
+		val (failures, validModels) = companyModels.map { companySchema.validate(_) }.divided
 		val modelPerYCode = validModels.map { model => model("y_code").getString -> model }.toMap
 		// Checks for existing companies (based on y-code)
 		val existingCompanyPerYCode = DbDetailedCompanies.withAnyOfYCodes(modelPerYCode.keys).pull
@@ -239,7 +239,7 @@ object ImportData
 	{
 		val (detailParseFailures, detailModels) = companyModelPerYCode.splitFlatMap { case (yCode, companyModel) =>
 			val (detailFailures, detailModels) = companyModel("details").getVector.flatMap { _.model }
-				.map { companyDetailsSchema.validate(_).toTry }.divided
+				.map { companyDetailsSchema.validate(_) }.divided
 			detailFailures -> detailModels.map { yCode -> _ }
 		}
 		val detailsPerYCode = detailModels.asMultiMap
@@ -325,7 +325,7 @@ object ImportData
 		val (parseFailures, productModels) = companyModelPerYCode.splitFlatMap { case (yCode, companyModel) =>
 			val companyId = companyIdPerYCode(yCode)
 			val (failures, productModels) = companyModel("products").getVector.flatMap { _.model }
-				.map { productSchema.validate(_).toTry }.divided
+				.map { productSchema.validate(_) }.divided
 			failures -> productModels.map { companyId -> _ }
 		}
 		// [(Product data, description models, old product id)]
@@ -355,7 +355,7 @@ object ImportData
 		val (parseFailures, accountData) = companyModelPerYCode.splitFlatMap { case (yCode, model) =>
 			val companyId = companyIdPerYCode(yCode)
 			val (failures, accountModels) = model("bank_accounts").getVector.flatMap { _.model }
-				.map { bankAccountSchema.validate(_).toTry }.divided
+				.map { bankAccountSchema.validate(_) }.divided
 			failures -> accountModels.map { model =>
 				// TODO: There are many possibilities for failures here
 				CompanyBankAccountData(companyId, bankIdPerBic(model("bic")), model("iban"), None, model("created"),
@@ -435,7 +435,7 @@ object ImportData
 		val organizationData = organizationModels.map { model =>
 			// Reads organization members
 			val (memberParseFailures, memberModels) = model("members").getVector.flatMap { _.model }
-				.map { idSchema.validate(_).toTry }.divided
+				.map { idSchema.validate(_) }.divided
 			val (memberFailures, members) = memberModels.map { model =>
 				userIdMap.get(model("id").getInt)
 					.toTry { new NoSuchElementException(s"No user matches id ${model("id").getInt}") }
@@ -532,7 +532,7 @@ object ImportData
 	                          (implicit connection: Connection, context: DescriptionContext) =
 	{
 		// Parses the main invoice part of each model
-		val (parseFailures, validModels) = invoiceModels.map { invoiceSchema.validate(_).toTry }.divided
+		val (parseFailures, validModels) = invoiceModels.map { invoiceSchema.validate(_) }.divided
 		// (failures, [(Pair(sender company id, recipient company id), invoice data, invoice model)])
 		val (invoiceFailures, invoiceData) = validModels.map { model =>
 			detailsIdMap.get(model("sender_details_id"))
@@ -569,7 +569,7 @@ object ImportData
 		val (itemFailures, itemData) = insertedInvoices.zip(invoiceData.map { _._3 })
 			.flatMap { case (invoice, invoiceModel) =>
 				invoiceModel("items").getVector.flatMap { _.model }
-					.map { invoiceItemSchema.validate(_).toTry.flatMap { model =>
+					.map { invoiceItemSchema.validate(_).flatMap { model =>
 						productIdMap.get(model("product_id"))
 							.toTry { new NoSuchElementException(s"Invalid product id ${model("product_id")}") }
 							.map { productId => InvoiceItemData(invoice.id, productId, model("description"),
@@ -588,7 +588,7 @@ object ImportData
 	                                        (implicit connection: Connection, context: DescriptionContext) =
 	{
 		// Processes the models
-		val (failures, validModels) = describedModels.map { idSchema.validate(_).toTry }.divided
+		val (failures, validModels) = describedModels.map { idSchema.validate(_) }.divided
 		val descriptionModels = validModels.flatMap { model =>
 			val id = model("id").getInt
 			model("descriptions").getVector.flatMap { _.model }.map { id -> _ }
@@ -606,7 +606,7 @@ object ImportData
 		if (descriptionModelsPerId.nonEmpty) {
 			// Parses specified description models into description data. Collects possible failures, also.
 			val (failures, proposedDescriptions) = descriptionModelsPerId.view.mapValues { models =>
-				val (failures, valid) = models.map { descriptionModelSchema.validate(_).toTry }.divided
+				val (failures, valid) = models.map { descriptionModelSchema.validate(_) }.divided
 				val (languageFailures, descriptions) = valid.flatDivideWith { model => {
 					// The specified language code must be valid (map to an id)
 					val languageCode = model("language").getString

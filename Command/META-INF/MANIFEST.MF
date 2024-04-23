@@ -1,12 +1,12 @@
 Manifest-Version: 1.0
 Main-Class: vf.arbiter.command.app.ArbiterCommandsApp
-Class-Path: scala-library-2.13.12.jar scala-reflect-2.13.12.jar mariaDB4
- j-2.4.0.jar mariaDB4j-core-2.4.0.jar slf4j-api-1.7.25.jar exec-3.1.1.ja
- r commons-exec-1.3.jar commons-collections4-4.2.jar commons-lang3-3.8.1
- .jar commons-io-2.6.jar spring-core-5.1.4.RELEASE.jar spring-jcl-5.1.4.
- RELEASE.jar mariaDB4j-db-linux64-10.2.11.jar mariaDB4j-db-win32-10.2.11
- .jar mariaDB4j-db-mac64-10.2.11.jar mariadb-java-client-1.5.9.jar commo
- ns-logging-1.2.jar pdfbox-2.0.25.jar fontbox-2.0.25.jar commons-codec-1
- .15.jar httpclient5-5.1.2.jar httpcore5-5.1.2.jar httpcore5-h2-5.1.2.ja
- r
+Class-Path: scala-library-2.13.12.jar scala-reflect-2.13.12.jar exec-3.1
+ .3.jar commons-exec-1.3.jar commons-codec-1.15.jar commons-collections4
+ -4.4.jar commons-lang3-3.12.0.jar commons-io-2.11.0.jar commons-logging
+ -1.2.jar spring-core-5.3.13.jar spring-jcl-5.3.13.jar mariaDB4j-2.5.3.j
+ ar mariaDB4j-core-2.5.3.jar mariaDB4j-db-linux64-10.2.11.jar mariaDB4j-
+ db-win32-10.2.11.jar mariaDB4j-db-mac64-10.2.11.jar mariadb-java-client
+ -1.5.9.jar slf4j-api-1.7.32.jar pdfbox-2.0.25.jar fontbox-2.0.25.jar ht
+ tpclient5-5.1.2.jar httpcore5-5.1.2.jar httpcore5-h2-5.1.2.jar jakarta.
+ annotation-api-1.3.5.jar
 

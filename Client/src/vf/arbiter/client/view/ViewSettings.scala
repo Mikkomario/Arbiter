@@ -1,13 +1,12 @@
 package vf.arbiter.client.view
 
 import utopia.firmament.context.{BaseContext, ScrollingContext, WindowContext}
-import utopia.firmament.image.SingleColorIconCache
+import utopia.firmament.image.ImageCache
 import utopia.firmament.localization.{Localizer, NoLocalization}
 import utopia.firmament.model.Margins
 import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.time.TimeExtensions._
-import utopia.genesis.handling.ActorLoop
-import utopia.genesis.handling.mutable.ActorHandler
+import utopia.genesis.handling.action.{ActionLoop, ActorHandler}
 import utopia.genesis.text.Font
 import utopia.genesis.util.Screen
 import utopia.paradigm.color.ColorRole.{Gray, Info, Success, Warning}
@@ -67,7 +66,7 @@ object ViewSettings
 	 * Actor handler that delivers action events
 	 */
 	val actorHandler = ActorHandler()
-	private val actorLoop = new ActorLoop(actorHandler)
+	private val actorLoop = new ActionLoop(actorHandler)
 	
 	/**
 	 * Settings for constructing scroll views
@@ -190,7 +189,7 @@ object ViewSettings
 	{
 		// ATTRIBUTES   ---------------------
 		
-		private val cache = new SingleColorIconCache(directory.images/"icons", Some(Size.square(1.cm.toPixels)))
+		private val cache = ImageCache.icons(directory.images/"icons", Some(Size.square(1.cm.toPixels)))
 		
 		
 		// COMPUTED ------------------------

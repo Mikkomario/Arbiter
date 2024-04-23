@@ -18,33 +18,6 @@ import scala.io.StdIn
 object ActionUtils
 {
 	/**
-	 * Reads a date from input. Allows the user to reattempt input on parse failure.
-	 * @param prompt Prompt to show before the first input request
-	 * @return
-	 */
-	def readDate(prompt: String = "") =
-	{
-		prompt.notEmpty.foreach(println)
-		println("Instruction: Supported formats are YYYY-MM-DD and DD.MM.YYYY")
-		StdIn.readIterator.findMap[Option[LocalDate]] { v =>
-			if (v.isEmpty)
-				Some(None)
-			else
-				v.localDate match {
-					case Some(d) => Some(Some(d))
-					case None =>
-						if (StdIn.ask(
-							s"Couldn't convert '${v.getString}' to a date. Do you want to try again?")) {
-							println("Please write the date again")
-							None
-						}
-						else
-							Some(None)
-				}
-		}.get
-	}
-	
-	/**
 	 * Reads a date range from user input
 	 * @param prompt Prompt to display before asking for a date range
 	 * @return Parsed input
