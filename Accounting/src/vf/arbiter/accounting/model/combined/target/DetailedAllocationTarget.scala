@@ -9,8 +9,7 @@ import vf.arbiter.accounting.model.stored.target.{AllocationTarget, TypeSpecific
   * @author Mikko Hilpinen
   * @since 04.01.2024, v1.5
   */
-case class DetailedAllocationTarget(target: AllocationTarget, 
-	specificTargets: Vector[TypeSpecificAllocationTarget]) 
+case class DetailedAllocationTarget(target: AllocationTarget, specificTargets: Seq[TypeSpecificAllocationTarget])
 	extends Extender[AllocationTargetData]
 {
 	// COMPUTED	--------------------

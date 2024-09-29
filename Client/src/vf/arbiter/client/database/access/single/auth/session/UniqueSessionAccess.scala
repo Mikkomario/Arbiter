@@ -76,8 +76,7 @@ trait UniqueSessionAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniqueSessionAccess = 
-		new UniqueSessionAccess._UniqueSessionAccess(mergeCondition(filterCondition))
+	override def apply(condition: Condition): UniqueSessionAccess = UniqueSessionAccess(condition)
 	
 	
 	// OTHER	--------------------

@@ -48,7 +48,7 @@ trait UniqueTransactionTypeAccess
 	
 	/**
 	  * Id of the parent type of this type. None if this is a root/main category.. None if
-	  *  no transaction type (or value) was found.
+	  * no transaction type (or value) was found.
 	  */
 	def parentId(implicit connection: Connection) = pullColumn(model.parentIdColumn).int
 	
@@ -66,7 +66,7 @@ trait UniqueTransactionTypeAccess
 	
 	/**
 	  * Whether these transaction types should be immediately as income or expense, 
-		before targets are applied. 
+	  * before targets are applied. 
 	  * E.g. some expenses may be deducted from income instead of considered additional spending. 
 	  * Main input sources should also be pre-applied.. None if no transaction type (or value) was found.
 	  */
@@ -86,8 +86,8 @@ trait UniqueTransactionTypeAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniqueTransactionTypeAccess = 
-		new UniqueTransactionTypeAccess._UniqueTransactionTypeAccess(mergeCondition(filterCondition))
+	override
+		 def apply(condition: Condition): UniqueTransactionTypeAccess = UniqueTransactionTypeAccess(condition)
 	
 	
 	// OTHER	--------------------

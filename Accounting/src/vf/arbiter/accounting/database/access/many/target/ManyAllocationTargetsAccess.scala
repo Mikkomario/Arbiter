@@ -1,20 +1,27 @@
 package vf.arbiter.accounting.database.access.many.target
 
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
+import utopia.vault.nosql.view.ViewFactory
 import utopia.vault.sql.Condition
 import vf.arbiter.accounting.database.factory.target.AllocationTargetFactory
 import vf.arbiter.accounting.model.stored.target.AllocationTarget
 
-object ManyAllocationTargetsAccess
+object ManyAllocationTargetsAccess extends ViewFactory[ManyAllocationTargetsAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyAllocationTargetsAccess = 
+		_ManyAllocationTargetsAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyAllocationTargetsSubView(condition: Condition) extends ManyAllocationTargetsAccess
-	{
-		// IMPLEMENTED	--------------------
-		
-		override def accessCondition = Some(condition)
-	}
+	private case class _ManyAllocationTargetsAccess(override val accessCondition: Option[Condition]) 
+		extends ManyAllocationTargetsAccess
 }
 
 /**
@@ -32,7 +39,9 @@ trait ManyAllocationTargetsAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): ManyAllocationTargetsAccess = 
-		new ManyAllocationTargetsAccess.ManyAllocationTargetsSubView(mergeCondition(filterCondition))
+	
+	// OTHER	--------------------
+	
+	def apply(condition: Condition): ManyAllocationTargetsAccess = ManyAllocationTargetsAccess(condition)
 }
 

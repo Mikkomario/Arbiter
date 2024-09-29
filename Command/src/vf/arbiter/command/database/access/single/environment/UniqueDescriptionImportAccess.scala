@@ -1,8 +1,7 @@
 package vf.arbiter.command.database.access.single.environment
 
-import java.time.Instant
-import utopia.flow.generic.model.immutable.Value
 import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.template.model.DistinctModelAccess
@@ -11,10 +10,12 @@ import vf.arbiter.command.database.factory.environment.DescriptionImportFactory
 import vf.arbiter.command.database.model.environment.DescriptionImportModel
 import vf.arbiter.command.model.stored.environment.DescriptionImport
 
+import java.time.Instant
+
 /**
   * A common trait for access points that return individual and distinct DescriptionImports.
   * @author Mikko Hilpinen
-  * @since 2021-10-20
+  * @since 20.10.2021
   */
 trait UniqueDescriptionImportAccess 
 	extends SingleRowModelAccess[DescriptionImport] 

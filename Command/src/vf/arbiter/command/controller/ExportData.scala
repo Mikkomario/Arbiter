@@ -92,7 +92,7 @@ object ExportData
 	}
 	
 	private def companyModelsFrom(companies: Iterable[Company],
-	                              bankAccountsPerCompanyId: Map[Int, Vector[FullCompanyBankAccount]],
+	                              bankAccountsPerCompanyId: Map[Int, Seq[FullCompanyBankAccount]],
 	                              languageCodePerId: Map[Int, String], descriptionRolePerId: Map[Int, DescriptionRole])
 	                             (implicit connection: Connection) =
 	{

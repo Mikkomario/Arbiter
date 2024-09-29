@@ -54,7 +54,7 @@ trait UniqueCommonSettingAccess
 	/**
 	  * Value given for this setting. None if no common setting (or value) was found.
 	  */
-	def value(implicit connection: Connection) =
+	def value(implicit connection: Connection) = 
 		pullColumn(model.valueColumn).mapIfNotEmpty { v => JsonBunny.sureMunch(v.getString) }
 	
 	/**
@@ -76,8 +76,7 @@ trait UniqueCommonSettingAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniqueCommonSettingAccess = 
-		new UniqueCommonSettingAccess._UniqueCommonSettingAccess(mergeCondition(filterCondition))
+	override def apply(condition: Condition): UniqueCommonSettingAccess = UniqueCommonSettingAccess(condition)
 	
 	
 	// OTHER	--------------------
@@ -102,7 +101,7 @@ trait UniqueCommonSettingAccess
 	  * @param newValue A new value to assign
 	  * @return Whether any common setting was affected
 	  */
-	def value_=(newValue: Value)(implicit connection: Connection) =
-		putColumn(model.valueColumn, newValue.toJson)
+	def value_=(newValue: Value)(implicit connection: Connection) = putColumn(model.valueColumn, 
+		newValue.toJson)
 }
 

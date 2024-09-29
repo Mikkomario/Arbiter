@@ -1,7 +1,7 @@
 package vf.arbiter.core.database.access.single.invoice
 
-import utopia.flow.generic.model.immutable.Value
 import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.template.model.DistinctModelAccess
@@ -13,7 +13,7 @@ import vf.arbiter.core.model.stored.invoice.ItemUnit
 /**
   * A common trait for access points that return individual and distinct ItemUnits.
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
 trait UniqueItemUnitAccess 
 	extends SingleRowModelAccess[ItemUnit] with DistinctModelAccess[ItemUnit, Option[ItemUnit], Value] 
@@ -28,7 +28,7 @@ trait UniqueItemUnitAccess
 	
 	/**
 	  * A multiplier that, when applied to this unit, makes it comparable 
-		with the other units in the same category. None if no instance (or value) was found.
+	  * with the other units in the same category. None if no instance (or value) was found.
 	  */
 	def multiplier(implicit connection: Connection) = pullColumn(model.multiplierColumn).double
 	

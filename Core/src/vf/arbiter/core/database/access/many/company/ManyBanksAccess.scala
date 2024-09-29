@@ -1,29 +1,38 @@
 package vf.arbiter.core.database.access.many.company
 
-import java.time.Instant
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.{FilterableView, SubView}
+import utopia.vault.nosql.view.{FilterableView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.core.database.factory.company.BankFactory
 import vf.arbiter.core.database.model.company.BankModel
 import vf.arbiter.core.model.stored.company.Bank
 
-object ManyBanksAccess
+import java.time.Instant
+
+object ManyBanksAccess extends ViewFactory[ManyBanksAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyBanksAccess = _ManyBanksAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyBanksSubView(override val parent: ManyRowModelAccess[Bank], 
-		override val filterCondition: Condition) 
-		extends ManyBanksAccess with SubView
+	private case class _ManyBanksAccess(override val accessCondition: Option[Condition])
+		 extends ManyBanksAccess
 }
 
 /**
   * A common trait for access points which target multiple Banks at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
 trait ManyBanksAccess extends ManyRowModelAccess[Bank] with Indexed with FilterableView[ManyBanksAccess]
 {
@@ -62,12 +71,11 @@ trait ManyBanksAccess extends ManyRowModelAccess[Bank] with Indexed with Filtera
 	
 	// IMPLEMENTED	--------------------
 	
-	override def self = this
-	
 	override def factory = BankFactory
 	
-	override def filter(additionalCondition: Condition): ManyBanksAccess = 
-		new ManyBanksAccess.ManyBanksSubView(this, additionalCondition)
+	override def self = this
+	
+	override def apply(condition: Condition): ManyBanksAccess = ManyBanksAccess(condition)
 	
 	
 	// OTHER	--------------------

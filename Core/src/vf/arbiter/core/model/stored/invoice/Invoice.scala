@@ -28,6 +28,6 @@ case class Invoice(id: Int, data: InvoiceData) extends StoredModelConvertible[In
 	  * @param items Items of this invoice
 	  * @return A copy of this invoice with those items
 	  */
-	def withItems(items: Vector[InvoiceItem]) = InvoiceWithItems(this, items)
+	def withItems(items: Seq[InvoiceItem]) = InvoiceWithItems(this, items)
 }
 

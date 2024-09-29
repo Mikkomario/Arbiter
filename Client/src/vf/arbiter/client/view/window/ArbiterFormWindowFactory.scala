@@ -7,7 +7,7 @@ import utopia.firmament.localization.LocalizedString
 import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.util.logging.Logger
 import utopia.flow.view.template.eventful.Changing
-import utopia.flow.view.template.eventful.FlagLike._
+import utopia.flow.view.template.eventful.Flag._
 import utopia.paradigm.color.ColorRole
 import utopia.paradigm.enumeration.Alignment
 import utopia.reach.component.factory.ContextualMixed
@@ -57,7 +57,7 @@ trait ArbiterFormWindowFactory[A, N] extends InputWindowFactory[A, N]
 		windowContext.textContext/buttonColor
 	
 	override protected def buildLayout(factories: ContextualMixed[TextContext],
-	                                   content: Vector[OpenComponent[ReachComponentLike, Changing[Boolean]]],
+	                                   content: Seq[OpenComponent[ReachComponentLike, Changing[Boolean]]],
 	                                   context: N): ReachComponentLike =
 	{
 		val bg = formBackground

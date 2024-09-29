@@ -14,6 +14,11 @@ import java.time.Instant
 
 object ManyTransactionEvaluationsAccess
 {
+	// OTHER    --------------------
+	
+	def apply(condition: Condition): ManyTransactionEvaluationsAccess = new ManyTransactionEvaluationsSubView(condition)
+	
+	
 	// NESTED	--------------------
 	
 	private class ManyTransactionEvaluationsSubView(condition: Condition)
@@ -94,9 +99,8 @@ trait ManyTransactionEvaluationsAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): ManyTransactionEvaluationsAccess = 
-		new ManyTransactionEvaluationsAccess
-			.ManyTransactionEvaluationsSubView(mergeCondition(filterCondition))
+	override def apply(condition: Condition): ManyTransactionEvaluationsAccess = 
+		ManyTransactionEvaluationsAccess(condition)
 	
 	
 	// OTHER	--------------------

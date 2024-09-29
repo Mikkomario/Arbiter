@@ -48,7 +48,7 @@ trait UniquePartyEntryAccess
 	
 	/**
 	  * Name of this entity, 
-		just as it appeared on a bank statement. None if no party entry (or value) was found.
+	  * just as it appeared on a bank statement. None if no party entry (or value) was found.
 	  */
 	def name(implicit connection: Connection) = pullColumn(model.nameColumn).getString
 	
@@ -71,8 +71,7 @@ trait UniquePartyEntryAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniquePartyEntryAccess = 
-		new UniquePartyEntryAccess._UniquePartyEntryAccess(mergeCondition(filterCondition))
+	override def apply(condition: Condition): UniquePartyEntryAccess = UniquePartyEntryAccess(condition)
 	
 	
 	// OTHER	--------------------

@@ -92,7 +92,7 @@ trait ManyTransactionsAccessLike[+A, +Repr]
 	  * @param newAmount A new amount to assign
 	  * @return Whether any transaction was affected
 	  */
-	def amounts_=(newAmount: Double)(implicit connection: Connection) = putColumn(model.amountColumn, 
+	def amounts_=(newAmount: Double)(implicit connection: Connection) = putColumn(model.amountColumn,
 		newAmount)
 	
 	/**

@@ -14,7 +14,7 @@ object UniqueAllocationTargetAccess
 	  * @param condition Condition to apply to all requests
 	  * @return An access point that applies the specified filter condition (only)
 	  */
-	def apply(condition: Condition): UniqueAllocationTargetAccess =
+	def apply(condition: Condition): UniqueAllocationTargetAccess = 
 		 new _UniqueAllocationTargetAccess(condition)
 	
 	
@@ -43,7 +43,7 @@ trait UniqueAllocationTargetAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniqueAllocationTargetAccess = 
-		new UniqueAllocationTargetAccess._UniqueAllocationTargetAccess(mergeCondition(filterCondition))
+	override def apply(condition: Condition): UniqueAllocationTargetAccess = 
+		UniqueAllocationTargetAccess(condition)
 }
 

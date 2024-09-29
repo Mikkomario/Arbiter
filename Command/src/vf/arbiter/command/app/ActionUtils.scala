@@ -22,6 +22,7 @@ object ActionUtils
 	 * @param prompt Prompt to display before asking for a date range
 	 * @return Parsed input
 	 */
+	@deprecated("Please use the version found in Flow instead", "v1.5")
 	def readDateRange(prompt: String = "") = {
 		prompt.notEmpty.foreach(println)
 		println("Instruction: Supported format is dd.mm.yyyy, you may specify a range with '-'")
@@ -65,6 +66,7 @@ object ActionUtils
 	 * @tparam A Type of selected item
 	 * @return The selected or inserted item
 	 */
+	@deprecated("Please use the version found in Flow instead", "v1.5")
 	def selectOrInsert[A](options: Seq[(A, String)], target: String = "item", skipInsertQuestion: Boolean = false)
 	                     (insert: => Option[A]) =
 	{
@@ -89,6 +91,7 @@ object ActionUtils
 	 * @return Item selected by the user. None if there were no items to select from or if the user didn't want to
 	 *         select any of them.
 	 */
+	@deprecated("Please use the version found in Flow instead", "v1.5")
 	def selectFrom[A](options: Seq[(A, String)], target: String = "items", verb: String = "select",
 	                  skipQuestion: Boolean = false): Option[A] =
 	{

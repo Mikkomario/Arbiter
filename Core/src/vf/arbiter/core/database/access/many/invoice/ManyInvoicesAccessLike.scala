@@ -96,35 +96,12 @@ trait ManyInvoicesAccessLike[+A, +Repr <: ManyModelAccess[A]]
 	protected def model = InvoiceModel
 	
 	/**
-	 * Factory used for constructing database interaction models for company details
-	 */
+	  * Factory used for constructing database interaction models for company details
+	  */
 	protected def companyDetailsModel = CompanyDetailsModel
 	
 	
 	// OTHER	--------------------
-	
-	/**
-	 * @param year Targeted year
-	 * @return A copy of this access point, limited to invoices created during that year
-	 */
-	def during(year: Year): Repr = during(year.dates)
-	/**
-	 * @param months Targeted months
-	 * @return A copy of this access point, limited to invoices created during those months
-	 */
-	def during(months: Span[YearMonth]): Repr = during(Span(months.start.firstDay, months.end.lastDay))
-	/**
-	 * @param dates Targeted date range
-	 * @return A copy of this access point, limited to invoices created during those dates
-	 */
-	def during(dates: HasEnds[LocalDate]) = {
-		if (dates.isEmpty)
-			filter(Condition.alwaysFalse)
-		else {
-			val last = if (dates.isInclusive) dates.end.tomorrow else dates.end
-			filter(model.createdColumn.isBetween(dates.start.atStartOfDay(), last.atStartOfDay()))
-		}
-	}
 	
 	/**
 	  * Updates the cancelled afters of the targeted invoices
@@ -155,6 +132,31 @@ trait ManyInvoicesAccessLike[+A, +Repr <: ManyModelAccess[A]]
 	  * @return Whether any row was targeted
 	  */
 	def deprecate()(implicit connection: Connection) = cancelledAfters = Now
+	
+	/**
+	  * @param dates Targeted date range
+	  * @return A copy of this access point, limited to invoices created during those dates
+	  */
+	def during(dates: HasEnds[LocalDate]) = {
+		if (dates.isEmpty)
+			filter(Condition.alwaysFalse)
+		else {
+			val last = if (dates.isInclusive) dates.end.tomorrow else dates.end
+			filter(model.createdColumn.isBetween(dates.start.atStartOfDay(), last.atStartOfDay()))
+		}
+	}
+	
+	/**
+	  * @param year Targeted year
+	  * @return A copy of this access point, limited to invoices created during that year
+	  */
+	def during(year: Year): Repr = during(year.dates)
+	
+	/**
+	  * @param months Targeted months
+	  * @return A copy of this access point, limited to invoices created during those months
+	  */
+	def during(months: Span[YearMonth]): Repr = during(Span(months.start.firstDay, months.end.lastDay))
 	
 	/**
 	  * Updates the languages ids of the targeted invoices

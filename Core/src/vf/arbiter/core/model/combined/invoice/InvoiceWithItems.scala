@@ -9,7 +9,7 @@ import vf.arbiter.core.model.stored.invoice.{Invoice, InvoiceItem}
   * @author Mikko Hilpinen
   * @since 31.10.2021, v1.3
   */
-case class InvoiceWithItems(invoice: Invoice, items: Vector[InvoiceItem]) extends Extender[InvoiceData]
+case class InvoiceWithItems(invoice: Invoice, items: Seq[InvoiceItem]) extends Extender[InvoiceData]
 {
 	// COMPUTED	--------------------
 	

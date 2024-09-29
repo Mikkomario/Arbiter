@@ -4,7 +4,7 @@ import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.{ChronoRowFactoryView, NullDeprecatableView}
+import utopia.vault.nosql.view.{ChronoRowFactoryView, NullDeprecatableView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.accounting.database.factory.account.AccountBalanceFactory
 import vf.arbiter.accounting.database.model.account.AccountBalanceModel
@@ -12,16 +12,22 @@ import vf.arbiter.accounting.model.stored.account.AccountBalance
 
 import java.time.Instant
 
-object ManyAccountBalancesAccess
+object ManyAccountBalancesAccess extends ViewFactory[ManyAccountBalancesAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyAccountBalancesAccess = 
+		_ManyAccountBalancesAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyAccountBalancesSubView(condition: Condition) extends ManyAccountBalancesAccess
-	{
-		// IMPLEMENTED	--------------------
-		
-		override def accessCondition = Some(condition)
-	}
+	private case class _ManyAccountBalancesAccess(override val accessCondition: Option[Condition]) 
+		extends ManyAccountBalancesAccess
 }
 
 /**
@@ -77,8 +83,7 @@ trait ManyAccountBalancesAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): ManyAccountBalancesAccess = 
-		new ManyAccountBalancesAccess.ManyAccountBalancesSubView(mergeCondition(filterCondition))
+	override def apply(condition: Condition): ManyAccountBalancesAccess = ManyAccountBalancesAccess(condition)
 	
 	
 	// OTHER	--------------------

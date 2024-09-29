@@ -1,8 +1,7 @@
 package vf.arbiter.core.database.access.single.company
 
-import java.time.Instant
-import utopia.flow.generic.model.immutable.Value
 import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.template.model.DistinctModelAccess
@@ -11,10 +10,12 @@ import vf.arbiter.core.database.factory.company.CompanyDetailsFactory
 import vf.arbiter.core.database.model.company.CompanyDetailsModel
 import vf.arbiter.core.model.stored.company.CompanyDetails
 
+import java.time.Instant
+
 /**
   * A common trait for access points that return individual and distinct CompanyDetails.
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
 trait UniqueCompanyDetailsAccess 
 	extends SingleRowModelAccess[CompanyDetails] 
@@ -53,13 +54,15 @@ trait UniqueCompanyDetailsAccess
 	def created(implicit connection: Connection) = pullColumn(model.createdColumn).instant
 	
 	/**
-	  * Time when this CompanyDetails became deprecated. None while this CompanyDetails is still valid.. None if no instance (or value) was found.
+	  * 
+		Time when this CompanyDetails became deprecated. None while this CompanyDetails is still valid.. None if
+	  *  no instance (or value) was found.
 	  */
 	def deprecatedAfter(implicit connection: Connection) = pullColumn(model.deprecatedAfterColumn).instant
 	
 	/**
 	  * Whether this information is by the company which is being described, 
-		having a more authority. None if no instance (or value) was found.
+	  * having a more authority. None if no instance (or value) was found.
 	  */
 	def isOfficial(implicit connection: Connection) = pullColumn(model.isOfficialColumn).boolean
 	

@@ -1,8 +1,7 @@
 package vf.arbiter.core.database.access.single.company
 
-import java.time.Instant
-import utopia.flow.generic.model.immutable.Value
 import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.template.model.DistinctModelAccess
@@ -11,10 +10,12 @@ import vf.arbiter.core.database.factory.company.CompanyFactory
 import vf.arbiter.core.database.model.company.CompanyModel
 import vf.arbiter.core.model.stored.company.Company
 
+import java.time.Instant
+
 /**
   * A common trait for access points that return individual and distinct Companies.
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
 trait UniqueCompanyAccess 
 	extends SingleRowModelAccess[Company] with DistinctModelAccess[Company, Option[Company], Value] 
@@ -23,7 +24,8 @@ trait UniqueCompanyAccess
 	// COMPUTED	--------------------
 	
 	/**
-	  * Official registration code of this company (id in the country system). None if no instance (or value) was found.
+	  * Official registration code of this company (id in the country system). None if no instance (or value)
+	  *  was found.
 	  */
 	def yCode(implicit connection: Connection) = pullColumn(model.yCodeColumn).string
 	

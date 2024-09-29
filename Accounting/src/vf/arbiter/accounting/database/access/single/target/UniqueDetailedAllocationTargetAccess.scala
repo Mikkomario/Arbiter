@@ -52,7 +52,7 @@ trait UniqueDetailedAllocationTargetAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniqueDetailedAllocationTargetAccess = 
-		new UniqueDetailedAllocationTargetAccess._UniqueDetailedAllocationTargetAccess(mergeCondition(filterCondition))
+	override def apply(condition: Condition): UniqueDetailedAllocationTargetAccess = 
+		UniqueDetailedAllocationTargetAccess(condition)
 }
 

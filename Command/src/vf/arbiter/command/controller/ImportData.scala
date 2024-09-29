@@ -1,34 +1,35 @@
 package vf.arbiter.command.controller
 
 import utopia.bunnymunch.jawn.JsonBunny
-import utopia.citadel.database.access.many.description.{DbDescriptionRoles, DbLanguageDescriptions, DbLanguageFamiliarityDescriptions, DbOrganizationDescriptions, LinkedDescriptionsAccess}
+import utopia.citadel.database.access.many.description._
 import utopia.citadel.database.access.many.language.DbLanguages
 import utopia.citadel.database.access.many.organization.{DbMemberships, DbUserRoles}
 import utopia.citadel.database.access.many.user.DbManyUserSettings
 import utopia.citadel.database.model.language.LanguageModel
 import utopia.citadel.database.model.organization.{MemberRoleLinkModel, MembershipModel, OrganizationModel}
 import utopia.citadel.database.model.user.{UserModel, UserSettingsModel}
-import utopia.flow.generic.model.immutable.{Model, ModelDeclaration}
-import utopia.flow.generic.model.mutable.DataType.{DoubleType, InstantType, IntType, StringType}
-import utopia.flow.generic.casting.ValueUnwraps._
-import utopia.flow.time.{DateRange, Days, Now}
 import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.collection.immutable.Pair
+import utopia.flow.generic.casting.ValueUnwraps._
+import utopia.flow.generic.model.immutable.{Model, ModelDeclaration}
+import utopia.flow.generic.model.mutable.DataType.{DoubleType, InstantType, IntType, StringType}
+import utopia.flow.time.{DateRange, Days, Now}
+import utopia.flow.util.TryExtensions._
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.metropolis.model.partial.language.LanguageData
 import utopia.metropolis.model.partial.organization.{MemberRoleLinkData, MembershipData, OrganizationData}
 import utopia.metropolis.model.partial.user.{UserData, UserSettingsData}
 import utopia.metropolis.model.stored.description.DescriptionRole
 import utopia.vault.database.Connection
-import vf.arbiter.core.database.access.many.company.{DbBanks, DbCompanyBankAccounts, DbDetailedCompanies, DbManyCompanyDetails, DbOrganizationCompanies}
+import vf.arbiter.core.database.access.many.company._
 import vf.arbiter.core.database.access.many.description.{DbCompanyProductDescriptions, DbItemUnitDescriptions}
 import vf.arbiter.core.database.access.many.location.{DbCounties, DbPostalCodes}
 import vf.arbiter.core.database.access.single.location.DbStreetAddress
-import vf.arbiter.core.database.model.company.{BankModel, CompanyBankAccountModel, CompanyDetailsModel, CompanyModel, CompanyProductModel, OrganizationCompanyModel}
+import vf.arbiter.core.database.model.company._
 import vf.arbiter.core.database.model.invoice.{InvoiceItemModel, InvoiceModel}
 import vf.arbiter.core.database.model.location.{CountyModel, PostalCodeModel}
 import vf.arbiter.core.model.combined.company.DetailedCompany
-import vf.arbiter.core.model.partial.company.{BankData, CompanyBankAccountData, CompanyData, CompanyDetailsData, CompanyProductData, OrganizationCompanyData}
+import vf.arbiter.core.model.partial.company._
 import vf.arbiter.core.model.partial.invoice.{InvoiceData, InvoiceItemData}
 import vf.arbiter.core.model.partial.location.{CountyData, PostalCodeData, StreetAddressData}
 import vf.arbiter.core.model.stored.location.PostalCode
@@ -242,7 +243,7 @@ object ImportData
 				.map { companyDetailsSchema.validate(_) }.divided
 			detailFailures -> detailModels.map { yCode -> _ }
 		}
-		val detailsPerYCode = detailModels.asMultiMap
+		val detailsPerYCode = detailModels.groupMap { _._1 } { _._2 }
 		// Inserts missing postal codes
 		val postalCodeIdMap = importPostalCodes(detailModels.map { _._2("address")("postal_code").getModel })
 		// Handles company details next
@@ -411,7 +412,7 @@ object ImportData
 		if (possibleDuplicatePostal.nonEmpty) {
 			val existingPostals = DbPostalCodes.inCountiesWithIds(possibleDuplicatePostal.map { _._1 }.toSet)
 				.withAnyOfCodes(possibleDuplicatePostal.map { _._2 }.toSet).pull
-			val definedCodesPerCountyId = existingPostals.map { postal => postal.countyId -> postal.number }.asMultiMap
+			val definedCodesPerCountyId = existingPostals.groupMap { _.countyId } { _.number }
 			val newPostals = possibleDuplicatePostal.filterNot { case (countyId, code) =>
 				definedCodesPerCountyId.get(countyId).exists { _.contains(code) } } ++ certainlyNewPostal
 			val insertedPostals = PostalCodeModel.insert(
@@ -462,14 +463,14 @@ object ImportData
 		val existingOrganizationCompanyLinks = DbOrganizationCompanies
 			.linkedToAnyOfCompanies(organizationCompanyIds).pull
 		val existingOrganizationIdsPerCompanyId = existingOrganizationCompanyLinks
-			.map { link => link.companyId -> link.organizationId }.asMultiMap
+			.groupMap { _.companyId } { _.organizationId }
 		val existingCompanyIdsPerOrganizationId = existingOrganizationCompanyLinks
-			.map { link => link.organizationId -> link.companyId }.asMultiMap
+			.groupMap { _.organizationId } { _.companyId }
 		// Also checks existing memberships among the listed users
 		val existingUserIdsPerOrganizationId = DbMemberships
 			.inAnyOfOrganizations(existingCompanyIdsPerOrganizationId.keys)
 			.ofAnyOfUsers(userIdMap.valuesIterator.toSet)
-			.pull.map { membership => membership.organizationId -> membership.userId }.asMultiMap
+			.pull.groupMap { _.organizationId } { _.userId }
 		// Divides the data into new organizations / companies and updates
 		// Existing organization must be linked with one of the specified companies and must share one
 		// common member
@@ -589,10 +590,12 @@ object ImportData
 	{
 		// Processes the models
 		val (failures, validModels) = describedModels.map { idSchema.validate(_) }.divided
-		val descriptionModels = validModels.flatMap { model =>
-			val id = model("id").getInt
-			model("descriptions").getVector.flatMap { _.model }.map { id -> _ }
-		}.asMultiMap
+		val descriptionModels = validModels
+			.flatMap { model =>
+				val id = model("id").getInt
+				model("descriptions").getVector.flatMap { _.model }.map { id -> _ }
+			}
+			.groupMap { _._1 } { _._2 }
 		val descriptionImportFailures = importDescriptions(descriptionsAccess, descriptionModels, checkForDuplicates)
 		// Returns encountered failures
 		failures ++ descriptionImportFailures

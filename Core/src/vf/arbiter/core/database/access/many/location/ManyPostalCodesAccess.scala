@@ -1,31 +1,40 @@
 package vf.arbiter.core.database.access.many.location
 
-import java.time.Instant
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.{FilterableView, SubView}
+import utopia.vault.nosql.view.{FilterableView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.core.database.factory.location.PostalCodeFactory
 import vf.arbiter.core.database.model.location.PostalCodeModel
 import vf.arbiter.core.model.stored.location.PostalCode
 
-object ManyPostalCodesAccess
+import java.time.Instant
+
+object ManyPostalCodesAccess extends ViewFactory[ManyPostalCodesAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyPostalCodesAccess = _ManyPostalCodesAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyPostalCodesSubView(override val parent: ManyRowModelAccess[PostalCode], 
-		override val filterCondition: Condition) 
-		extends ManyPostalCodesAccess with SubView
+	private case class _ManyPostalCodesAccess(override val accessCondition: Option[Condition]) 
+		extends ManyPostalCodesAccess
 }
 
 /**
   * A common trait for access points which target multiple PostalCodes at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
-trait ManyPostalCodesAccess
+trait ManyPostalCodesAccess 
 	extends ManyRowModelAccess[PostalCode] with Indexed with FilterableView[ManyPostalCodesAccess]
 {
 	// COMPUTED	--------------------
@@ -64,28 +73,14 @@ trait ManyPostalCodesAccess
 	
 	// IMPLEMENTED	--------------------
 	
-	override def self = this
-	
 	override def factory = PostalCodeFactory
 	
-	override def filter(additionalCondition: Condition): ManyPostalCodesAccess = 
-		new ManyPostalCodesAccess.ManyPostalCodesSubView(this, additionalCondition)
+	override def self = this
+	
+	override def apply(condition: Condition): ManyPostalCodesAccess = ManyPostalCodesAccess(condition)
 	
 	
 	// OTHER	--------------------
-	
-	/**
-	 * @param countyIds Ids of targeted counties
-	 * @return A copy of this access point, limited to those counties
-	 */
-	def inCountiesWithIds(countyIds: Iterable[Int]) =
-		filter(model.countyIdColumn in countyIds)
-	
-	/**
-	 * @param postalCodes Targeted postal codes / numbers
-	 * @return A copy of this access point limited to those codes (but not necessarily containing all of them)
-	 */
-	def withAnyOfCodes(postalCodes: Iterable[String]) = filter(model.numberColumn in postalCodes)
 	
 	/**
 	  * Updates the countyId of the targeted PostalCode instance(s)
@@ -112,11 +107,24 @@ trait ManyPostalCodesAccess
 		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
+	  * @param countyIds Ids of targeted counties
+	  * @return A copy of this access point, limited to those counties
+	  */
+	def inCountiesWithIds(countyIds: Iterable[Int]) = filter(model.countyIdColumn in countyIds)
+	
+	/**
 	  * Updates the number of the targeted PostalCode instance(s)
 	  * @param newNumber A new number to assign
 	  * @return Whether any PostalCode instance was affected
 	  */
-	def numbers_=(newNumber: String)(implicit connection: Connection) = putColumn(model.numberColumn, 
+	def numbers_=(newNumber: String)(implicit connection: Connection) = putColumn(model.numberColumn,
 		newNumber)
+	
+	/**
+	  * @param postalCodes Targeted postal codes / numbers
+	  * 
+		@return A copy of this access point limited to those codes (but not necessarily containing all of them)
+	  */
+	def withAnyOfCodes(postalCodes: Iterable[String]) = filter(model.numberColumn in postalCodes)
 }
 

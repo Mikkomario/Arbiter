@@ -1,54 +1,64 @@
 package vf.arbiter.core.database.access.many.company
 
 import utopia.vault.database.Connection
-import utopia.vault.nosql.access.many.model.ManyModelAccess
-import utopia.vault.nosql.view.SubView
+import utopia.vault.nosql.view.ViewFactory
 import utopia.vault.sql.Condition
-import vf.arbiter.core.database.access.many.company.ManyDetailedCompaniesAccess.SubAccess
 import vf.arbiter.core.database.factory.company.DetailedCompanyFactory
 import vf.arbiter.core.database.model.company.CompanyDetailsModel
 import vf.arbiter.core.model.combined.company.DetailedCompany
 
-object ManyDetailedCompaniesAccess
+object ManyDetailedCompaniesAccess extends ViewFactory[ManyDetailedCompaniesAccess]
 {
-	private class SubAccess(override val parent: ManyModelAccess[DetailedCompany],
-	                        override val filterCondition: Condition) extends ManyDetailedCompaniesAccess with SubView
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyDetailedCompaniesAccess = 
+		_ManyDetailedCompaniesAccess(Some(condition))
+	
+	
+	// NESTED	--------------------
+	
+	private case class _ManyDetailedCompaniesAccess(override val accessCondition: Option[Condition]) 
+		extends ManyDetailedCompaniesAccess
 }
 
 /**
- * A common trait for access points which yield multiple detailed companies at a time
- * @author Mikko Hilpinen
- * @since 27.12.2021, v1.2
- */
-trait ManyDetailedCompaniesAccess extends ManyCompaniesAccessLike[DetailedCompany, ManyDetailedCompaniesAccess]
+  * A common trait for access points which yield multiple detailed companies at a time
+  * @author Mikko Hilpinen
+  * @since 27.12.2021, v1.2
+  */
+trait ManyDetailedCompaniesAccess 
+	extends ManyCompaniesAccessLike[DetailedCompany, ManyDetailedCompaniesAccess]
 {
-	// COMPUTED --------------------------------------
+	// COMPUTED	--------------------
 	
 	/**
-	 * @return Model used for interacting with company details
-	 */
+	  * Model used for interacting with company details
+	  */
 	protected def detailsModel = CompanyDetailsModel
 	
 	
-	// IMPLEMENTED  --------------------------
-	
-	override def self = this
+	// IMPLEMENTED	--------------------
 	
 	override def factory = DetailedCompanyFactory
 	
-	override def filter(additionalCondition: Condition): ManyDetailedCompaniesAccess =
-		new SubAccess(this, additionalCondition)
+	override def self = this
 	
 	
-	// OTHER    --------------------------------------
+	// OTHER	--------------------
+	
+	def apply(condition: Condition): ManyDetailedCompaniesAccess = ManyDetailedCompaniesAccess(condition)
 	
 	/**
-	 * Finds companies within this group that contain the specified string in their name
-	 * @param companyNamePart String that must be contained within a company name
-	 * @param connection Implicit DB Connection
-	 * @return Companies that have the specified string in their name
-	 */
-	 // TODO: Use filter instead of find
-	def matchingName(companyNamePart: String)(implicit connection: Connection) =
+	  * Finds companies within this group that contain the specified string in their name
+	  * @param companyNamePart String that must be contained within a company name
+	  * @param connection Implicit DB Connection
+	  * @return Companies that have the specified string in their name
+	  */
+	def matchingName(companyNamePart: String)(implicit connection: Connection) = 
 		find(detailsModel.nameMatchCondition(companyNamePart))
 }
+

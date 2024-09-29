@@ -42,7 +42,7 @@ trait UniqueInvoicePaymentAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniqueInvoicePaymentAccess = 
-		new UniqueInvoicePaymentAccess._UniqueInvoicePaymentAccess(mergeCondition(filterCondition))
+	override
+		 def apply(condition: Condition): UniqueInvoicePaymentAccess = UniqueInvoicePaymentAccess(condition)
 }
 

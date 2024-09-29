@@ -1,8 +1,7 @@
 package vf.arbiter.core.database.access.single.company
 
-import java.time.Instant
-import utopia.flow.generic.model.immutable.Value
 import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.template.model.DistinctModelAccess
@@ -11,10 +10,12 @@ import vf.arbiter.core.database.factory.company.CompanyProductFactory
 import vf.arbiter.core.database.model.company.CompanyProductModel
 import vf.arbiter.core.model.stored.company.CompanyProduct
 
+import java.time.Instant
+
 /**
   * A common trait for access points that return individual and distinct CompanyProducts.
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
 trait UniqueCompanyProductAccess 
 	extends SingleRowModelAccess[CompanyProduct] 
@@ -28,7 +29,8 @@ trait UniqueCompanyProductAccess
 	def companyId(implicit connection: Connection) = pullColumn(model.companyIdColumn).int
 	
 	/**
-	  * Id representing the units in which this product or service is sold. None if no instance (or value) was found.
+	  * 
+		Id representing the units in which this product or service is sold. None if no instance (or value) was found.
 	  */
 	def unitId(implicit connection: Connection) = pullColumn(model.unitIdColumn).int
 	
@@ -38,7 +40,9 @@ trait UniqueCompanyProductAccess
 	def defaultUnitPrice(implicit connection: Connection) = pullColumn(model.defaultUnitPriceColumn).double
 	
 	/**
-	  * A modifier that is applied to this product's price to get the applied tax. None if no instance (or value) was found.
+	  * 
+		A modifier that is applied to this product's price to get the applied tax. None if no instance (or value)
+	  *  was found.
 	  */
 	def taxModifier(implicit connection: Connection) = pullColumn(model.taxModifierColumn).double
 	

@@ -1,8 +1,8 @@
 package vf.arbiter.command.controller
 
 import utopia.flow.collection.CollectionExtensions._
-import utopia.flow.collection.immutable.Pair
 import utopia.flow.collection.immutable.range.Span
+import utopia.flow.collection.immutable.{Empty, Pair}
 import utopia.flow.operator.numeric.DoubleLike
 import utopia.flow.operator.sign.{Sign, SignOrZero}
 import utopia.flow.parse.file.FileExtensions._
@@ -58,7 +58,7 @@ object ExportSummary
 			
 			// Formats the data so that it can be accessed more easily
 			val itemsPerInvoiceId = items.groupBy { _.invoiceId }
-			val invoicesWithItems = invoices.map { i => i.withItems(itemsPerInvoiceId.getOrElse(i.id, Vector())) }
+			val invoicesWithItems = invoices.map { i => i.withItems(itemsPerInvoiceId.getOrElse(i.id, Empty)) }
 			val yCodePerCompanyId = customers.map { c => c.id -> c.yCode }.toMap
 			val namePerCompanyId = customers.map { c => c.id -> c.details.name }.toMap
 			val companyIdPerDetailsId = customerDetails.map { d => d.id -> d.companyId }.toMap
@@ -70,8 +70,9 @@ object ExportSummary
 			exportMonthlyInvoices(directory/"invoices", invoicesWithItems, yCodePerDetailsId, namePerDetailsId,
 				productPerId)
 				.flatMap { _ => exportTotals(directory, invoicesWithItems, productPerId) }
-				.flatMap { _ => exportGrouped(directory/"sales-by-customer.csv",
-					invoicesWithItems.groupBy { i => namePerDetailsId(i.recipientCompanyDetailsId) }) }
+				.flatMap { _ =>
+					exportGrouped(directory/"sales-by-customer.csv",
+						invoicesWithItems.groupBy { i => namePerDetailsId(i.recipientCompanyDetailsId) }) }
 				.flatMap { _ =>
 					exportGroupedTotals(directory/"sales-by-product.csv",
 						invoicesWithItems.flatMap { i =>
@@ -85,7 +86,7 @@ object ExportSummary
 		}
 	}
 	
-	private def exportMonthlyInvoices(directory: Path, invoices: Vector[InvoiceWithItems],
+	private def exportMonthlyInvoices(directory: Path, invoices: Seq[InvoiceWithItems],
 	                                  companyYCodeForDetailsId: MapView[Int, String],
 	                                  companyNameForDetailsId: MapView[Int, String],
 	                                  productPerId: Map[Int, DescribedCompanyProduct]) =
@@ -108,7 +109,7 @@ object ExportSummary
 			}
 	}
 	
-	private def exportTotals(directory: Path, invoices: Vector[InvoiceWithItems],
+	private def exportTotals(directory: Path, invoices: Seq[InvoiceWithItems],
 	                         productPerId: Map[Int, DescribedCompanyProduct]) =
 	{
 		// Won't write anything if there are no invoices
@@ -141,7 +142,7 @@ object ExportSummary
 			Success(())
 	}
 	
-	private def exportGrouped[A](path: Path, invoices: Map[A, Vector[InvoiceWithItems]]) = {
+	private def exportGrouped[A](path: Path, invoices: Map[A, Seq[InvoiceWithItems]]) = {
 		// Calculates the total sales for each target per each month
 		exportGroupedTotals(path,
 			invoices.view.mapValues { _.groupMapReduce { _.created.toLocalDate.month } { _.price } { _ + _ } }.toMap)

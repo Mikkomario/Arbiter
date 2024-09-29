@@ -7,6 +7,7 @@ import utopia.flow.collection.immutable.Pair
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.{DateRange, Days, Today}
 import utopia.flow.util.TryCatch
+import utopia.flow.util.TryExtensions._
 import utopia.vault.database.ConnectionPool
 import vf.arbiter.gold.model.cached.auth.ApiKey
 import vf.arbiter.gold.model.cached.price.InflationCorrectedPrice

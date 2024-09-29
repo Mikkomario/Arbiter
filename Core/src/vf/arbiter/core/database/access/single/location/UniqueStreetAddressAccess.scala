@@ -1,8 +1,7 @@
 package vf.arbiter.core.database.access.single.location
 
-import java.time.Instant
-import utopia.flow.generic.model.immutable.Value
 import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.template.model.DistinctModelAccess
@@ -11,10 +10,12 @@ import vf.arbiter.core.database.factory.location.StreetAddressFactory
 import vf.arbiter.core.database.model.location.StreetAddressModel
 import vf.arbiter.core.model.stored.location.StreetAddress
 
+import java.time.Instant
+
 /**
   * A common trait for access points that return individual and distinct StreetAddresses.
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
 trait UniqueStreetAddressAccess 
 	extends SingleRowModelAccess[StreetAddress] 
@@ -39,13 +40,13 @@ trait UniqueStreetAddressAccess
 	
 	/**
 	  * Number or letter of the targeted stair within that building, 
-		if applicable. None if no instance (or value) was found.
+	  * if applicable. None if no instance (or value) was found.
 	  */
 	def stair(implicit connection: Connection) = pullColumn(model.stairColumn).string
 	
 	/**
 	  * Number of the targeted room within that stair / building, 
-		if applicable. None if no instance (or value) was found.
+	  * if applicable. None if no instance (or value) was found.
 	  */
 	def roomNumber(implicit connection: Connection) = pullColumn(model.roomNumberColumn).string
 	

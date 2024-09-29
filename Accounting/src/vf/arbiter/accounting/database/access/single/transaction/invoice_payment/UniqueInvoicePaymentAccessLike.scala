@@ -42,8 +42,8 @@ trait UniqueInvoicePaymentAccessLike[+A]
 	
 	/**
 	  * Whether this connection was made manually (true), 
-	  * 
-		or whether it was determined by an automated algorithm (false). None if no invoice payment (or value) was found.
+	  * or whether it was determined by an automated algorithm (false). None if no invoice payment (or value)
+	  *  was found.
 	  */
 	def manual(implicit connection: Connection) = pullColumn(model.manualColumn).boolean
 	
@@ -86,7 +86,7 @@ trait UniqueInvoicePaymentAccessLike[+A]
 	  * @param newManual A new manual to assign
 	  * @return Whether any invoice payment was affected
 	  */
-	def manual_=(newManual: Boolean)(implicit connection: Connection) = putColumn(model.manualColumn, 
+	def manual_=(newManual: Boolean)(implicit connection: Connection) = putColumn(model.manualColumn,
 		newManual)
 	
 	/**

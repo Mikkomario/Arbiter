@@ -12,6 +12,12 @@ import vf.arbiter.accounting.model.stored.target.TypeSpecificAllocationTarget
 
 object ManyTypeSpecificAllocationTargetsAccess
 {
+	// OTHER    --------------------
+	
+	def apply(condition: Condition): ManyTypeSpecificAllocationTargetsAccess =
+		new ManyTypeSpecificAllocationTargetsSubView(condition)
+	
+	
 	// NESTED	--------------------
 	
 	private class ManyTypeSpecificAllocationTargetsSubView(condition: Condition) 
@@ -69,9 +75,8 @@ trait ManyTypeSpecificAllocationTargetsAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): ManyTypeSpecificAllocationTargetsAccess = 
-		new ManyTypeSpecificAllocationTargetsAccess
-			.ManyTypeSpecificAllocationTargetsSubView(mergeCondition(filterCondition))
+	override def apply(condition: Condition): ManyTypeSpecificAllocationTargetsAccess = 
+		ManyTypeSpecificAllocationTargetsAccess(condition)
 	
 	
 	// OTHER	--------------------

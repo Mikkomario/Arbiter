@@ -2,47 +2,57 @@ package vf.arbiter.core.database.access.many.company
 
 import utopia.citadel.database.CitadelTables
 import utopia.citadel.database.factory.organization.MembershipFactory
-
-import java.time.Instant
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.{FilterableView, SubView}
+import utopia.vault.nosql.view.{FilterableView, ViewFactory}
 import utopia.vault.sql.{Condition, Select, Where}
 import vf.arbiter.core.database.factory.company.OrganizationCompanyFactory
 import vf.arbiter.core.database.model.company.OrganizationCompanyModel
 import vf.arbiter.core.model.stored.company.OrganizationCompany
 
-object ManyOrganizationCompaniesAccess
+import java.time.Instant
+
+object ManyOrganizationCompaniesAccess extends ViewFactory[ManyOrganizationCompaniesAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyOrganizationCompaniesAccess = 
+		_ManyOrganizationCompaniesAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyOrganizationCompaniesSubView(override val parent: ManyRowModelAccess[OrganizationCompany], 
-		override val filterCondition: Condition) 
-		extends ManyOrganizationCompaniesAccess with SubView
+	private case class _ManyOrganizationCompaniesAccess(override val accessCondition: Option[Condition]) 
+		extends ManyOrganizationCompaniesAccess
 }
 
 /**
   * A common trait for access points which target multiple OrganizationCompanies at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
-trait ManyOrganizationCompaniesAccess
-	extends ManyRowModelAccess[OrganizationCompany] with Indexed with FilterableView[ManyOrganizationCompaniesAccess]
+trait ManyOrganizationCompaniesAccess 
+	extends ManyRowModelAccess[OrganizationCompany] with Indexed 
+		with FilterableView[ManyOrganizationCompaniesAccess]
 {
 	// COMPUTED	--------------------
 	
 	/**
-	 * @param connection Implicit DB Connection
-	 * @return Organization memberships associated with these links
-	 */
-	def memberships(implicit connection: Connection) =
-	{
+	  * Organization memberships associated with these links
+	  * @param connection Implicit DB Connection
+	  */
+	def memberships(implicit connection: Connection) = {
 		val membershipTable = CitadelTables.membership
 		// Joins to organization to membership
 		// Only selects active memberships
-		MembershipFactory(connection(Select(membershipTable join CitadelTables.organization join table, membershipTable) +
+		MembershipFactory(connection(Select(membershipTable join CitadelTables.organization join table, 
+			membershipTable) +
 			Where(mergeCondition(MembershipFactory.nonDeprecatedCondition))))
 	}
 	
@@ -80,28 +90,15 @@ trait ManyOrganizationCompaniesAccess
 	
 	// IMPLEMENTED	--------------------
 	
-	override def self = this
-	
 	override def factory = OrganizationCompanyFactory
 	
-	override def filter(additionalCondition: Condition): ManyOrganizationCompaniesAccess = 
-		new ManyOrganizationCompaniesAccess.ManyOrganizationCompaniesSubView(this, additionalCondition)
+	override def self = this
+	
+	override def apply(condition: Condition): ManyOrganizationCompaniesAccess = 
+		ManyOrganizationCompaniesAccess(condition)
 	
 	
 	// OTHER	--------------------
-	
-	/**
-	 * @param companyId A company id
-	 * @return An access point to links between that company and organizations
-	 */
-	def linkedToCompanyWithId(companyId: Int) =
-		filter(model.withCompanyId(companyId).toCondition)
-	/**
-	 * @param companyIds Ids of targeted companies
-	 * @return An access point to organization-company links concerning any of those companies
-	 */
-	def linkedToAnyOfCompanies(companyIds: Iterable[Int]) =
-		filter(model.companyIdColumn in companyIds)
 	
 	/**
 	  * Updates the companyId of the targeted OrganizationCompany instance(s)
@@ -126,6 +123,18 @@ trait ManyOrganizationCompaniesAccess
 	  */
 	def creatorIds_=(newCreatorId: Int)(implicit connection: Connection) = 
 		putColumn(model.creatorIdColumn, newCreatorId)
+	
+	/**
+	  * @param companyIds Ids of targeted companies
+	  * @return An access point to organization-company links concerning any of those companies
+	  */
+	def linkedToAnyOfCompanies(companyIds: Iterable[Int]) = filter(model.companyIdColumn in companyIds)
+	
+	/**
+	  * @param companyId A company id
+	  * @return An access point to links between that company and organizations
+	  */
+	def linkedToCompanyWithId(companyId: Int) = filter(model.withCompanyId(companyId).toCondition)
 	
 	/**
 	  * Updates the organizationId of the targeted OrganizationCompany instance(s)

@@ -1,8 +1,7 @@
 package vf.arbiter.core.database.access.single.location
 
-import java.time.Instant
-import utopia.flow.generic.model.immutable.Value
 import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.template.model.DistinctModelAccess
@@ -11,10 +10,12 @@ import vf.arbiter.core.database.factory.location.PostalCodeFactory
 import vf.arbiter.core.database.model.location.PostalCodeModel
 import vf.arbiter.core.model.stored.location.PostalCode
 
+import java.time.Instant
+
 /**
   * A common trait for access points that return individual and distinct PostalCodes.
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
 trait UniquePostalCodeAccess 
 	extends SingleRowModelAccess[PostalCode] with DistinctModelAccess[PostalCode, Option[PostalCode], Value] 
@@ -86,7 +87,6 @@ trait UniquePostalCodeAccess
 	  * @param newNumber A new number to assign
 	  * @return Whether any PostalCode instance was affected
 	  */
-	def number_=(newNumber: String)(implicit connection: Connection) = putColumn(model.numberColumn, 
-		newNumber)
+	def number_=(newNumber: String)(implicit connection: Connection) = putColumn(model.numberColumn,newNumber)
 }
 

@@ -6,7 +6,7 @@ import utopia.flow.generic.model.immutable.Value
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.ChronoRowFactoryView
+import utopia.vault.nosql.view.{ChronoRowFactoryView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.gold.database.factory.settings.CommonSettingFactory
 import vf.arbiter.gold.database.model.settings.CommonSettingModel
@@ -14,16 +14,22 @@ import vf.arbiter.gold.model.stored.settings.CommonSetting
 
 import java.time.Instant
 
-object ManyCommonSettingsAccess
+object ManyCommonSettingsAccess extends ViewFactory[ManyCommonSettingsAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyCommonSettingsAccess = 
+		_ManyCommonSettingsAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyCommonSettingsSubView(condition: Condition) extends ManyCommonSettingsAccess
-	{
-		// IMPLEMENTED	--------------------
-		
-		override def accessCondition = Some(condition)
-	}
+	private case class _ManyCommonSettingsAccess(override val accessCondition: Option[Condition]) 
+		extends ManyCommonSettingsAccess
 }
 
 /**
@@ -68,8 +74,7 @@ trait ManyCommonSettingsAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): ManyCommonSettingsAccess = 
-		new ManyCommonSettingsAccess.ManyCommonSettingsSubView(mergeCondition(filterCondition))
+	override def apply(condition: Condition): ManyCommonSettingsAccess = ManyCommonSettingsAccess(condition)
 	
 	
 	// OTHER	--------------------
@@ -94,7 +99,7 @@ trait ManyCommonSettingsAccess
 	  * @param newValue A new value to assign
 	  * @return Whether any common setting was affected
 	  */
-	def values_=(newValue: Value)(implicit connection: Connection) = putColumn(model.valueColumn, 
+	def values_=(newValue: Value)(implicit connection: Connection) = putColumn(model.valueColumn,
 		newValue.toJson)
 }
 

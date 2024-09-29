@@ -3,6 +3,7 @@ package vf.arbiter.accounting.database.access.many.transaction
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
+import utopia.vault.nosql.view.ViewFactory
 import utopia.vault.sql.Condition
 import vf.arbiter.accounting.database.factory.transaction.EvaluatedTransactionFactory
 import vf.arbiter.accounting.database.model.transaction.TransactionEvaluationModel
@@ -10,16 +11,22 @@ import vf.arbiter.accounting.model.combined.transaction.EvaluatedTransaction
 
 import java.time.Instant
 
-object ManyEvaluatedTransactionsAccess
+object ManyEvaluatedTransactionsAccess extends ViewFactory[ManyEvaluatedTransactionsAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyEvaluatedTransactionsAccess = 
+		_ManyEvaluatedTransactionsAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class SubAccess(condition: Condition) extends ManyEvaluatedTransactionsAccess
-	{
-		// IMPLEMENTED	--------------------
-		
-		override def accessCondition = Some(condition)
-	}
+	private case class _ManyEvaluatedTransactionsAccess(override val accessCondition: Option[Condition]) 
+		extends ManyEvaluatedTransactionsAccess
 }
 
 /**
@@ -83,7 +90,7 @@ trait ManyEvaluatedTransactionsAccess
 	
 	/**
 	  * Model (factory) used for interacting the transaction evaluations associated 
-		with this evaluated transaction
+	  * with this evaluated transaction
 	  */
 	protected def evaluationModel = TransactionEvaluationModel
 	
@@ -94,8 +101,8 @@ trait ManyEvaluatedTransactionsAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): ManyEvaluatedTransactionsAccess = 
-		new ManyEvaluatedTransactionsAccess.SubAccess(mergeCondition(filterCondition))
+	override def apply(condition: Condition): ManyEvaluatedTransactionsAccess = 
+		ManyEvaluatedTransactionsAccess(condition)
 	
 	
 	// OTHER	--------------------

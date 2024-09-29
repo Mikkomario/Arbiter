@@ -38,7 +38,7 @@ trait UniqueAllocationTargetAccessLike[+A]
 	
 	/**
 	  * Time until which this target was applied. None if applied indefinitely (or until changed).. None if
-	  *  no allocation target (or value) was found.
+	  * no allocation target (or value) was found.
 	  */
 	def appliedUntil(implicit connection: Connection) = pullColumn(model.appliedUntilColumn).instant
 	

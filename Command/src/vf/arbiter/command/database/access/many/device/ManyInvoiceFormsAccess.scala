@@ -4,27 +4,40 @@ import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.{FilterableView, SubView}
+import utopia.vault.nosql.view.{FilterableView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.command.database.factory.device.InvoiceFormFactory
 import vf.arbiter.command.database.model.device.InvoiceFormModel
 import vf.arbiter.command.model.stored.device.InvoiceForm
 
-object ManyInvoiceFormsAccess
+object ManyInvoiceFormsAccess extends ViewFactory[ManyInvoiceFormsAccess]
 {
+	// INITIAL CODE	--------------------
+	
+override
+	
+	
+	// OTHER	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	def apply(condition: Condition): ManyInvoiceFormsAccess = _ManyInvoiceFormsAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyInvoiceFormsSubView(override val parent: ManyRowModelAccess[InvoiceForm], 
-		override val filterCondition: Condition) 
-		extends ManyInvoiceFormsAccess with SubView
+	private case class _ManyInvoiceFormsAccess(override val accessCondition: Option[Condition]) 
+		extends ManyInvoiceFormsAccess
 }
 
 /**
   * A common trait for access points which target multiple InvoiceForms at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-20
+  * @since 20.10.2021
   */
-trait ManyInvoiceFormsAccess
+trait ManyInvoiceFormsAccess 
 	extends ManyRowModelAccess[InvoiceForm] with Indexed with FilterableView[ManyInvoiceFormsAccess]
 {
 	// COMPUTED	--------------------
@@ -34,16 +47,19 @@ trait ManyInvoiceFormsAccess
 	  */
 	def ownerIds(implicit connection: Connection) = pullColumn(model.ownerIdColumn)
 		.flatMap { value => value.int }
+	
 	/**
 	  * languageIds of the accessible InvoiceForms
 	  */
 	def languageIds(implicit connection: Connection) = 
 		pullColumn(model.languageIdColumn).flatMap { value => value.int }
+	
 	/**
 	  * companyIds of the accessible InvoiceForms
 	  */
 	def companyIds(implicit connection: Connection) = 
 		pullColumn(model.companyIdColumn).flatMap { value => value.int }
+	
 	/**
 	  * paths of the accessible InvoiceForms
 	  */
@@ -60,26 +76,14 @@ trait ManyInvoiceFormsAccess
 	
 	// IMPLEMENTED	--------------------
 	
-	override def self = this
-	
 	override def factory = InvoiceFormFactory
 	
-	override def filter(additionalCondition: Condition): ManyInvoiceFormsAccess = 
-		new ManyInvoiceFormsAccess.ManyInvoiceFormsSubView(this, additionalCondition)
+	override def self = this
+	
+	override def apply(condition: Condition): ManyInvoiceFormsAccess = ManyInvoiceFormsAccess(condition)
 	
 	
 	// OTHER	--------------------
-	
-	/**
-	 * @param userId Id of the user who's using the forms
-	 * @return An access point to forms used by that user
-	 */
-	def forUserWithId(userId: Int) = filter(model.withOwnerId(userId).toCondition)
-	/**
-	 * @param languageId Id of the language used in the forms
-	 * @return An access point to forms using that language
-	 */
-	def withLanguageId(languageId: Int) = filter(model.withLanguageId(languageId).toCondition)
 	
 	/**
 	  * Updates the companyId of the targeted InvoiceForm instance(s)
@@ -88,6 +92,13 @@ trait ManyInvoiceFormsAccess
 	  */
 	def companyId_=(newCompanyId: Int)(implicit connection: Connection) = 
 		putColumn(model.companyIdColumn, newCompanyId)
+	
+	/**
+	  * @param userId Id of the user who's using the forms
+	  * @return An access point to forms used by that user
+	  */
+	def forUserWithId(userId: Int) = filter(model.withOwnerId(userId).toCondition)
+	
 	/**
 	  * Updates the languageId of the targeted InvoiceForm instance(s)
 	  * @param newLanguageId A new languageId to assign
@@ -95,18 +106,26 @@ trait ManyInvoiceFormsAccess
 	  */
 	def languageId_=(newLanguageId: Int)(implicit connection: Connection) = 
 		putColumn(model.languageIdColumn, newLanguageId)
+	
 	/**
 	  * Updates the ownerId of the targeted InvoiceForm instance(s)
 	  * @param newOwnerId A new ownerId to assign
 	  * @return Whether any InvoiceForm instance was affected
 	  */
-	def ownerId_=(newOwnerId: Int)(implicit connection: Connection) = putColumn(model.ownerIdColumn, 
+	def ownerId_=(newOwnerId: Int)(implicit connection: Connection) = putColumn(model.ownerIdColumn,
 		newOwnerId)
+	
 	/**
 	  * Updates the path of the targeted InvoiceForm instance(s)
 	  * @param newPath A new path to assign
 	  * @return Whether any InvoiceForm instance was affected
 	  */
 	def path_=(newPath: String)(implicit connection: Connection) = putColumn(model.pathColumn, newPath)
+	
+	/**
+	  * @param languageId Id of the language used in the forms
+	  * @return An access point to forms using that language
+	  */
+	def withLanguageId(languageId: Int) = filter(model.withLanguageId(languageId).toCondition)
 }
 

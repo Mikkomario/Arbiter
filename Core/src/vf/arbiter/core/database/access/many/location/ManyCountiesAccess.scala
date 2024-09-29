@@ -1,31 +1,41 @@
 package vf.arbiter.core.database.access.many.location
 
-import java.time.Instant
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.{FilterableView, SubView}
+import utopia.vault.nosql.view.{FilterableView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.core.database.factory.location.CountyFactory
 import vf.arbiter.core.database.model.location.CountyModel
 import vf.arbiter.core.model.stored.location.County
 
-object ManyCountiesAccess
+import java.time.Instant
+
+object ManyCountiesAccess extends ViewFactory[ManyCountiesAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyCountiesAccess = _ManyCountiesAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyCountiesSubView(override val parent: ManyRowModelAccess[County], 
-		override val filterCondition: Condition) 
-		extends ManyCountiesAccess with SubView
+	private case class _ManyCountiesAccess(override val accessCondition: Option[Condition]) 
+		extends ManyCountiesAccess
 }
 
 /**
   * A common trait for access points which target multiple Counties at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
-trait ManyCountiesAccess extends ManyRowModelAccess[County] with Indexed with FilterableView[ManyCountiesAccess]
+trait ManyCountiesAccess 
+	extends ManyRowModelAccess[County] with Indexed with FilterableView[ManyCountiesAccess]
 {
 	// COMPUTED	--------------------
 	
@@ -57,21 +67,14 @@ trait ManyCountiesAccess extends ManyRowModelAccess[County] with Indexed with Fi
 	
 	// IMPLEMENTED	--------------------
 	
-	override def self = this
-	
 	override def factory = CountyFactory
 	
-	override def filter(additionalCondition: Condition): ManyCountiesAccess = 
-		new ManyCountiesAccess.ManyCountiesSubView(this, additionalCondition)
+	override def self = this
+	
+	override def apply(condition: Condition): ManyCountiesAccess = ManyCountiesAccess(condition)
 	
 	
 	// OTHER	--------------------
-	
-	/**
-	 * @param names County names
-	 * @return An access point to counties with those names (might not include all of them)
-	 */
-	def withAnyOfNames(names: Iterable[String]) = filter(model.nameColumn in names)
 	
 	/**
 	  * Updates the created of the targeted County instance(s)
@@ -95,5 +98,11 @@ trait ManyCountiesAccess extends ManyRowModelAccess[County] with Indexed with Fi
 	  * @return Whether any County instance was affected
 	  */
 	def names_=(newName: String)(implicit connection: Connection) = putColumn(model.nameColumn, newName)
+	
+	/**
+	  * @param names County names
+	  * @return An access point to counties with those names (might not include all of them)
+	  */
+	def withAnyOfNames(names: Iterable[String]) = filter(model.nameColumn in names)
 }
 

@@ -4,7 +4,7 @@ import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.FilterableView
+import utopia.vault.nosql.view.{FilterableView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.accounting.database.factory.transaction.PartyEntryFactory
 import vf.arbiter.accounting.database.model.transaction.PartyEntryModel
@@ -12,16 +12,26 @@ import vf.arbiter.accounting.model.stored.transaction.PartyEntry
 
 import java.time.Instant
 
-object ManyPartyEntriesAccess
+object ManyPartyEntriesAccess extends ViewFactory[ManyPartyEntriesAccess]
 {
+	// INITIAL CODE	--------------------
+	
+override
+	
+	
+	// OTHER	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	def apply(condition: Condition): ManyPartyEntriesAccess = _ManyPartyEntriesAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyPartyEntriesSubView(condition: Condition) extends ManyPartyEntriesAccess
-	{
-		// IMPLEMENTED	--------------------
-		
-		override def accessCondition = Some(condition)
-	}
+	private case class _ManyPartyEntriesAccess(override val accessCondition: Option[Condition]) 
+		extends ManyPartyEntriesAccess
 }
 
 /**
@@ -59,8 +69,7 @@ trait ManyPartyEntriesAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): ManyPartyEntriesAccess = 
-		new ManyPartyEntriesAccess.ManyPartyEntriesSubView(mergeCondition(filterCondition))
+	override def apply(condition: Condition): ManyPartyEntriesAccess = ManyPartyEntriesAccess(condition)
 	
 	
 	// OTHER	--------------------

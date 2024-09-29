@@ -1,31 +1,41 @@
 package vf.arbiter.core.database.access.many.invoice
 
-import java.time.{Instant, LocalDate}
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.{FilterableView, SubView}
+import utopia.vault.nosql.view.{FilterableView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.core.database.factory.invoice.InvoicePaymentFactory
 import vf.arbiter.core.database.model.invoice.InvoicePaymentModel
 import vf.arbiter.core.model.stored.invoice.InvoicePayment
 
-object ManyInvoicePaymentsAccess
+import java.time.{Instant, LocalDate}
+
+object ManyInvoicePaymentsAccess extends ViewFactory[ManyInvoicePaymentsAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyInvoicePaymentsAccess = 
+		_ManyInvoicePaymentsAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyInvoicePaymentsSubView(override val parent: ManyRowModelAccess[InvoicePayment], 
-		override val filterCondition: Condition) 
-		extends ManyInvoicePaymentsAccess with SubView
+	private case class _ManyInvoicePaymentsAccess(override val accessCondition: Option[Condition]) 
+		extends ManyInvoicePaymentsAccess
 }
 
 /**
   * A common trait for access points which target multiple InvoicePayments at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
-trait ManyInvoicePaymentsAccess
+trait ManyInvoicePaymentsAccess 
 	extends ManyRowModelAccess[InvoicePayment] with Indexed with FilterableView[ManyInvoicePaymentsAccess]
 {
 	// COMPUTED	--------------------
@@ -70,12 +80,11 @@ trait ManyInvoicePaymentsAccess
 	
 	// IMPLEMENTED	--------------------
 	
-	override def self = this
-	
 	override def factory = InvoicePaymentFactory
 	
-	override def filter(additionalCondition: Condition): ManyInvoicePaymentsAccess = 
-		new ManyInvoicePaymentsAccess.ManyInvoicePaymentsSubView(this, additionalCondition)
+	override def self = this
+	
+	override def apply(condition: Condition): ManyInvoicePaymentsAccess = ManyInvoicePaymentsAccess(condition)
 	
 	
 	// OTHER	--------------------

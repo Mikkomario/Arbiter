@@ -15,34 +15,36 @@ import java.time.Instant
 /**
   * A common trait for access points which target multiple Companies or company-like instances at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-14
+  * @since 14.10.2021
   */
 trait ManyCompaniesAccessLike[+A, +Repr] extends ManyRowModelAccess[A] with Indexed with FilterableView[Repr]
 {
 	// COMPUTED	--------------------
 	
 	/**
-	 * @return Model used for interacting with company-organization links
-	 */
-	protected def organizationLinkModel = OrganizationCompanyModel
-	
-	/**
 	  * yCodes of the accessible Companies
 	  */
-	def yCodes(implicit connection: Connection) = pullColumn(companyModel.yCodeColumn)
-		.flatMap { value => value.string }
+	def yCodes(implicit connection: Connection) = 
+		pullColumn(companyModel.yCodeColumn).flatMap { value => value.string }
+	
 	/**
 	  * creatorIds of the accessible Companies
 	  */
-	def creatorIds(implicit connection: Connection) =
+	def creatorIds(implicit connection: Connection) = 
 		pullColumn(companyModel.creatorIdColumn).flatMap { value => value.int }
+	
 	/**
 	  * createds of the accessible Companies
 	  */
-	def createds(implicit connection: Connection) =
+	def createds(implicit connection: Connection) = 
 		pullColumn(companyModel.createdColumn).flatMap { value => value.instant }
 	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
+	
+	/**
+	  * Model used for interacting with company-organization links
+	  */
+	protected def organizationLinkModel = OrganizationCompanyModel
 	
 	/**
 	  * Factory used for constructing database the interaction models
@@ -53,45 +55,48 @@ trait ManyCompaniesAccessLike[+A, +Repr] extends ManyRowModelAccess[A] with Inde
 	// OTHER	--------------------
 	
 	/**
-	 * @param yCodes A set of y-codes to target
-	 * @return A copy of this access point that only targets companies with those codes
-	 */
-	def withAnyOfYCodes(yCodes: Iterable[String]) = filter(companyModel.yCodeColumn in yCodes)
-	
-	/**
-	 * @param userId A user id
-	 * @param connection Implicit DB Connection
-	 * @return All companies that are linked with an organization that user belongs to
-	 */
-	def linkedWithUserWithId(userId: Int)(implicit connection: Connection) =
-	{
-		val membershipModel = MembershipModel
-		// Joins to organization link -> organization -> membership
-		factory(connection(
-			Select.tables(target join organizationLinkModel.table join CitadelTables.organization join membershipModel.table,
-				factory.tables) + Where(mergeCondition(membershipModel.nonDeprecatedCondition &&
-				membershipModel.withUserId(userId).toCondition))))
-	}
-	
-	/**
 	  * Updates the created of the targeted Company instance(s)
 	  * @param newCreated A new created to assign
 	  * @return Whether any Company instance was affected
 	  */
-	def created_=(newCreated: Instant)(implicit connection: Connection) =
+	def created_=(newCreated: Instant)(implicit connection: Connection) = 
 		putColumn(companyModel.createdColumn, newCreated)
+	
 	/**
 	  * Updates the creatorId of the targeted Company instance(s)
 	  * @param newCreatorId A new creatorId to assign
 	  * @return Whether any Company instance was affected
 	  */
-	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) =
+	def creatorId_=(newCreatorId: Int)(implicit connection: Connection) = 
 		putColumn(companyModel.creatorIdColumn, newCreatorId)
+	
+	/**
+	  * @param userId A user id
+	  * @param connection Implicit DB Connection
+	  * @return All companies that are linked with an organization that user belongs to
+	  */
+	def linkedWithUserWithId(userId: Int)(implicit connection: Connection) = {
+		val membershipModel = MembershipModel
+		// Joins to organization link -> organization -> membership
+		factory(connection(
+			Select.tables(target join organizationLinkModel.table join CitadelTables.organization join membershipModel.table,
+				
+				factory.tables) + Where(mergeCondition(membershipModel.nonDeprecatedCondition &&
+				membershipModel.withUserId(userId).toCondition))))
+	}
+	
+	/**
+	  * @param yCodes A set of y-codes to target
+	  * @return A copy of this access point that only targets companies with those codes
+	  */
+	def withAnyOfYCodes(yCodes: Iterable[String]) = filter(companyModel.yCodeColumn in yCodes)
+	
 	/**
 	  * Updates the yCode of the targeted Company instance(s)
 	  * @param newYCode A new yCode to assign
 	  * @return Whether any Company instance was affected
 	  */
-	def yCode_=(newYCode: String)(implicit connection: Connection) = putColumn(companyModel.yCodeColumn, newYCode)
+	def yCode_=(newYCode: String)(implicit connection: Connection) = putColumn(companyModel.yCodeColumn, 
+		newYCode)
 }
 

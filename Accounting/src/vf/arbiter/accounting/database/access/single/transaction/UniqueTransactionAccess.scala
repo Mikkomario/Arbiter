@@ -42,7 +42,6 @@ trait UniqueTransactionAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniqueTransactionAccess = 
-		new UniqueTransactionAccess._UniqueTransactionAccess(mergeCondition(filterCondition))
+	override def apply(condition: Condition): UniqueTransactionAccess = UniqueTransactionAccess(condition)
 }
 

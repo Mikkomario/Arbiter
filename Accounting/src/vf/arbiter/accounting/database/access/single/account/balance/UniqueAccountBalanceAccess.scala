@@ -59,13 +59,13 @@ trait UniqueAccountBalanceAccess
 	
 	/**
 	  * Id of the user who provided this information. None if not known or if not applicable.. None if
-	  *  no account balance (or value) was found.
+	  * no account balance (or value) was found.
 	  */
 	def creatorId(implicit connection: Connection) = pullColumn(model.creatorIdColumn).int
 	
 	/**
 	  * Time when this value was specified. Also represents the time when this value was accurate.. None if
-	  *  no account balance (or value) was found.
+	  * no account balance (or value) was found.
 	  */
 	def created(implicit connection: Connection) = pullColumn(model.createdColumn).instant
 	
@@ -89,8 +89,8 @@ trait UniqueAccountBalanceAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniqueAccountBalanceAccess = 
-		new UniqueAccountBalanceAccess._UniqueAccountBalanceAccess(mergeCondition(filterCondition))
+	override
+		 def apply(condition: Condition): UniqueAccountBalanceAccess = UniqueAccountBalanceAccess(condition)
 	
 	
 	// OTHER	--------------------

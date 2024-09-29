@@ -1,7 +1,7 @@
 package vf.arbiter.core.database.access.single.invoice
 
-import utopia.flow.generic.model.immutable.Value
 import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.template.model.DistinctModelAccess
@@ -33,7 +33,7 @@ trait UniqueInvoiceItemAccess
 	
 	/**
 	  * Name or description of this item (in the same language the invoice is given in). None if
-	  *  no instance (or value) was found.
+	  * no instance (or value) was found.
 	  */
 	def description(implicit connection: Connection) = pullColumn(model.descriptionColumn).string
 	

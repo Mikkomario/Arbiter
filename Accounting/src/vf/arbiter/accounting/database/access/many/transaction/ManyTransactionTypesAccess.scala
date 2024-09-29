@@ -4,7 +4,7 @@ import utopia.citadel.database.access.many.description.ManyDescribedAccess
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
-import utopia.vault.nosql.view.FilterableView
+import utopia.vault.nosql.view.{FilterableView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.accounting.database.access.many.description.DbTransactionTypeDescriptions
 import vf.arbiter.accounting.database.factory.transaction.TransactionTypeFactory
@@ -14,16 +14,22 @@ import vf.arbiter.accounting.model.stored.transaction.TransactionType
 
 import java.time.Instant
 
-object ManyTransactionTypesAccess
+object ManyTransactionTypesAccess extends ViewFactory[ManyTransactionTypesAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyTransactionTypesAccess = 
+		_ManyTransactionTypesAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyTransactionTypesSubView(condition: Condition) extends ManyTransactionTypesAccess
-	{
-		// IMPLEMENTED	--------------------
-		
-		override def accessCondition = Some(condition)
-	}
+	private case class _ManyTransactionTypesAccess(override val accessCondition: Option[Condition]) 
+		extends ManyTransactionTypesAccess
 }
 
 /**
@@ -77,13 +83,12 @@ trait ManyTransactionTypesAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): ManyTransactionTypesAccess = 
-		new ManyTransactionTypesAccess.ManyTransactionTypesSubView(mergeCondition(filterCondition))
-	
 	override def idOf(item: TransactionType) = item.id
 	
 	
 	// OTHER	--------------------
+	
+	def apply(condition: Condition): ManyTransactionTypesAccess = ManyTransactionTypesAccess(condition)
 	
 	/**
 	  * Updates the creation times of the targeted transaction types

@@ -51,7 +51,7 @@ trait UniqueTypeSpecificAllocationTargetAccess
 	/**
 	  * 
 		Id of the target to which this specific value belongs. None if no type specific allocation target (or value)
-	  *  was found.
+	  * was found.
 	  */
 	def parentId(implicit connection: Connection) = pullColumn(model.parentIdColumn).int
 	
@@ -65,7 +65,8 @@ trait UniqueTypeSpecificAllocationTargetAccess
 		The targeted ratio of total after-expenses income that should be allocated into this transaction type. 
 	  * If a ratio has been specified for a parent transaction type, 
 	  * 
-		this ratio is applied to the parent's portion (E.g. ratio of 1.0 would allocate 100% of the parent's share to this child type). 
+		this ratio is applied to the parent's portion (E.g. ratio of 1.0 would allocate 100% of the parent's share to
+	  *  this child type). 
 	  * [0,1]. None if no type specific allocation target (or value) was found.
 	  */
 	def ratio(implicit connection: Connection) = pullColumn(model.ratioColumn).double
@@ -73,7 +74,7 @@ trait UniqueTypeSpecificAllocationTargetAccess
 	/**
 	  * 
 		Whether this target represents the largest allowed value. False if this represents the minimum target..
-	  *  None if no type specific allocation target (or value) was found.
+	  * None if no type specific allocation target (or value) was found.
 	  */
 	def isMaximum(implicit connection: Connection) = pullColumn(model.isMaximumColumn).boolean
 	
@@ -91,8 +92,8 @@ trait UniqueTypeSpecificAllocationTargetAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniqueTypeSpecificAllocationTargetAccess = 
-		new UniqueTypeSpecificAllocationTargetAccess._UniqueTypeSpecificAllocationTargetAccess(mergeCondition(filterCondition))
+	override def apply(condition: Condition): UniqueTypeSpecificAllocationTargetAccess = 
+		UniqueTypeSpecificAllocationTargetAccess(condition)
 	
 	
 	// OTHER	--------------------

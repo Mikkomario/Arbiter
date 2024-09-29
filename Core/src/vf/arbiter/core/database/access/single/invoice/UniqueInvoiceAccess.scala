@@ -1,7 +1,7 @@
 package vf.arbiter.core.database.access.single.invoice
 
-import utopia.flow.generic.model.immutable.Value
 import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
 import utopia.flow.time.{Days, Now}
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
@@ -27,7 +27,7 @@ trait UniqueInvoiceAccess
 	/**
 	  * 
 		Id of the details of the company who sent this invoice (payment recipient). None if no instance (or value)
-	  *  was found.
+	  * was found.
 	  */
 	def senderCompanyDetailsId(implicit connection: Connection) = 
 		pullColumn(model.senderCompanyDetailsIdColumn).int
@@ -41,7 +41,7 @@ trait UniqueInvoiceAccess
 	
 	/**
 	  * Id of the bank account the invoice sender wants the recipient to transfer money to. None if
-	  *  no instance (or value) was found.
+	  * no instance (or value) was found.
 	  */
 	def senderBankAccountId(implicit connection: Connection) = pullColumn(model.senderBankAccountIdColumn).int
 	
@@ -58,14 +58,14 @@ trait UniqueInvoiceAccess
 	
 	/**
 	  * Number of days during which this invoice can be paid before additional consequences. None if
-	  *  no instance (or value) was found.
+	  * no instance (or value) was found.
 	  */
 	def paymentDuration(implicit connection: Connection) = 
 		pullColumn(model.paymentDurationColumn).int.map { Days(_) }
 	
 	/**
 	  * The first date when the products were delivered, 
-		if applicable. None if no instance (or value) was found.
+	  * if applicable. None if no instance (or value) was found.
 	  */
 	def productDeliveryBegin(implicit connection: Connection) = 
 		pullColumn(model.productDeliveryBeginColumn).localDate
@@ -89,7 +89,7 @@ trait UniqueInvoiceAccess
 	
 	/**
 	  * Time when this invoice became deprecated. None while this invoice is still valid.. None if
-	  *  no instance (or value) was found.
+	  * no instance (or value) was found.
 	  */
 	def cancelledAfter(implicit connection: Connection) = pullColumn(model.cancelledAfterColumn).instant
 	

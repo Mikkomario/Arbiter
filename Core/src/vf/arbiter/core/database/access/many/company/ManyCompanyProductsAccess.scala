@@ -1,11 +1,10 @@
 package vf.arbiter.core.database.access.many.company
 
-import java.time.Instant
 import utopia.citadel.database.access.many.description.ManyDescribedAccess
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
-import utopia.vault.nosql.view.{FilterableView, SubView}
+import utopia.vault.nosql.view.{FilterableView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.core.database.access.many.description.DbCompanyProductDescriptions
 import vf.arbiter.core.database.factory.company.CompanyProductFactory
@@ -13,23 +12,34 @@ import vf.arbiter.core.database.model.company.CompanyProductModel
 import vf.arbiter.core.model.combined.company.DescribedCompanyProduct
 import vf.arbiter.core.model.stored.company.CompanyProduct
 
-object ManyCompanyProductsAccess
+import java.time.Instant
+
+object ManyCompanyProductsAccess extends ViewFactory[ManyCompanyProductsAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyCompanyProductsAccess = 
+		_ManyCompanyProductsAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyCompanyProductsSubView(override val parent: ManyRowModelAccess[CompanyProduct], 
-		override val filterCondition: Condition) 
-		extends ManyCompanyProductsAccess with SubView
+	private case class _ManyCompanyProductsAccess(override val accessCondition: Option[Condition]) 
+		extends ManyCompanyProductsAccess
 }
 
 /**
   * A common trait for access points which target multiple CompanyProducts at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
 trait ManyCompanyProductsAccess 
 	extends ManyRowModelAccess[CompanyProduct] 
-		with ManyDescribedAccess[CompanyProduct, DescribedCompanyProduct]
+		with ManyDescribedAccess[CompanyProduct, DescribedCompanyProduct] 
 		with FilterableView[ManyCompanyProductsAccess]
 {
 	// COMPUTED	--------------------
@@ -86,27 +96,20 @@ trait ManyCompanyProductsAccess
 	
 	// IMPLEMENTED	--------------------
 	
-	override def self = this
-	
 	override def factory = CompanyProductFactory
+	
+	override def self = this
 	
 	override protected def describedFactory = DescribedCompanyProduct
 	
 	override protected def manyDescriptionsAccess = DbCompanyProductDescriptions
 	
-	override def filter(additionalCondition: Condition): ManyCompanyProductsAccess = 
-		new ManyCompanyProductsAccess.ManyCompanyProductsSubView(this, additionalCondition)
+	override def apply(condition: Condition): ManyCompanyProductsAccess = ManyCompanyProductsAccess(condition)
 	
 	override def idOf(item: CompanyProduct) = item.id
 	
 	
 	// OTHER	--------------------
-	
-	/**
-	 * @param companyId Target company id
-	 * @return An access point to that company's products
-	 */
-	def ofCompanyWithId(companyId: Int) = filter(model.withCompanyId(companyId).toCondition)
 	
 	/**
 	  * Updates the companyId of the targeted CompanyProduct instance(s)
@@ -147,6 +150,12 @@ trait ManyCompanyProductsAccess
 	  */
 	def discontinuedAfters_=(newDiscontinuedAfter: Instant)(implicit connection: Connection) = 
 		putColumn(model.discontinuedAfterColumn, newDiscontinuedAfter)
+	
+	/**
+	  * @param companyId Target company id
+	  * @return An access point to that company's products
+	  */
+	def ofCompanyWithId(companyId: Int) = filter(model.withCompanyId(companyId).toCondition)
 	
 	/**
 	  * Updates the taxModifier of the targeted CompanyProduct instance(s)

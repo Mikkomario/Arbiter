@@ -6,7 +6,7 @@ import vf.arbiter.core.model.combined.invoice.InvoiceWithItems
 import vf.arbiter.core.model.stored.invoice.{Invoice, InvoiceItem}
 
 /**
-  * Used for reading invoice with itemss from the database
+  * Used for readings invoice with items from the database
   * @author Mikko Hilpinen
   * @since 31.10.2021, v1.3
   */
@@ -23,6 +23,6 @@ object InvoiceWithItemsFactory
 	
 	override def parentFactory = InvoiceFactory
 	
-	override def apply(invoice: Invoice, items: Vector[InvoiceItem]) = InvoiceWithItems(invoice, items)
+	override def apply(invoice: Invoice, items: Seq[InvoiceItem]) = InvoiceWithItems(invoice, items)
 }
 

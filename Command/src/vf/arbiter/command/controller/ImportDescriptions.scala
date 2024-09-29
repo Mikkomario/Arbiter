@@ -6,6 +6,7 @@ import utopia.flow.time.Now
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.parse.file.FileExtensions._
+import utopia.flow.util.TryExtensions._
 import utopia.vault.database.Connection
 import vf.arbiter.command.database.access.many.environment.DbDescriptionImports
 import vf.arbiter.command.database.model.environment.DescriptionImportModel

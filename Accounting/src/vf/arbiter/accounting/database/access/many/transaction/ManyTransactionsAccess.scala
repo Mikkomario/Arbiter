@@ -2,22 +2,33 @@ package vf.arbiter.accounting.database.access.many.transaction
 
 import utopia.citadel.database.access.many.description.ManyDescribedAccess
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
+import utopia.vault.nosql.view.ViewFactory
 import utopia.vault.sql.Condition
 import vf.arbiter.accounting.database.access.many.description.DbTransactionDescriptions
 import vf.arbiter.accounting.database.factory.transaction.TransactionFactory
 import vf.arbiter.accounting.model.combined.transaction.DescribedTransaction
 import vf.arbiter.accounting.model.stored.transaction.Transaction
 
-object ManyTransactionsAccess
+object ManyTransactionsAccess extends ViewFactory[ManyTransactionsAccess]
 {
+	// INITIAL CODE	--------------------
+	
+override
+	
+	
+	// OTHER	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	def apply(condition: Condition): ManyTransactionsAccess = _ManyTransactionsAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyTransactionsSubView(condition: Condition) extends ManyTransactionsAccess
-	{
-		// IMPLEMENTED	--------------------
-		
-		override def accessCondition = Some(condition)
-	}
+	private case class _ManyTransactionsAccess(override val accessCondition: Option[Condition]) 
+		extends ManyTransactionsAccess
 }
 
 /**
@@ -39,8 +50,7 @@ trait ManyTransactionsAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): ManyTransactionsAccess = 
-		new ManyTransactionsAccess.ManyTransactionsSubView(mergeCondition(filterCondition))
+	override def apply(condition: Condition): ManyTransactionsAccess = ManyTransactionsAccess(condition)
 	
 	override def idOf(item: Transaction) = item.id
 }

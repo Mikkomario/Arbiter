@@ -65,34 +65,34 @@ trait UniqueEvaluatedTransactionAccess
 	
 	/**
 	  * An alias given to the other party of this transaction. Empty if no alias has been specified.. None if
-	  *  no transaction evaluation (or value) was found.
+	  * no transaction evaluation (or value) was found.
 	  */
 	def evaluationOtherPartyAlias(implicit connection: Connection) = 
 		pullColumn(evaluationModel.otherPartyAliasColumn).getString
 	
 	/**
 	  * Id of the user who added this evaluation. None if unknown or if not applicable.. None if
-	  *  no transaction evaluation (or value) was found.
+	  * no transaction evaluation (or value) was found.
 	  */
 	def evaluationCreatorId(implicit connection: Connection) = pullColumn(evaluationModel.creatorIdColumn).int
 	
 	/**
 	  * 
 		Time when this transaction evaluation was added to the database. None if no transaction evaluation (or value)
-	  *  was found.
+	  * was found.
 	  */
 	def evaluationCreated(implicit connection: Connection) = pullColumn(evaluationModel.createdColumn).instant
 	
 	/**
 	  * Time when this evaluation was replaced or cancelled. None while valid.. None if
-	  *  no transaction evaluation (or value) was found.
+	  * no transaction evaluation (or value) was found.
 	  */
 	def evaluationDeprecatedAfter(implicit connection: Connection) = 
 		pullColumn(evaluationModel.deprecatedAfterColumn).instant
 	
 	/**
 	  * Whether this evaluation is manually performed by a human. False if performed by an algorithm.. None if
-	  *  no transaction evaluation (or value) was found.
+	  * no transaction evaluation (or value) was found.
 	  */
 	def evaluationManual(implicit connection: Connection) = pullColumn(evaluationModel.manualColumn).boolean
 	
@@ -108,8 +108,8 @@ trait UniqueEvaluatedTransactionAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniqueEvaluatedTransactionAccess = 
-		new UniqueEvaluatedTransactionAccess._UniqueEvaluatedTransactionAccess(mergeCondition(filterCondition))
+	override def apply(condition: Condition): UniqueEvaluatedTransactionAccess = 
+		UniqueEvaluatedTransactionAccess(condition)
 	
 	
 	// OTHER	--------------------

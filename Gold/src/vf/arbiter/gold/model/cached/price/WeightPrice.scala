@@ -5,6 +5,7 @@ import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.operator.numeric.DoubleLike
 import utopia.flow.operator.sign.Sign
 import utopia.flow.parse.string.Regex
+import utopia.flow.util.EitherExtensions._
 import vf.arbiter.gold.model.enumeration.WeightUnit
 import vf.arbiter.gold.model.enumeration.WeightUnit.{Gram, Kilogram, TroyOunce}
 

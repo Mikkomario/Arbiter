@@ -1,11 +1,11 @@
 package vf.arbiter.core.database.access.many.invoice
 
-import utopia.flow.collection.immutable.Pair
+import utopia.flow.collection.immutable.{Empty, Pair}
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
-import utopia.vault.nosql.view.{ChronoRowFactoryView, SubView}
+import utopia.vault.nosql.view.{ChronoRowFactoryView, ViewFactory}
 import utopia.vault.sql.{Condition, Select, Where}
 import vf.arbiter.core.database.access.many.company.{DbCompanies, DbFullCompanyBankAccounts, DbManyCompanyDetails}
 import vf.arbiter.core.database.factory.invoice.InvoiceFactory
@@ -13,13 +13,21 @@ import vf.arbiter.core.database.model.company.CompanyDetailsModel
 import vf.arbiter.core.model.combined.invoice.FullInvoice
 import vf.arbiter.core.model.stored.invoice.Invoice
 
-object ManyInvoicesAccess
+object ManyInvoicesAccess extends ViewFactory[ManyInvoicesAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyInvoicesAccess = _ManyInvoicesAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyInvoicesSubView(override val parent: ManyRowModelAccess[Invoice], 
-		override val filterCondition: Condition) 
-		extends ManyInvoicesAccess with SubView
+	private case class _ManyInvoicesAccess(override val accessCondition: Option[Condition]) 
+		extends ManyInvoicesAccess
 }
 
 /**
@@ -43,15 +51,29 @@ trait ManyInvoicesAccess
 	
 	// IMPLEMENTED	--------------------
 	
-	override def self = this
-	
 	override def factory = InvoiceFactory
 	
-	override def filter(additionalCondition: Condition): ManyInvoicesAccess = 
-		new ManyInvoicesAccess.ManyInvoicesSubView(this, additionalCondition)
+	override def self = this
+	
+	override def apply(condition: Condition): ManyInvoicesAccess = ManyInvoicesAccess(condition)
 	
 	
 	// OTHER	--------------------
+	
+	/**
+	  * Finds invoices that are made between the two mentioned companies
+	  * @param senderCompanyId Id of the company who sent the invoice
+	  * @param recipientCompanyId Id of the company who received the invoice
+	  * @param connection Implicit DB connection
+	  * @return Invoices from the sender company to the recipient company
+	  */
+	def betweenCompanies(senderCompanyId: Int, recipientCompanyId: Int)(implicit connection: Connection) = {
+		// Unfortunately, because having to join to the same table twice, has to perform two separate searches
+		val invoiceIds = connection(Select(target.joinFrom(model.senderCompanyDetailsIdColumn), index) +
+			Where(mergeCondition(companyDetailsModel.withCompanyId(senderCompanyId)))).rowIntValues
+		factory(connection(Select(target.joinFrom(model.recipientCompanyDetailsIdColumn), table) +
+			Where(companyDetailsModel.withCompanyId(recipientCompanyId).toCondition && index.in(invoiceIds))))
+	}
 	
 	/**
 	  * Completes the specified invoices by adding company, bank & item data
@@ -78,25 +100,12 @@ trait ManyInvoicesAccess
 			val bankAccountIds = invoices.map { _.senderBankAccountId }.toSet
 			val bankAccountPerId = DbFullCompanyBankAccounts(bankAccountIds).pull.map { a => a.id -> a }.toMap
 			// Combines the data together
-			invoices.map { i => FullInvoice(i, fullCompanyByDetailsId(i.senderCompanyDetailsId),
-				fullCompanyByDetailsId(i.recipientCompanyDetailsId), bankAccountPerId(i.senderBankAccountId),
-				itemsByInvoiceId.getOrElse(i.id, Vector())) }
+			invoices.map { i =>
+				FullInvoice(i, fullCompanyByDetailsId(i.senderCompanyDetailsId),
+					fullCompanyByDetailsId(i.recipientCompanyDetailsId), bankAccountPerId(i.senderBankAccountId),
+					itemsByInvoiceId.getOrElse(i.id, Empty))
+			}
 		}
-	}
-	
-	/**
-	 * Finds invoices that are made between the two mentioned companies
-	 * @param senderCompanyId Id of the company who sent the invoice
-	 * @param recipientCompanyId Id of the company who received the invoice
-	 * @param connection Implicit DB connection
-	 * @return Invoices from the sender company to the recipient company
-	 */
-	def betweenCompanies(senderCompanyId: Int, recipientCompanyId: Int)(implicit connection: Connection) = {
-		// Unfortunately, because having to join to the same table twice, has to perform two separate searches
-		val invoiceIds = connection(Select(target.joinFrom(model.senderCompanyDetailsIdColumn), index) +
-			Where(mergeCondition(companyDetailsModel.withCompanyId(senderCompanyId)))).rowIntValues
-		factory(connection(Select(target.joinFrom(model.recipientCompanyDetailsIdColumn), table) +
-			Where(companyDetailsModel.withCompanyId(recipientCompanyId).toCondition && index.in(invoiceIds))))
 	}
 	
 	/**

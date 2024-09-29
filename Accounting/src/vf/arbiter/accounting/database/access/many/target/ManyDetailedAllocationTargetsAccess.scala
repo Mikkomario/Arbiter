@@ -2,21 +2,28 @@ package vf.arbiter.accounting.database.access.many.target
 
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
+import utopia.vault.nosql.view.ViewFactory
 import utopia.vault.sql.Condition
 import vf.arbiter.accounting.database.factory.target.DetailedAllocationTargetFactory
 import vf.arbiter.accounting.database.model.target.TypeSpecificAllocationTargetModel
 import vf.arbiter.accounting.model.combined.target.DetailedAllocationTarget
 
-object ManyDetailedAllocationTargetsAccess
+object ManyDetailedAllocationTargetsAccess extends ViewFactory[ManyDetailedAllocationTargetsAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyDetailedAllocationTargetsAccess = 
+		_ManyDetailedAllocationTargetsAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class SubAccess(condition: Condition) extends ManyDetailedAllocationTargetsAccess
-	{
-		// IMPLEMENTED	--------------------
-		
-		override def accessCondition = Some(condition)
-	}
+	private case class _ManyDetailedAllocationTargetsAccess(override val accessCondition: Option[Condition]) 
+		extends ManyDetailedAllocationTargetsAccess
 }
 
 /**
@@ -66,8 +73,8 @@ trait ManyDetailedAllocationTargetsAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): ManyDetailedAllocationTargetsAccess = 
-		new ManyDetailedAllocationTargetsAccess.SubAccess(mergeCondition(filterCondition))
+	override def apply(condition: Condition): ManyDetailedAllocationTargetsAccess = 
+		ManyDetailedAllocationTargetsAccess(condition)
 	
 	
 	// OTHER	--------------------

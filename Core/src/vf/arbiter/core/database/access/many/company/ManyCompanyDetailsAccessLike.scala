@@ -13,9 +13,9 @@ import java.time.Instant
 /**
   * A common trait for access points which target multiple CompanyDetails or similar instances at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
-trait ManyCompanyDetailsAccessLike[+A, +Repr <: ManyModelAccess[A]]
+trait ManyCompanyDetailsAccessLike[+A, +Repr <: ManyModelAccess[A]] 
 	extends ManyModelAccess[A] with Indexed with FilterableView[Repr]
 {
 	// COMPUTED	--------------------
@@ -78,21 +78,6 @@ trait ManyCompanyDetailsAccessLike[+A, +Repr <: ManyModelAccess[A]]
 	
 	// OTHER	--------------------
 	
-	/** Finds companies within this group that contain the specified string in their name
-	 * @param companyNamePart String that must be contained within a company name
-	* @param connection Implicit DB Connection
-	* @return Companies that have the specified string in their name
-	*/
-	def matchingName(companyNamePart: String)(implicit connection: Connection) =
-		find(model.nameMatchCondition(companyNamePart))
-	
-	/**
-	 * Deprecates all accessible company details
-	 * @param connection Implicit Db Connection
-	 * @return Whether any row was targeted
-	 */
-	def deprecate()(implicit connection: Connection) = deprecationTimes = Now
-	
 	/**
 	  * Updates the addressId of the targeted CompanyDetails instance(s)
 	  * @param newAddressId A new addressId to assign
@@ -134,12 +119,28 @@ trait ManyCompanyDetailsAccessLike[+A, +Repr <: ManyModelAccess[A]]
 		putColumn(model.creatorIdColumn, newCreatorId)
 	
 	/**
+	  * Deprecates all accessible company details
+	  * @param connection Implicit Db Connection
+	  * @return Whether any row was targeted
+	  */
+	def deprecate()(implicit connection: Connection) = deprecationTimes = Now
+	
+	/**
 	  * Updates the deprecatedAfter of the targeted CompanyDetails instance(s)
 	  * @param newDeprecatedAfter A new deprecatedAfter to assign
 	  * @return Whether any CompanyDetails instance was affected
 	  */
 	def deprecationTimes_=(newDeprecatedAfter: Instant)(implicit connection: Connection) = 
 		putColumn(model.deprecatedAfterColumn, newDeprecatedAfter)
+	
+	/**
+	  *  Finds companies within this group that contain the specified string in their name
+	  * @param companyNamePart String that must be contained within a company name
+	  * @param connection Implicit DB Connection
+	  * @return Companies that have the specified string in their name
+	  */
+	def matchingName(companyNamePart: String)(implicit connection: Connection) = 
+		find(model.nameMatchCondition(companyNamePart))
 	
 	/**
 	  * Updates the name of the targeted CompanyDetails instance(s)

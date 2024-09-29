@@ -65,7 +65,7 @@ trait UniqueMetalPriceAccess
 	
 	/**
 	  * Price of the specified metal in the specified currency. Per one troy ounce of metal.. None if
-	  *  no metal price (or value) was found.
+	  * no metal price (or value) was found.
 	  */
 	def pricePerTroyOunce(implicit connection: Connection) = pullColumn(model.pricePerTroyOunceColumn).double
 	
@@ -83,8 +83,7 @@ trait UniqueMetalPriceAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniqueMetalPriceAccess = 
-		new UniqueMetalPriceAccess._UniqueMetalPriceAccess(mergeCondition(filterCondition))
+	override def apply(condition: Condition): UniqueMetalPriceAccess = UniqueMetalPriceAccess(condition)
 	
 	
 	// OTHER	--------------------

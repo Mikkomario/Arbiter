@@ -40,7 +40,7 @@ trait UniqueTransactionAccessLike[+A]
 	/**
 	  * 
 		The size of the transaction in €. Positive amounts indicate balance added to the account. Negative values
-	  *  indicate withdrawals or purchases.. None if no transaction (or value) was found.
+	  * indicate withdrawals or purchases.. None if no transaction (or value) was found.
 	  */
 	def amount(implicit connection: Connection) = pullColumn(model.amountColumn).double
 	
@@ -59,7 +59,7 @@ trait UniqueTransactionAccessLike[+A]
 	/**
 	  * 
 		Id of the user who added this entry. None if unknown or if not applicable.. None if no transaction (or value)
-	  *  was found.
+	  * was found.
 	  */
 	def creatorId(implicit connection: Connection) = pullColumn(model.creatorIdColumn).int
 	
@@ -70,7 +70,7 @@ trait UniqueTransactionAccessLike[+A]
 	
 	/**
 	  * Time when this entry was cancelled / 
-		removed. None while valid.. None if no transaction (or value) was found.
+	  * removed. None while valid.. None if no transaction (or value) was found.
 	  */
 	def deprecatedAfter(implicit connection: Connection) = pullColumn(model.deprecatedAfterColumn).instant
 	
@@ -97,8 +97,7 @@ trait UniqueTransactionAccessLike[+A]
 	  * @param newAmount A new amount to assign
 	  * @return Whether any transaction was affected
 	  */
-	def amount_=(newAmount: Double)(implicit connection: Connection) = putColumn(model.amountColumn, 
-		newAmount)
+	def amount_=(newAmount: Double)(implicit connection: Connection) = putColumn(model.amountColumn,newAmount)
 	
 	/**
 	  * Updates the creation times of the targeted transactions

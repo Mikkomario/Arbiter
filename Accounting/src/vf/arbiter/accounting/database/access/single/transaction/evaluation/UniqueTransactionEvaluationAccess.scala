@@ -67,32 +67,32 @@ trait UniqueTransactionEvaluationAccess
 	
 	/**
 	  * An alias given to the other party of this transaction. Empty if no alias has been specified.. None if
-	  *  no transaction evaluation (or value) was found.
+	  * no transaction evaluation (or value) was found.
 	  */
 	def otherPartyAlias(implicit connection: Connection) = pullColumn(model.otherPartyAliasColumn).getString
 	
 	/**
 	  * Id of the user who added this evaluation. None if unknown or if not applicable.. None if
-	  *  no transaction evaluation (or value) was found.
+	  * no transaction evaluation (or value) was found.
 	  */
 	def creatorId(implicit connection: Connection) = pullColumn(model.creatorIdColumn).int
 	
 	/**
 	  * 
 		Time when this transaction evaluation was added to the database. None if no transaction evaluation (or value)
-	  *  was found.
+	  * was found.
 	  */
 	def created(implicit connection: Connection) = pullColumn(model.createdColumn).instant
 	
 	/**
 	  * Time when this evaluation was replaced or cancelled. None while valid.. None if
-	  *  no transaction evaluation (or value) was found.
+	  * no transaction evaluation (or value) was found.
 	  */
 	def deprecatedAfter(implicit connection: Connection) = pullColumn(model.deprecatedAfterColumn).instant
 	
 	/**
 	  * Whether this evaluation is manually performed by a human. False if performed by an algorithm.. None if
-	  *  no transaction evaluation (or value) was found.
+	  * no transaction evaluation (or value) was found.
 	  */
 	def manual(implicit connection: Connection) = pullColumn(model.manualColumn).boolean
 	
@@ -110,8 +110,8 @@ trait UniqueTransactionEvaluationAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): UniqueTransactionEvaluationAccess = 
-		new UniqueTransactionEvaluationAccess._UniqueTransactionEvaluationAccess(mergeCondition(filterCondition))
+	override def apply(condition: Condition): UniqueTransactionEvaluationAccess = 
+		UniqueTransactionEvaluationAccess(condition)
 	
 	
 	// OTHER	--------------------
@@ -145,7 +145,7 @@ trait UniqueTransactionEvaluationAccess
 	  * @param newManual A new manual to assign
 	  * @return Whether any transaction evaluation was affected
 	  */
-	def manual_=(newManual: Boolean)(implicit connection: Connection) = putColumn(model.manualColumn, 
+	def manual_=(newManual: Boolean)(implicit connection: Connection) = putColumn(model.manualColumn,
 		newManual)
 	
 	/**

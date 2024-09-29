@@ -1,10 +1,10 @@
 package vf.arbiter.command.app
 
-import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.time.TimeExtensions._
-import utopia.flow.util.console.{ArgumentSchema, Command}
+import utopia.flow.util.TryExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
+import utopia.flow.util.console.{ArgumentSchema, Command}
 import utopia.vault.database.Connection
 import vf.arbiter.core.util.Common._
 

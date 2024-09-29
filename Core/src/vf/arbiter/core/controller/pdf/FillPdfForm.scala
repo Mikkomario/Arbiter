@@ -1,9 +1,10 @@
 package vf.arbiter.core.controller.pdf
 
 import org.apache.pdfbox.pdmodel.PDDocument
-import utopia.flow.parse.AutoClose._
 import utopia.flow.collection.CollectionExtensions._
+import utopia.flow.parse.AutoClose._
 import utopia.flow.parse.file.FileExtensions._
+import utopia.flow.util.TryExtensions._
 
 import java.io.IOException
 import java.nio.file.Path

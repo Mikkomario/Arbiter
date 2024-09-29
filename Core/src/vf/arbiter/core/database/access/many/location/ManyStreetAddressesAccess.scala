@@ -1,31 +1,41 @@
 package vf.arbiter.core.database.access.many.location
 
-import java.time.Instant
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.{FilterableView, SubView}
+import utopia.vault.nosql.view.{FilterableView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.core.database.factory.location.StreetAddressFactory
 import vf.arbiter.core.database.model.location.StreetAddressModel
 import vf.arbiter.core.model.stored.location.StreetAddress
 
-object ManyStreetAddressesAccess
+import java.time.Instant
+
+object ManyStreetAddressesAccess extends ViewFactory[ManyStreetAddressesAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManyStreetAddressesAccess = 
+		_ManyStreetAddressesAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyStreetAddressesSubView(override val parent: ManyRowModelAccess[StreetAddress], 
-		override val filterCondition: Condition) 
-		extends ManyStreetAddressesAccess with SubView
+	private case class _ManyStreetAddressesAccess(override val accessCondition: Option[Condition]) 
+		extends ManyStreetAddressesAccess
 }
 
 /**
   * A common trait for access points which target multiple StreetAddresses at a time
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
-trait ManyStreetAddressesAccess
+trait ManyStreetAddressesAccess 
 	extends ManyRowModelAccess[StreetAddress] with Indexed with FilterableView[ManyStreetAddressesAccess]
 {
 	// COMPUTED	--------------------
@@ -82,12 +92,11 @@ trait ManyStreetAddressesAccess
 	
 	// IMPLEMENTED	--------------------
 	
-	override def self = this
-	
 	override def factory = StreetAddressFactory
 	
-	override def filter(additionalCondition: Condition): ManyStreetAddressesAccess = 
-		new ManyStreetAddressesAccess.ManyStreetAddressesSubView(this, additionalCondition)
+	override def self = this
+	
+	override def apply(condition: Condition): ManyStreetAddressesAccess = ManyStreetAddressesAccess(condition)
 	
 	
 	// OTHER	--------------------

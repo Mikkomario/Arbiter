@@ -24,7 +24,7 @@ object DetailedAllocationTargetFactory
 	
 	override def parentFactory = AllocationTargetFactory
 	
-	override def apply(target: AllocationTarget, specificTargets: Vector[TypeSpecificAllocationTarget]) = 
+	override def apply(target: AllocationTarget, specificTargets: Seq[TypeSpecificAllocationTarget]) =
 		DetailedAllocationTarget(target, specificTargets)
 }
 

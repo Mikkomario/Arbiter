@@ -5,7 +5,7 @@ import utopia.metropolis.model.cached.LanguageIds
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.{FilterableView, SubView}
+import utopia.vault.nosql.view.{FilterableView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.core.database.access.many.company.DbCompanyProducts
 import vf.arbiter.core.database.factory.invoice.InvoiceItemFactory
@@ -13,66 +13,76 @@ import vf.arbiter.core.database.model.invoice.InvoiceItemModel
 import vf.arbiter.core.model.combined.company.FullCompanyProduct
 import vf.arbiter.core.model.stored.invoice.InvoiceItem
 
-object ManyInvoiceItemsAccess
+object ManyInvoiceItemsAccess extends ViewFactory[ManyInvoiceItemsAccess]
 {
+	// INITIAL CODE	--------------------
+	
+override
+	
+	
+	// OTHER	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	def apply(condition: Condition): ManyInvoiceItemsAccess = _ManyInvoiceItemsAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManyInvoiceItemsSubView(override val parent: ManyRowModelAccess[InvoiceItem],
-	                                      override val filterCondition: Condition)
-		extends ManyInvoiceItemsAccess with SubView
+	private case class _ManyInvoiceItemsAccess(override val accessCondition: Option[Condition]) 
+		extends ManyInvoiceItemsAccess
 }
 
 /**
- * A common trait for access points which target multiple InvoiceItems at a time
- * @author Mikko Hilpinen
- * @since 2021-10-14
- */
-trait ManyInvoiceItemsAccess
+  * A common trait for access points which target multiple InvoiceItems at a time
+  * @author Mikko Hilpinen
+  * @since 14.10.2021
+  */
+trait ManyInvoiceItemsAccess 
 	extends ManyRowModelAccess[InvoiceItem] with Indexed with FilterableView[ManyInvoiceItemsAccess]
 {
 	// COMPUTED	--------------------
 	
 	/**
-	 * invoiceIds of the accessible InvoiceItems
-	 */
-	def invoiceIds(implicit connection: Connection) =
+	  * invoiceIds of the accessible InvoiceItems
+	  */
+	def invoiceIds(implicit connection: Connection) = 
 		pullColumn(model.invoiceIdColumn).flatMap { value => value.int }
+	
 	/**
-	 * productIds of the accessible InvoiceItems
-	 */
-	def productIds(implicit connection: Connection) =
+	  * productIds of the accessible InvoiceItems
+	  */
+	def productIds(implicit connection: Connection) = 
 		pullColumn(model.productIdColumn).flatMap { value => value.int }
+	
 	/**
-	 * descriptions of the accessible InvoiceItems
-	 */
-	def descriptions(implicit connection: Connection) =
+	  * descriptions of the accessible InvoiceItems
+	  */
+	def descriptions(implicit connection: Connection) = 
 		pullColumn(model.descriptionColumn).flatMap { value => value.string }
+	
 	/**
-	 * perUnitPrices of the accessible InvoiceItems
-	 */
-	def perUnitPrices(implicit connection: Connection) =
+	  * perUnitPrices of the accessible InvoiceItems
+	  */
+	def perUnitPrices(implicit connection: Connection) = 
 		pullColumn(model.pricePerUnitColumn).flatMap { value => value.double }
+	
 	/**
-	 * unitsSold of the accessible InvoiceItems
-	 */
-	def unitsSold(implicit connection: Connection) =
+	  * unitsSold of the accessible InvoiceItems
+	  */
+	def unitsSold(implicit connection: Connection) = 
 		pullColumn(model.unitsSoldColumn).flatMap { value => value.double }
 	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
 	
 	/**
-	 * Factory used for constructing database the interaction models
-	 */
-	protected def model = InvoiceItemModel
-	
-	/**
-	 * Reads these invoice items and attaches all linked information
-	 * @param connection Implicit DB Connection
-	 * @param languageIds Ids of the languages in which descriptions are read
-	 * @return Full copies of these invoice items
-	 */
-	def full(implicit connection: Connection, languageIds: LanguageIds) =
-	{
+	  * Reads these invoice items and attaches all linked information
+	  * @param connection Implicit DB Connection
+	  * @param languageIds Ids of the languages in which descriptions are read
+	  */
+	def full(implicit connection: Connection, languageIds: LanguageIds) = {
 		// Reads invoice items
 		val items = pull
 		// Reads associated product information
@@ -88,77 +98,84 @@ trait ManyInvoiceItemsAccess
 		items.map { item => item + productsById(item.productId) }
 	}
 	
+	/**
+	  * Factory used for constructing database the interaction models
+	  */
+	protected def model = InvoiceItemModel
+	
 	
 	// IMPLEMENTED	--------------------
 	
-	override def self = this
-	
 	override def factory = InvoiceItemFactory
 	
-	override def filter(additionalCondition: Condition): ManyInvoiceItemsAccess =
-		new ManyInvoiceItemsAccess.ManyInvoiceItemsSubView(this, additionalCondition)
+	override def self = this
+	
+	override def apply(condition: Condition): ManyInvoiceItemsAccess = ManyInvoiceItemsAccess(condition)
 	
 	
 	// OTHER	--------------------
 	
 	/**
-	 * @param invoiceId Id of the targeted invoice
-	 * @return An access point to items belonging to that invoice
-	 */
-	def forInvoiceWithId(invoiceId: Int) = filter(model.withInvoiceId(invoiceId).toCondition)
-	/**
-	 * @param invoiceIds Ids of targeted invoices
-	 * @return An access point to all of those invoices items
-	 */
-	def forAnyOfInvoices(invoiceIds: Iterable[Int]) =
-		filter(model.invoiceIdColumn in invoiceIds)
+	  * Updates the description of the targeted InvoiceItem instance(s)
+	  * @param newDescription A new description to assign
+	  * @return Whether any InvoiceItem instance was affected
+	  */
+	def description_=(newDescription: String)(implicit connection: Connection) = 
+		putColumn(model.descriptionColumn, newDescription)
 	
 	/**
-	 * Reads these invoice items and attaches all linked information
-	 * @param languageId Id of the language in which these items are read
-	 * @param connection Implicit DB Connection
-	 * @return Full copies of these invoice items
-	 */
-	def fullInLanguageWithId(languageId: Int)(implicit connection: Connection) =
-	{
+	  * @param invoiceIds Ids of targeted invoices
+	  * @return An access point to all of those invoices items
+	  */
+	def forAnyOfInvoices(invoiceIds: Iterable[Int]) = filter(model.invoiceIdColumn in invoiceIds)
+	
+	/**
+	  * @param invoiceId Id of the targeted invoice
+	  * @return An access point to items belonging to that invoice
+	  */
+	def forInvoiceWithId(invoiceId: Int) = filter(model.withInvoiceId(invoiceId).toCondition)
+	
+	/**
+	  * Reads these invoice items and attaches all linked information
+	  * @param languageId Id of the language in which these items are read
+	  * @param connection Implicit DB Connection
+	  * @return Full copies of these invoice items
+	  */
+	def fullInLanguageWithId(languageId: Int)(implicit connection: Connection) = {
 		implicit val languageIds: LanguageIds = LanguageIds(languageId)
 		full
 	}
 	
 	/**
-	 * Updates the description of the targeted InvoiceItem instance(s)
-	 * @param newDescription A new description to assign
-	 * @return Whether any InvoiceItem instance was affected
-	 */
-	def description_=(newDescription: String)(implicit connection: Connection) =
-		putColumn(model.descriptionColumn, newDescription)
-	/**
-	 * Updates the invoiceId of the targeted InvoiceItem instance(s)
-	 * @param newInvoiceId A new invoiceId to assign
-	 * @return Whether any InvoiceItem instance was affected
-	 */
-	def invoiceId_=(newInvoiceId: Int)(implicit connection: Connection) =
+	  * Updates the invoiceId of the targeted InvoiceItem instance(s)
+	  * @param newInvoiceId A new invoiceId to assign
+	  * @return Whether any InvoiceItem instance was affected
+	  */
+	def invoiceId_=(newInvoiceId: Int)(implicit connection: Connection) = 
 		putColumn(model.invoiceIdColumn, newInvoiceId)
+	
 	/**
-	 * Updates the pricePerUnit of the targeted InvoiceItem instance(s)
-	 * @param newPricePerUnit A new pricePerUnit to assign
-	 * @return Whether any InvoiceItem instance was affected
-	 */
-	def pricePerUnit_=(newPricePerUnit: Double)(implicit connection: Connection) =
+	  * Updates the pricePerUnit of the targeted InvoiceItem instance(s)
+	  * @param newPricePerUnit A new pricePerUnit to assign
+	  * @return Whether any InvoiceItem instance was affected
+	  */
+	def pricePerUnit_=(newPricePerUnit: Double)(implicit connection: Connection) = 
 		putColumn(model.pricePerUnitColumn, newPricePerUnit)
+	
 	/**
-	 * Updates the productId of the targeted InvoiceItem instance(s)
-	 * @param newProductId A new productId to assign
-	 * @return Whether any InvoiceItem instance was affected
-	 */
-	def productId_=(newProductId: Int)(implicit connection: Connection) =
+	  * Updates the productId of the targeted InvoiceItem instance(s)
+	  * @param newProductId A new productId to assign
+	  * @return Whether any InvoiceItem instance was affected
+	  */
+	def productId_=(newProductId: Int)(implicit connection: Connection) = 
 		putColumn(model.productIdColumn, newProductId)
+	
 	/**
-	 * Updates the unitsSold of the targeted InvoiceItem instance(s)
-	 * @param newUnitsSold A new unitsSold to assign
-	 * @return Whether any InvoiceItem instance was affected
-	 */
-	def unitsSold_=(newUnitsSold: Double)(implicit connection: Connection) =
+	  * Updates the unitsSold of the targeted InvoiceItem instance(s)
+	  * @param newUnitsSold A new unitsSold to assign
+	  * @return Whether any InvoiceItem instance was affected
+	  */
+	def unitsSold_=(newUnitsSold: Double)(implicit connection: Connection) = 
 		putColumn(model.unitsSoldColumn, newUnitsSold)
 }
 

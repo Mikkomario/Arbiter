@@ -11,7 +11,7 @@ import vf.arbiter.core.model.stored.invoice.Invoice
  * @since 15.10.2021, v0.2
  */
 case class FullInvoice(invoice: Invoice, senderCompany: FullyDetailedCompany, recipientCompany: FullyDetailedCompany,
-                       senderBankAccount: FullCompanyBankAccount, items: Vector[FullInvoiceItem])
+                       senderBankAccount: FullCompanyBankAccount, items: Seq[FullInvoiceItem])
 	extends Extender[InvoiceData]
 {
 	// COMPUTED ------------------------------------

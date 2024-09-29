@@ -30,7 +30,7 @@ object BankActions
 		if (existingAccounts.isEmpty)
 			createBankAccount(userId, companyId)
 		else
-			ActionUtils.selectOrInsert(existingAccounts.map { a => a -> s"${a.bank.name}: ${a.address}" }) {
+			StdIn.selectFromOrAdd(existingAccounts.map { a => a -> s"${a.bank.name}: ${a.address}" }) {
 				createBankAccount(userId, companyId)
 			}
 	}
@@ -66,7 +66,7 @@ object BankActions
 		if (existingBanks.isEmpty)
 			createBank(userId)
 		else
-			ActionUtils.selectOrInsert(existingBanks.map { b => b -> b.nameAndBic }, "bank") { createBank(userId) }
+			StdIn.selectFromOrAdd(existingBanks.map { b => b -> b.nameAndBic }, "bank") { createBank(userId) }
 	}
 	
 	/**

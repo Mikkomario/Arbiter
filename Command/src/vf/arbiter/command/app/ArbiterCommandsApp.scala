@@ -5,13 +5,13 @@ import utopia.bunnymunch.jawn.JsonBunny
 import utopia.citadel.database.Tables
 import utopia.citadel.util.CitadelContext
 import utopia.flow.async.context.CloseHook
-import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.collection.immutable.range.Span
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.parse.json.JsonParser
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.Today
+import utopia.flow.util.TryExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.console.{ArgumentSchema, Command, CommandArguments, Console}
 import utopia.flow.view.mutable.Pointer
@@ -21,7 +21,7 @@ import utopia.metropolis.model.stored.user.UserSettings
 import utopia.trove.controller.LocalDatabase
 import utopia.vault.database.Connection
 import utopia.vault.database.columnlength.ColumnLengthRules
-import utopia.vault.sql.{Count, Limit, SelectAll}
+import utopia.vault.sql.{Count, Limit, Select}
 import utopia.vault.util.ErrorHandling
 import utopia.vault.util.ErrorHandlingPrinciple.Throw
 import vf.arbiter.command.controller._
@@ -118,7 +118,7 @@ object ArbiterCommandsApp extends App
 	}
 	
 	// Sets up the user and company tracking
-	private val userSettingsPointer = EventfulPointer.empty[UserSettings]()
+	private val userSettingsPointer = EventfulPointer.empty[UserSettings]
 	private def userSettings = userSettingsPointer.value
 	private def userSettings_=(newUser: UserSettings) = userSettingsPointer.value = Some(newUser)
 	userSettingsPointer.addContinuousListener { _.newValue.foreach { u => println(s"Welcome, ${u.name}") } }
@@ -128,7 +128,7 @@ object ArbiterCommandsApp extends App
 		case None => LanguageIds(Vector())
 	}
 	
-	private val companyPointer = EventfulPointer.empty[DetailedCompany]()
+	private val companyPointer = EventfulPointer.empty[DetailedCompany]
 	def company = companyPointer.value
 	def company_=(newCompany: Option[DetailedCompany]) = companyPointer.value = newCompany
 	def company_=(newCompany: DetailedCompany) = companyPointer.value = Some(newCompany)
@@ -272,7 +272,7 @@ object ArbiterCommandsApp extends App
 						val tableSize = c(Count(table)).firstValue.getInt
 						if (tableSize > 0) {
 							println(s"$tableSize rows")
-							c(SelectAll(table) + Limit(3)).rows.foreach { row => println(s"- ${row.toModel}") }
+							c(Select.all(table) + Limit(3)).rows.foreach { row => println(s"- ${row.toModel}") }
 						}
 						else
 							println("This table is empty")

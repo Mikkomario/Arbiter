@@ -9,6 +9,7 @@ import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.{Days, Now}
 import utopia.flow.util.StringExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
+import utopia.flow.util.logging.Logger
 import utopia.flow.view.immutable.caching.Lazy
 import utopia.flow.view.mutable.Pointer
 import utopia.flow.view.mutable.eventful.EventfulPointer
@@ -63,7 +64,7 @@ object InvoiceActions
 	              (implicit connection: Connection, languageIds: LanguageIds) =
 	{
 		val baseAccess = maxPast.finite match {
-			case Some(duration) => DbInvoices.createdAfter(Now - duration)
+			case Some(duration) => DbInvoices.after(Now - duration)
 			case None => DbInvoices
 		}
 		// Finds the target company, if specified
@@ -89,7 +90,8 @@ object InvoiceActions
 	 * @param connection Implicit DB Connection
 	 * @return Created invoice and its items. None if no invoice was created (process was cancelled by the user)
 	 */
-	def create(userId: Int, senderCompany: DetailedCompany)(implicit connection: Connection, languageIds: LanguageIds) =
+	def create(userId: Int, senderCompany: DetailedCompany)
+	          (implicit connection: Connection, languageIds: LanguageIds, log: Logger) =
 	{
 		// Selects the target company
 		println("Which company this invoice is for?")
@@ -168,7 +170,7 @@ object InvoiceActions
 	 * @param languageIds Implicit list of user's preferred languages
 	 */
 	def findAndEdit(userId: Int, senderCompanyId: Int, filter: String = "")
-	               (implicit connection: Connection, languageIds: LanguageIds) =
+	               (implicit connection: Connection, languageIds: LanguageIds, log: Logger) =
 		findFullAnd(senderCompanyId, filter) { invoice =>
 			// Reads required data
 			// TODO: Handle thrown error
@@ -283,52 +285,53 @@ object InvoiceActions
 	                      (implicit connection: Connection) =
 	{
 		println("Which key you want to search with?")
-		ActionUtils.selectFrom(Vector(1 -> "Invoice index", 2 -> "Reference number", 3 -> "Customer name"),
-			"search keys", "use", skipQuestion = true).foreach { searchKey =>
-			val searchKeyName = {
-				if (searchKey == 1)
-					"invoice index"
-				else if (searchKey == 2)
-					"reference number"
-				else
-					"customer name"
-			}
-			filter.notEmpty.orElse { StdIn.readNonEmptyLine(s"What's the $searchKeyName you want to find?") }
-				.foreach { searched =>
-					// Finds the invoice with the searched key
-					val invoice = {
-						import utopia.flow.generic.casting.ValueConversions._
-						if (searchKey == 1)
-							searched.int match {
-								case Some(invoiceId) => DbInvoice(invoiceId).pull
-								case None =>
-									println(s"$searched is not a valid invoice index")
-									None
+		StdIn.selectFrom(Vector(1 -> "Invoice index", 2 -> "Reference number", 3 -> "Customer name"),
+			"search keys", "use")
+			.foreach { searchKey =>
+				val searchKeyName = {
+					if (searchKey == 1)
+						"invoice index"
+					else if (searchKey == 2)
+						"reference number"
+					else
+						"customer name"
+				}
+				filter.notEmpty.orElse { StdIn.readNonEmptyLine(s"What's the $searchKeyName you want to find?") }
+					.foreach { searched =>
+						// Finds the invoice with the searched key
+						val invoice = {
+							import utopia.flow.generic.casting.ValueConversions._
+							if (searchKey == 1)
+								searched.int match {
+									case Some(invoiceId) => DbInvoice(invoiceId).pull
+									case None =>
+										println(s"$searched is not a valid invoice index")
+										None
+								}
+							else if (searchKey == 2)
+								DbInvoice.withReferenceCode(searched)
+							else
+								CompanyActions.findAndSelectOne(searched).flatMap { recipientCompany =>
+									val invoices = DbInvoices.betweenCompanies(senderCompanyId, recipientCompany.id)
+									StdIn.selectFrom(invoices.map { i => i -> s"${i.date}: ${i.id} / ${i.referenceCode}" })
+								}
+						}
+						invoice.foreach { invoice =>
+							// Reads associated data
+							// The invoice must belong to the sender company
+							invoice.senderDetailsAccess.full.filter { _.companyId == senderCompanyId } match {
+								case Some(senderDetails) => action(invoice, senderDetails)
+								case None => println("This invoice doesn't belong to your company")
 							}
-						else if (searchKey == 2)
-							DbInvoice.withReferenceCode(searched)
-						else
-							CompanyActions.findAndSelectOne(searched).flatMap { recipientCompany =>
-								val invoices = DbInvoices.betweenCompanies(senderCompanyId, recipientCompany.id)
-								ActionUtils.selectFrom(invoices.map { i => i -> s"${i.date}: ${i.id} / ${i.referenceCode}" })
-							}
-					}
-					invoice.foreach { invoice =>
-						// Reads associated data
-						// The invoice must belong to the sender company
-						invoice.senderDetailsAccess.full.filter { _.companyId == senderCompanyId } match {
-							case Some(senderDetails) => action(invoice, senderDetails)
-							case None => println("This invoice doesn't belong to your company")
 						}
 					}
 			}
-		}
 	}
 	
 	private def createOrEdit(userId: Int, senderCompany: DetailedCompany, recipientCompany: DetailedCompany,
 	                         invoiceLanguage: SelectedLanguage, otherLanguageIds: LanguageIds,
 	                         editedInvoice: Option[InvoiceWithItems] = None)
-	                        (implicit connection: Connection) =
+	                        (implicit connection: Connection, log: Logger) =
 	{
 		implicit val appliedLanguageIds: LanguageIds = otherLanguageIds.preferringLanguageWithId(invoiceLanguage.id)
 		
@@ -349,7 +352,7 @@ object InvoiceActions
 					.intOr(30))
 				println("When were the services or items delivered for the customer?")
 				println("Leave empty if not applicable")
-				val deliveryDate = ActionUtils.readDateRange()
+				val deliveryDate = StdIn.readDateRange()
 				duration -> deliveryDate
 			}
 		
@@ -401,7 +404,7 @@ object InvoiceActions
 				.map { p => p -> Lazy { fillProduct(userId, p, invoiceLanguage, units) } })
 			
 			// Creates / prepares the invoice items
-			val lastProductPointer = EventfulPointer.empty[FullCompanyProduct]()
+			val lastProductPointer = EventfulPointer.empty[FullCompanyProduct]
 			lastProductPointer.addContinuousListener {
 				_.newValue.flatMap { _(Name).notEmpty }
 					.foreach { n => println(s"Using product $n for this invoice item") }
@@ -501,8 +504,8 @@ object InvoiceActions
 	// Returns product + description + units sold + price per unit
 	private def requestInvoiceItem(userId: Int, senderCompanyId: Int, language: SelectedLanguage,
 	                               defaultProduct: Option[FullCompanyProduct], defaultPrice: Option[Double],
-	                               existingProductsPointer: Pointer[Vector[(DescribedCompanyProduct, Lazy[FullCompanyProduct])]],
-	                               units: Vector[DescribedItemUnit], editedItem: Option[InvoiceItemData] = None)
+	                               existingProductsPointer: Pointer[Seq[(DescribedCompanyProduct, Lazy[FullCompanyProduct])]],
+	                               units: Seq[DescribedItemUnit], editedItem: Option[InvoiceItemData] = None)
 	                              (implicit connection: Connection) =
 	{
 		// Selects the product to use
@@ -514,8 +517,8 @@ object InvoiceActions
 			// Option B: Selects from existing products or creates a new product
 			.orElse {
 				println("Please select or insert the product to use in this invoice item")
-				ActionUtils.selectOrInsert(
-					existingProductsPointer.value.map { case (p, fullP) => fullP -> p.name }, "product") {
+				StdIn.selectFromOrAdd(
+					existingProductsPointer.value.map { case (p, fullP) => fullP -> p.name }, "products") {
 					val newProduct = createProduct(userId, senderCompanyId, language, units)
 					// Adds the product to selectable options
 					newProduct.foreach { p => existingProductsPointer.update { _ :+ (p.describedProduct, Lazy(p)) } }
@@ -582,24 +585,24 @@ object InvoiceActions
 		val retryPrompt = "This information is required. Leaving empty will cancel invoice creation."
 		StdIn.readNonEmptyLine(s"What's the name of this new product in ${language.name}?", retryPrompt).flatMap { name =>
 			println("What's the unit in which this product is sold (select from below)")
-			ActionUtils.selectFrom(units.map { u => u -> u.apply(Name, Abbreviation).nonEmptyOrElse("?") },
-				skipQuestion = true).map { selectedUnit =>
-				val defaultPrice = StdIn.read(
-					s"What's the default price (€) of this product for one ${
-						selectedUnit.name }? (optional)").double
-				val taxModifier = StdIn.read(
-					"What's the tax percentage applied for this product? (default = 24%)")
-					.double.map { _ / 100.0 }.getOrElse(0.24)
-				
-				// Inserts the product and it's name to the database
-				val product = CompanyProductModel.insert(CompanyProductData(senderCompanyId,
-					selectedUnit.id, defaultPrice, taxModifier, Some(userId)))
-				val nameDescription = DbCompanyProductDescription.linkModel
-					.insert(product.id, DescriptionData(Name.id, language.id, name, Some(userId)))
-				val describedProduct = DescribedCompanyProduct(product, Set(nameDescription))
-				
-				FullCompanyProduct(describedProduct, selectedUnit)
-			}
+			StdIn.selectFrom(units.map { u => u -> u.apply(Name, Abbreviation).nonEmptyOrElse("?") })
+				.map { selectedUnit =>
+					val defaultPrice = StdIn.read(
+						s"What's the default price (€) of this product for one ${
+							selectedUnit.name }? (optional)").double
+					val taxModifier = StdIn.read(
+						"What's the tax percentage applied for this product? (default = 24%)")
+						.double.map { _ / 100.0 }.getOrElse(0.24)
+					
+					// Inserts the product and it's name to the database
+					val product = CompanyProductModel.insert(CompanyProductData(senderCompanyId,
+						selectedUnit.id, defaultPrice, taxModifier, Some(userId)))
+					val nameDescription = DbCompanyProductDescription.linkModel
+						.insert(product.id, DescriptionData(Name.id, language.id, name, Some(userId)))
+					val describedProduct = DescribedCompanyProduct(product, Set(nameDescription))
+					
+					FullCompanyProduct(describedProduct, selectedUnit)
+				}
 		}
 	}
 	
@@ -624,8 +627,7 @@ object InvoiceActions
 			val (generalForms, otherCompanyForms) = notMyCompanyForms.divideBy { _.companyId.isDefined }.toTuple
 			val orderedForms = myCompanyForms.sortBy { _.path.toString } ++ generalForms.sortBy { _.path.toString } ++
 				otherCompanyForms.sortBy { _.path.toString }
-			val newForm = ActionUtils.selectOrInsert(orderedForms.map { f => f -> f.path.toString }, "form",
-				skipInsertQuestion = true) {
+			val newForm = StdIn.selectFromOrAdd(orderedForms.map { f => f -> f.path.toString }, "forms") {
 				println(s"Please type the path to the invoice form to use (in ${language.name})")
 				val root: Path = ""
 				println(s"Hint: The path may be absolute or relative to ${root.toAbsolutePath}")

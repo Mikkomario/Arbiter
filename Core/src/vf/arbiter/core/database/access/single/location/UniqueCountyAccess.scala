@@ -1,8 +1,7 @@
 package vf.arbiter.core.database.access.single.location
 
-import java.time.Instant
-import utopia.flow.generic.model.immutable.Value
 import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.template.model.DistinctModelAccess
@@ -11,10 +10,12 @@ import vf.arbiter.core.database.factory.location.CountyFactory
 import vf.arbiter.core.database.model.location.CountyModel
 import vf.arbiter.core.model.stored.location.County
 
+import java.time.Instant
+
 /**
   * A common trait for access points that return individual and distinct Counties.
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
 trait UniqueCountyAccess 
 	extends SingleRowModelAccess[County] with DistinctModelAccess[County, Option[County], Value] with Indexed
@@ -23,7 +24,7 @@ trait UniqueCountyAccess
 	
 	/**
 	  * County name, 
-		with that county's or country's primary language. None if no instance (or value) was found.
+	  * with that county's or country's primary language. None if no instance (or value) was found.
 	  */
 	def name(implicit connection: Connection) = pullColumn(model.nameColumn).string
 	

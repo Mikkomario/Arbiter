@@ -117,17 +117,14 @@ object UserActions
 		// Reads language names
 		val names = DbLanguageDescriptions.forPreferredLanguages.withRoleIdInPreferredLanguages(Name.id)
 		// Asks for names for languages that don't have one
-		val options: Vector[SelectedLanguage] = {
-			if (names.size < languageIds.size)
-			{
-				def _nameForIdOrElse(id: Int)(backup: Int => String) = names.get(id) match
-				{
+		val options: Seq[SelectedLanguage] = {
+			if (names.size < languageIds.size) {
+				def _nameForIdOrElse(id: Int)(backup: Int => String) = names.get(id) match {
 					case Some(desc) => desc.description.text
 					case None => backup(id)
 				}
 				val missingLanguages = DbLanguages(languageIds.filterNot(names.contains).toSet).pull
-				def _missingLangCode(languageId: Int) = missingLanguages.find { _.id == languageId } match
-				{
+				def _missingLangCode(languageId: Int) = missingLanguages.find { _.id == languageId } match {
 					case Some(language) => s"'${language.isoCode}'"
 					case None => s"Language #$languageId"
 				}
@@ -135,8 +132,7 @@ object UserActions
 				println(s"There are ${languageIds.size - names.size} languages (${
 					missingLanguages.map { _.isoCode }.sorted.mkString(", ")
 				}) that don't have a name in any of your languages")
-				if (StdIn.ask("Would you provide a name for those?"))
-				{
+				if (StdIn.ask("Would you provide a name for those?")) {
 					val primaryLanguageName = _nameForIdOrElse(languageIds.mostPreferred)(_missingLangCode)
 					val newNames = missingLanguages.view.map { language =>
 						StdIn.readNonEmptyLine(s"What's the name of ${language.isoCode} in $primaryLanguageName?")
@@ -153,16 +149,14 @@ object UserActions
 				languageIds.map { id => SelectedLanguage(id, names(id).description.text) }
 		}
 		// Selects from the known languages (or inserts a new one)
-		ActionUtils.selectOrInsert(options.map { l => l -> l.name }, "language") {
+		StdIn.selectFromOrAdd(options.map { l => l -> l.name }, "languages") {
 			StdIn.readNonEmptyLine("What's the 2 character ISO-code of your language (e.g. 'en')")
 				.flatMap { code =>
-					if (code.length != 2)
-					{
+					if (code.length != 2) {
 						println(s"'$code' is not a valid language code (must be of length 2)")
 						None
 					}
-					else
-					{
+					else {
 						val (newLanguageIds, languageName) = addUserLanguage(userId, code, languageIds)
 						languageName.map { SelectedLanguage(newLanguageIds.mostPreferred, _) }
 					}
@@ -206,8 +200,7 @@ object UserActions
 				p -> p(Name).nonEmptyOrElse(p.wrapped.orderIndex.toString)
 			}
 			println(s"How proficient are you in $languageName?")
-			ActionUtils.selectFrom(proficiencyOptions) match
-			{
+			StdIn.selectFrom(proficiencyOptions, "proficiencies") match {
 				case Some(proficiency) =>
 					UserLanguageLinkModel.insert(UserLanguageLinkData(userId, language.id, proficiency.id))
 					languageIds -> Some(languageName)

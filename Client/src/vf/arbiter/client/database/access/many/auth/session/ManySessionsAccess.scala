@@ -4,7 +4,7 @@ import utopia.flow.generic.casting.ValueConversions._
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyRowModelAccess
 import utopia.vault.nosql.template.Indexed
-import utopia.vault.nosql.view.{ChronoRowFactoryView, NullDeprecatableView}
+import utopia.vault.nosql.view.{ChronoRowFactoryView, NullDeprecatableView, ViewFactory}
 import utopia.vault.sql.Condition
 import vf.arbiter.client.database.factory.auth.SessionFactory
 import vf.arbiter.client.database.model.auth.SessionModel
@@ -12,16 +12,21 @@ import vf.arbiter.client.model.stored.auth.Session
 
 import java.time.Instant
 
-object ManySessionsAccess
+object ManySessionsAccess extends ViewFactory[ManySessionsAccess]
 {
+	// IMPLEMENTED	--------------------
+	
+	/**
+	  * @param condition Condition to apply to all requests
+	  * @return An access point that applies the specified filter condition (only)
+	  */
+	override def apply(condition: Condition): ManySessionsAccess = _ManySessionsAccess(Some(condition))
+	
+	
 	// NESTED	--------------------
 	
-	private class ManySessionsSubView(condition: Condition) extends ManySessionsAccess
-	{
-		// IMPLEMENTED	--------------------
-		
-		override def accessCondition = Some(condition)
-	}
+	private case class _ManySessionsAccess(override val accessCondition: Option[Condition]) 
+		extends ManySessionsAccess
 }
 
 /**
@@ -66,8 +71,7 @@ trait ManySessionsAccess
 	
 	override protected def self = this
 	
-	override def filter(filterCondition: Condition): ManySessionsAccess = 
-		new ManySessionsAccess.ManySessionsSubView(mergeCondition(filterCondition))
+	override def apply(condition: Condition): ManySessionsAccess = ManySessionsAccess(condition)
 	
 	
 	// OTHER	--------------------

@@ -1,8 +1,7 @@
 package vf.arbiter.core.database.access.single.company
 
-import java.time.Instant
-import utopia.flow.generic.model.immutable.Value
 import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.generic.model.immutable.Value
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.single.model.SingleRowModelAccess
 import utopia.vault.nosql.access.template.model.DistinctModelAccess
@@ -11,10 +10,12 @@ import vf.arbiter.core.database.factory.company.OrganizationCompanyFactory
 import vf.arbiter.core.database.model.company.OrganizationCompanyModel
 import vf.arbiter.core.model.stored.company.OrganizationCompany
 
+import java.time.Instant
+
 /**
   * A common trait for access points that return individual and distinct OrganizationCompanies.
   * @author Mikko Hilpinen
-  * @since 2021-10-31
+  * @since 31.10.2021
   */
 trait UniqueOrganizationCompanyAccess 
 	extends SingleRowModelAccess[OrganizationCompany] 
