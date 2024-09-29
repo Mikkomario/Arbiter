@@ -9,7 +9,7 @@ import utopia.citadel.database.model.language.LanguageModel
 import utopia.citadel.database.model.organization.{MemberRoleLinkModel, MembershipModel, OrganizationModel}
 import utopia.citadel.database.model.user.{UserModel, UserSettingsModel}
 import utopia.flow.collection.CollectionExtensions._
-import utopia.flow.collection.immutable.Pair
+import utopia.flow.collection.immutable.{Empty, Pair}
 import utopia.flow.generic.casting.ValueUnwraps._
 import utopia.flow.generic.model.immutable.{Model, ModelDeclaration}
 import utopia.flow.generic.model.mutable.DataType.{DoubleType, InstantType, IntType, StringType}
@@ -476,8 +476,8 @@ object ImportData
 		// common member
 		val (updates, newOrganizationData) = organizationData
 			.divideWith { case (companyIds, members, descriptionModels, _) =>
-				companyIds.findMap { companyId => existingOrganizationIdsPerCompanyId.getOrElse(companyId, Vector())
-					.find { organizationId => existingUserIdsPerOrganizationId.getOrElse(organizationId, Vector())
+				companyIds.findMap { companyId => existingOrganizationIdsPerCompanyId.getOrElse(companyId, Empty)
+					.find { organizationId => existingUserIdsPerOrganizationId.getOrElse(organizationId, Empty)
 						.exists { userId => members.exists { _._1 == userId } } } }
 				match {
 					case Some(organizationId) => Left((organizationId, companyIds, members, descriptionModels))
@@ -490,8 +490,8 @@ object ImportData
 		// Collects new company- and member -links for the existing organizations
 		val (updateCompanyLinks, updateMembershipData) = updates
 			.splitFlatMap { case (organizationId, companyIds, members, _) =>
-				val existingCompanyIds = existingCompanyIdsPerOrganizationId.getOrElse(organizationId, Vector())
-				val existingUserIds = existingUserIdsPerOrganizationId.getOrElse(organizationId, Vector())
+				val existingCompanyIds = existingCompanyIdsPerOrganizationId.getOrElse(organizationId, Empty)
+				val existingUserIds = existingUserIdsPerOrganizationId.getOrElse(organizationId, Empty)
 				val newCompanyLinks = companyIds.filterNot(existingCompanyIds.contains)
 					.map { companyId => OrganizationCompanyData(organizationId, companyId) }
 				val newMemberData = members.filterNot { case (userId, _) => existingUserIds.contains(userId) }
@@ -643,7 +643,7 @@ object ImportData
 				// Removes duplicates
 				val newDescriptions = proposedDescriptionsPerTargetId.toVector
 					.flatMap { case (targetId, descriptions) =>
-						val existingDescriptions = existingDescriptionsPerTargetId.getOrElse(targetId, Vector())
+						val existingDescriptions = existingDescriptionsPerTargetId.getOrElse(targetId, Empty)
 						val existingRoleIdsPerLanguageId = existingDescriptions.groupMap { _.languageId } { _.roleId }
 							.view.mapValues { _.toSet }.toMap
 						descriptions.filterNot { proposed => existingRoleIdsPerLanguageId.get(proposed.languageId)
@@ -659,7 +659,7 @@ object ImportData
 			failures
 		}
 		else
-			Vector()
+			Empty
 	}
 	
 	

@@ -11,6 +11,7 @@ import utopia.citadel.database.model.user.{UserLanguageLinkModel, UserModel, Use
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.citadel.util.MetropolisAccessExtensions._
 import utopia.flow.collection.CollectionExtensions._
+import utopia.flow.collection.immutable.Empty
 import utopia.flow.parse.string.Regex
 import utopia.flow.util.StringExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
@@ -299,7 +300,7 @@ object UserActions
 									.map { newName => proficiency.id -> newName }
 							}
 						else
-							Vector()
+							Empty
 					}
 				}
 			}
@@ -328,6 +329,6 @@ object UserActions
 				existingProficiencies
 		}
 		else
-			Vector()
+			Empty
 	}
 }

@@ -19,7 +19,7 @@ case class DbSingleCompany(id: Int) extends UniqueCompanyAccess with SingleIntId
 	/**
 	 * @return An access point to this company's products
 	 */
-	def products = DbCompanyProducts.ofCompanyWithId(id)
+	def products = DbCompanyProducts.ofCompany(id)
 	/**
 	 * @return An access point to this company's bank accounts
 	 */

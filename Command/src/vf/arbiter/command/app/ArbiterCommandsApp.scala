@@ -5,6 +5,8 @@ import utopia.bunnymunch.jawn.JsonBunny
 import utopia.citadel.database.Tables
 import utopia.citadel.util.CitadelContext
 import utopia.flow.async.context.CloseHook
+import utopia.flow.collection.immutable.{Empty, Single}
+import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.collection.immutable.range.Span
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.parse.file.FileExtensions._
@@ -42,6 +44,8 @@ import scala.util.{Failure, Success}
  */
 object ArbiterCommandsApp extends App
 {
+	// SETUP    -----------------------------
+	
 	// Sets up the program environment
 	Status.setup()
 	CitadelContext.setup(executionContext, connectionPool, "arbiter_db")
@@ -125,7 +129,7 @@ object ArbiterCommandsApp extends App
 	
 	private val languageIdsPointer = userSettingsPointer.lazyMap {
 		case Some(user) => connectionPool { implicit c => UserActions.validLanguageIdListForUserWithId(user.userId) }
-		case None => LanguageIds(Vector())
+		case None => LanguageIds(Empty)
 	}
 	
 	private val companyPointer = EventfulPointer.empty[DetailedCompany]
@@ -166,8 +170,7 @@ object ArbiterCommandsApp extends App
 			StdIn.readLineUntilNotEmpty()
 		}
 		connectionPool { implicit connection =>
-			target match
-			{
+			target match {
 				case "user" =>
 					if (userSettings.forall { u => StdIn.ask(s"You're already logged in as ${
 						u.name}. Do you still want to register a new user?") })
@@ -177,16 +180,12 @@ object ArbiterCommandsApp extends App
 						company = newCompany
 					}
 				case "company" =>
-					userSettings match
-					{
-						case Some(user) =>
-							implicit val languageIds: LanguageIds = languageIdsPointer.value
-							CompanyActions.startOrSelectFromOwn(user.userId, name).foreach { company = _ }
+					userSettings match {
+						case Some(user) => CompanyActions.startOrSelectFromOwn(user.userId, name).foreach { company = _ }
 						case None => println("You must be logged in to register a new company")
 					}
 				case "customer" =>
-					userSettings match
-					{
+					userSettings match {
 						case Some(user) =>
 							CompanyActions.findOrCreateOne(user.userId, name)
 								.foreach { c => println(
@@ -291,6 +290,53 @@ object ArbiterCommandsApp extends App
 		}
 	}
 	
+	// Updates the available commands when the user logs in / selects a company
+	private val commandsPointer = userSettingsPointer.lazyMergeWith(companyPointer) { (user, company) =>
+		val userStatefulCommands = user match {
+			case Some(user) =>
+				Vector(selectCompanyCommand(user.userId), claimCompanyCommand(user.userId),
+					editCommand(user.userId, company.map { _.id })) ++
+					company.emptyOrSingle.flatMap { company =>
+						Vector(
+							createInvoiceCommand(user.userId, company),
+							printInvoiceCommand(user.userId, company.id),
+							changeVatCommand(user.id, company.id)
+						)
+					}
+			case None => Single(loginCommand)
+		}
+		val companyStatefulCommands = company match {
+			case Some(company) =>
+				Vector(
+					listCommand(company.id), cancelInvoiceCommand(company.id), archiveCommand(company.id),
+					exportDataCommand(company.details)
+				)
+			case None => Empty
+		}
+		(Vector(registerCommand, seeCommand(company.map { _.id }), backupCommand, importCommand,
+			debugCommand, clearAllCommand) ++ GoldCommands.all ++ userStatefulCommands ++
+			companyStatefulCommands)
+			.sortBy { _.name }
+	}
+	
+	
+	// APP CODE ----------------------------
+	
+	// Starts the console
+	println()
+	println("Welcome to Arbiter")
+	println("Instructions: use 'help' or 'man' commands to get more information. Use exit to quit.")
+	Console(commandsPointer, "\nPlease enter the next command", closeConsoleFlag, closeCommandName = "exit").run()
+	println("Bye!")
+	println()
+	
+	System.exit(0)
+	
+	
+	// COMPUTED ----------------------------
+	
+	private implicit def languageIds: LanguageIds = languageIdsPointer.value
+	
 	// Creates user-dependent commands
 	private def selectCompanyCommand(userId: Int) = Command.withoutArguments("use",
 		help = "Switches between owned companies") {
@@ -301,10 +347,7 @@ object ArbiterCommandsApp extends App
 		args("company").string.orElse(StdIn.readNonEmptyLine(
 			"What's the name of the company you want to claim? (part of company name is enough)"))
 			.foreach { companyName =>
-				connectionPool { implicit c =>
-					implicit val languageIds: LanguageIds = languageIdsPointer.value
-					CompanyActions.findAndJoinOne(userId, companyName)
-				}
+				connectionPool { implicit c => CompanyActions.findAndJoinOne(userId, companyName) }
 			}
 	}
 	// Creates company-dependent commands
@@ -345,8 +388,14 @@ object ArbiterCommandsApp extends App
 			case _ => if (filter.isEmpty) 30.days else 90.days
 		}
 		// Lists invoices
-		implicit val languageIds: LanguageIds = languageIdsPointer.value
 		connectionPool { implicit c => InvoiceActions.listLatest(companyId, filter, duration) }
+	}
+	private def archiveCommand(companyId: Int) = Command("archive", "rm", help = "Archives company products")(
+		ArgumentSchema("target", "t", "product", "The targeted item group (currently only 'product' is supported)")) { args =>
+		if (args("target").getString.toLowerCase == "product")
+			connectionPool { implicit c => ProductActions.archive(companyId) }
+		else
+			println(s"Unrecognized target type \"${ args("target") }\". Note: Currently only \"product\" is supported.")
 	}
 	private def cancelInvoiceCommand(companyId: Int) = Command("cancel", "delete",
 		help = "Cancels an existing invoice")(
@@ -369,7 +418,6 @@ object ArbiterCommandsApp extends App
 				companyId match {
 					case Some(companyId) =>
 						connectionPool { implicit c =>
-							implicit val languageIds: LanguageIds = languageIdsPointer.value
 							InvoiceActions.findAndEdit(userId, companyId, args("filter").getString)
 						}
 					case None => println("Please select a company first")
@@ -395,10 +443,7 @@ object ArbiterCommandsApp extends App
 			case "product" =>
 				companyId match {
 					case Some(companyId) =>
-						connectionPool { implicit c =>
-							implicit val languageIds: LanguageIds = languageIdsPointer.value
-							CompanyActions.editProduct(userId, companyId)
-						}
+						connectionPool { implicit c => CompanyActions.editProduct(userId, companyId) }
 					case None => println("Please select a company first")
 				}
 			case _ => println("Unrecognized target. Supported values are: product")
@@ -427,7 +472,6 @@ object ArbiterCommandsApp extends App
 					.map { s => s: Path }.getOrElse(defaultPath)
 		}
 		connectionPool { implicit connection =>
-			implicit val languageIds: LanguageIds = languageIdsPointer.value
 			println(s"Exporting summary to ${path.toAbsolutePath}...")
 			ExportSummary.asCsv(senderCompanyDetails.companyId, path, year, months) match {
 				case Success(_) =>
@@ -441,42 +485,23 @@ object ArbiterCommandsApp extends App
 	}
 	private def createInvoiceCommand(userId: Int, senderCompany: DetailedCompany) =
 		Command.withoutArguments("invoice", "send", "Creates a new invoice") {
-			connectionPool { implicit connection =>
-				implicit val languageIds: LanguageIds = languageIdsPointer.value
-				InvoiceActions.create(userId, senderCompany)
+			connectionPool { implicit connection => InvoiceActions.create(userId, senderCompany) }
+		}
+	private def changeVatCommand(userId: Int, companyId: Int) = Command("changeVAT", "vat",
+		help = "Changes a single entire VAT category")(
+		ArgumentSchema("from", help = "The targeted VAT%. E.g. 24"),
+		ArgumentSchema("to",help = "The new assigned VAT%. E.g. 25.5")) {
+		args =>
+			args("from").double match {
+				case Some(fromPercentage) =>
+					args("to").double match {
+						case Some(toPercentage) =>
+							connectionPool { implicit c =>
+								ProductActions.changeVat(fromPercentage / 100.0, toPercentage / 100.0, userId, companyId)
+							}
+						case None => println("Required parameter \"to\" is missing")
+					}
+				case None => println("Required parameter \"from\" is missing")
 			}
-		}
-	
-	// Updates the available commands when the user logs in / selects a company
-	private val commandsPointer = userSettingsPointer.lazyMergeWith(companyPointer) { (user, company) =>
-		val userStatefulCommands = user match {
-			case Some(user) =>
-				Vector(selectCompanyCommand(user.userId), claimCompanyCommand(user.userId),
-					editCommand(user.userId, company.map { _.id })) ++
-					company.toVector.flatMap { company => Vector(
-						createInvoiceCommand(user.userId, company),
-						printInvoiceCommand(user.userId, company.id)
-					)}
-			case None => Vector(loginCommand)
-		}
-		val companyStatefulCommands = company match {
-			case Some(company) =>
-				Vector(listCommand(company.id), cancelInvoiceCommand(company.id), exportDataCommand(company.details))
-			case None => Vector()
-		}
-		(Vector(registerCommand, seeCommand(company.map { _.id }), backupCommand, importCommand,
-			debugCommand, clearAllCommand) ++ GoldCommands.all ++ userStatefulCommands ++
-			companyStatefulCommands)
-			.sortBy { _.name }
 	}
-	
-	// Starts the console
-	println()
-	println("Welcome to Arbiter")
-	println("Instructions: use 'help' or 'man' commands to get more information. Use exit to quit.")
-	Console(commandsPointer, "\nPlease enter the next command", closeConsoleFlag, closeCommandName = "exit").run()
-	println("Bye!")
-	println()
-	
-	System.exit(0)
 }

@@ -1,8 +1,6 @@
 package vf.arbiter.core.database.access.many.company
 
-import utopia.citadel.database.access.many.description.ManyDescribedAccessByIds
-import utopia.vault.nosql.view.NonDeprecatedView
-import vf.arbiter.core.model.combined.company.DescribedCompanyProduct
+import utopia.vault.nosql.view.{NonDeprecatedView, ViewManyByIntIds}
 import vf.arbiter.core.model.stored.company.CompanyProduct
 
 /**
@@ -10,21 +8,6 @@ import vf.arbiter.core.model.stored.company.CompanyProduct
   * @author Mikko Hilpinen
   * @since 2021-10-31
   */
-object DbCompanyProducts extends ManyCompanyProductsAccess with NonDeprecatedView[CompanyProduct]
-{
-	// OTHER	--------------------
-	
-	/**
-	  * @param ids Ids of the targeted CompanyProducts
-	  * @return An access point to CompanyProducts with the specified ids
-	  */
-	def apply(ids: Set[Int]) = new DbCompanyProductsSubset(ids)
-	
-	
-	// NESTED	--------------------
-	
-	class DbCompanyProductsSubset(override val ids: Set[Int]) 
-		extends ManyCompanyProductsAccess 
-			with ManyDescribedAccessByIds[CompanyProduct, DescribedCompanyProduct]
-}
+object DbCompanyProducts
+	extends ManyCompanyProductsAccess with NonDeprecatedView[CompanyProduct] with ViewManyByIntIds[ManyCompanyProductsAccess]
 

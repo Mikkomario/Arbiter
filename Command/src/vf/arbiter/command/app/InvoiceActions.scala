@@ -4,6 +4,7 @@ import utopia.citadel.database.access.single.description.DbLanguageDescription
 import utopia.citadel.database.access.single.language.DbLanguage
 import utopia.citadel.model.enumeration.CitadelDescriptionRole.Name
 import utopia.flow.collection.CollectionExtensions._
+import utopia.flow.collection.immutable.Empty
 import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.{Days, Now}
@@ -14,7 +15,6 @@ import utopia.flow.view.immutable.caching.Lazy
 import utopia.flow.view.mutable.Pointer
 import utopia.flow.view.mutable.eventful.EventfulPointer
 import utopia.metropolis.model.cached.LanguageIds
-import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.vault.database.Connection
 import vf.arbiter.command.database.access.many.device.DbInvoiceForms
 import vf.arbiter.command.database.model.device.InvoiceFormModel
@@ -22,17 +22,12 @@ import vf.arbiter.command.model.cached.SelectedLanguage
 import vf.arbiter.command.model.partial.device.InvoiceFormData
 import vf.arbiter.core.controller.pdf.FillPdfForm
 import vf.arbiter.core.database.access.many.company.DbCompanies
-import vf.arbiter.core.database.access.many.invoice.{DbInvoiceItems, DbInvoices, DbItemUnits}
-import vf.arbiter.core.database.access.single.company.{DbCompany, DbCompanyDetails}
-import vf.arbiter.core.database.access.single.description.DbCompanyProductDescription
-import vf.arbiter.core.database.access.single.invoice.{DbInvoice, DbItemUnit}
-import vf.arbiter.core.database.model.CoreDescriptionLinkModel
-import vf.arbiter.core.database.model.company.CompanyProductModel
+import vf.arbiter.core.database.access.many.invoice.{DbInvoiceItems, DbInvoices}
+import vf.arbiter.core.database.access.single.company.DbCompanyDetails
+import vf.arbiter.core.database.access.single.invoice.DbInvoice
 import vf.arbiter.core.database.model.invoice.{InvoiceItemModel, InvoiceModel}
 import vf.arbiter.core.model.combined.company._
 import vf.arbiter.core.model.combined.invoice.{DescribedItemUnit, FullInvoice, FullInvoiceItem, InvoiceWithItems}
-import vf.arbiter.core.model.enumeration.ArbiterDescriptionRoleId.Abbreviation
-import vf.arbiter.core.model.partial.company.CompanyProductData
 import vf.arbiter.core.model.partial.invoice.{InvoiceData, InvoiceItemData}
 import vf.arbiter.core.model.stored.invoice.Invoice
 import vf.arbiter.core.util.ReferenceCode
@@ -358,50 +353,14 @@ object InvoiceActions
 		
 		// Prepares information for the next phase
 		// Units must have some kind of description available
-		val readUnits = DbItemUnits.described.filter { u => u.has(Name) || u.has(Abbreviation) }
-			.sortBy { _.wrapped.categoryId }
-		if (readUnits.isEmpty)
+		// Also makes sure units have appropriate names in the targeted language
+		val units = ProductActions.allUnitsIn(invoiceLanguage, userId)
+		if (units.isEmpty)
 			None
 		else {
-			// Also makes sure units have appropriate names in the targeted language
-			val units = readUnits.map { u =>
-				val (unitPlaceholderName, hasName, hasAbbreviation) = u.description(Name) match {
-					case Some(nameDescription) =>
-						val hasAbbreviation = u.description(Abbreviation).exists { _.languageId == invoiceLanguage.id }
-						if (nameDescription.languageId == invoiceLanguage.id)
-							(nameDescription.text, true, hasAbbreviation)
-						else
-							(nameDescription.text, false, hasAbbreviation)
-					case None =>
-						val abbreviation = u.description(Abbreviation).get
-						(abbreviation.text, false, abbreviation.languageId == invoiceLanguage.id)
-				}
-				// Case: Required data already exists
-				if (hasName && hasAbbreviation)
-					u
-				// Case: Some data is missing => asks the user to fill it in
-				else {
-					val newName = if (hasName) None else StdIn.readNonEmptyLine(
-						s"What's the name of $unitPlaceholderName in ${invoiceLanguage.name}")
-					val newAbbreviation = if (hasAbbreviation) None else
-						StdIn.readNonEmptyLine(s"What's the abbreviation of ${
-							newName.getOrElse(unitPlaceholderName)
-						} in ${invoiceLanguage.name}?")
-					val newDescriptionData = (newName.map { _ -> Name.id } ++
-						newAbbreviation.map { _ -> Abbreviation.id })
-						.map { case (text, roleId) => DescriptionData(roleId, invoiceLanguage.id, text, Some(userId)) }
-						.toVector
-					val newDescriptions = CoreDescriptionLinkModel.itemUnit.insert(u.id, newDescriptionData)
-					// Replaces the existing descriptions with the new ones
-					newDescriptions.foldLeft(u) { (u, newDescription) =>
-						u.copy(descriptions = u.descriptions
-							.filter { _.description.roleId != newDescription.description.roleId } + newDescription)
-					}
-				}
-			}
 			// [Product -> filled product] - separated because filled product may require user interaction
-			val existingProductsPointer = Pointer(DbCompany(senderCompany.id).products.described
-				.map { p => p -> Lazy { fillProduct(userId, p, invoiceLanguage, units) } })
+			val existingProductsPointer = Pointer(
+				ProductActions.allProductsFor(userId, senderCompany.id, invoiceLanguage, units))
 			
 			// Creates / prepares the invoice items
 			val lastProductPointer = EventfulPointer.empty[FullCompanyProduct]
@@ -427,7 +386,7 @@ object InvoiceActions
 							case _ => Some(Right(item))
 						}
 					}
-				case None => Vector()
+				case None => Empty
 			}
 			
 			// Collected info: product id + description + amount + price per unit
@@ -519,7 +478,7 @@ object InvoiceActions
 				println("Please select or insert the product to use in this invoice item")
 				StdIn.selectFromOrAdd(
 					existingProductsPointer.value.map { case (p, fullP) => fullP -> p.name }, "products") {
-					val newProduct = createProduct(userId, senderCompanyId, language, units)
+					val newProduct = ProductActions.create(userId, senderCompanyId, language, units)
 					// Adds the product to selectable options
 					newProduct.foreach { p => existingProductsPointer.update { _ :+ (p.describedProduct, Lazy(p)) } }
 					newProduct.map(Lazy.initialized)
@@ -549,60 +508,6 @@ object InvoiceActions
 			}
 			// Collects the information together
 			(product, description, pricePerUnit, amount)
-		}
-	}
-	
-	private def fillProduct(userId: Int, product: DescribedCompanyProduct, language: SelectedLanguage,
-	                        units: Iterable[DescribedItemUnit])
-	                       (implicit connection: Connection, languageIds: LanguageIds) =
-	{
-		// NB: Unit read may technically fail
-		val productUnit = units.find { _.id == product.wrapped.unitId }
-			.getOrElse { DbItemUnit(product.wrapped.unitId).described.get }
-		// Case: Product already has a name in the correct language => uses as is
-		if (product.description(Name).exists { _.languageId == language.id })
-			FullCompanyProduct(product, productUnit)
-		// Case: Product doesn't have a name in the correct language => asks for one
-		else
-			StdIn.readNonEmptyLine(s"What's the name of ${
-				product(Name).nonEmptyOrElse("this product")} in ${language.name}?") match
-			{
-				case Some(newName) =>
-					val newDescription = CoreDescriptionLinkModel.companyProduct
-						.insert(product.id, DescriptionData(Name.id, language.id,
-							newName, Some(userId)))
-					val modifiedProduct = product.copy(descriptions =
-						product.descriptions.filter { _.description.roleId != Name.id } +
-							newDescription)
-					FullCompanyProduct(modifiedProduct, productUnit)
-				case None => FullCompanyProduct(product, productUnit)
-			}
-	}
-	
-	private def createProduct(userId: Int, senderCompanyId: Int, language: SelectedLanguage,
-	                          units: Seq[DescribedItemUnit])(implicit connection: Connection) =
-	{
-		val retryPrompt = "This information is required. Leaving empty will cancel invoice creation."
-		StdIn.readNonEmptyLine(s"What's the name of this new product in ${language.name}?", retryPrompt).flatMap { name =>
-			println("What's the unit in which this product is sold (select from below)")
-			StdIn.selectFrom(units.map { u => u -> u.apply(Name, Abbreviation).nonEmptyOrElse("?") })
-				.map { selectedUnit =>
-					val defaultPrice = StdIn.read(
-						s"What's the default price (€) of this product for one ${
-							selectedUnit.name }? (optional)").double
-					val taxModifier = StdIn.read(
-						"What's the tax percentage applied for this product? (default = 24%)")
-						.double.map { _ / 100.0 }.getOrElse(0.24)
-					
-					// Inserts the product and it's name to the database
-					val product = CompanyProductModel.insert(CompanyProductData(senderCompanyId,
-						selectedUnit.id, defaultPrice, taxModifier, Some(userId)))
-					val nameDescription = DbCompanyProductDescription.linkModel
-						.insert(product.id, DescriptionData(Name.id, language.id, name, Some(userId)))
-					val describedProduct = DescribedCompanyProduct(product, Set(nameDescription))
-					
-					FullCompanyProduct(describedProduct, selectedUnit)
-				}
 		}
 	}
 	

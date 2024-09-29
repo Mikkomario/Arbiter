@@ -10,7 +10,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="mariadb-java-client-1" level="project" />
+    <orderEntry type="library" name="mariadb-java-client" level="project" />
     <orderEntry type="module" module-name="Citadel" />
     <orderEntry type="module" module-name="Core" />
     <orderEntry type="module" module-name="Flow" />
@@ -27,7 +27,7 @@
     <orderEntry type="module" module-name="Disciple" />
     <orderEntry type="module" module-name="Gold" />
     <orderEntry type="library" name="apache.httpcomponents.client5.httpclient5" level="project" />
-    <orderEntry type="library" name="scala-sdk-2.13.12" level="application" />
     <orderEntry type="library" name="slf4j-1" level="project" />
+    <orderEntry type="library" name="scala-sdk-2.13.14" level="application" />
   </component>
 </module>

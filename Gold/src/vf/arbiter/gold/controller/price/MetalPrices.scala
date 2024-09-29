@@ -67,7 +67,7 @@ class MetalPrices(metal: Metal, currency: Currency)
 	private def pullAverageDuring(targetDates: DateRange, cachedPrices: Map[LocalDate, WeightPrice])
 	                             (implicit cPool: ConnectionPool, exc: ExecutionContext, apiKey: ApiKey) = {
 		// Requests price data for the missing dates
-		MetalPriceApi.pricesDuring(metal, currency, targetDates)
+		MetalPriceApiClient.pricesDuring(metal, currency, targetDates)
 			.map {
 				// Case: Price request succeeded => Stores the read prices and produces the average
 				case TryCatch.Success(priceData, errors) =>

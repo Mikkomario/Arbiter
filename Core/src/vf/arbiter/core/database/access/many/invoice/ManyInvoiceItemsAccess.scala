@@ -1,5 +1,6 @@
 package vf.arbiter.core.database.access.many.invoice
 
+import utopia.flow.collection.immutable.Empty
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.vault.database.Connection
@@ -15,11 +16,6 @@ import vf.arbiter.core.model.stored.invoice.InvoiceItem
 
 object ManyInvoiceItemsAccess extends ViewFactory[ManyInvoiceItemsAccess]
 {
-	// INITIAL CODE	--------------------
-	
-override
-	
-	
 	// OTHER	--------------------
 	
 	/**
@@ -87,10 +83,10 @@ trait ManyInvoiceItemsAccess
 		val items = pull
 		// Reads associated product information
 		val productIds = items.map { _.productId }.toSet
-		val products = if (productIds.isEmpty) Vector() else DbCompanyProducts(productIds).described
+		val products = if (productIds.isEmpty) Empty else DbCompanyProducts(productIds).described
 		// Reads associated unit information
 		val unitIds = products.map { _.wrapped.unitId }.toSet
-		val units = if (unitIds.isEmpty) Vector() else DbItemUnits(unitIds).described
+		val units = if (unitIds.isEmpty) Empty else DbItemUnits(unitIds).described
 		val unitsById = units.map { u => u.id -> u }.toMap
 		val productsById: Map[Int, FullCompanyProduct] =
 			products.map { p => p.id -> (p + unitsById(p.wrapped.unitId)) }.toMap

@@ -49,43 +49,36 @@ trait ManyCompanyProductsAccess
 	  */
 	def companyIds(implicit connection: Connection) = 
 		pullColumn(model.companyIdColumn).flatMap { value => value.int }
-	
 	/**
 	  * unitIds of the accessible CompanyProducts
 	  */
 	def unitIds(implicit connection: Connection) = pullColumn(model.unitIdColumn)
 		.flatMap { value => value.int }
-	
 	/**
 	  * defaultUnitPrices of the accessible CompanyProducts
 	  */
 	def defaultUnitPrices(implicit connection: Connection) = 
 		pullColumn(model.defaultUnitPriceColumn).flatMap { value => value.double }
-	
 	/**
 	  * taxModifiers of the accessible CompanyProducts
 	  */
 	def taxModifiers(implicit connection: Connection) = 
 		pullColumn(model.taxModifierColumn).flatMap { value => value.double }
-	
 	/**
 	  * creatorIds of the accessible CompanyProducts
 	  */
 	def creatorIds(implicit connection: Connection) = 
 		pullColumn(model.creatorIdColumn).flatMap { value => value.int }
-	
 	/**
 	  * creationTimes of the accessible CompanyProducts
 	  */
 	def creationTimes(implicit connection: Connection) = 
 		pullColumn(model.createdColumn).flatMap { value => value.instant }
-	
 	/**
 	  * discontinuedAfters of the accessible CompanyProducts
 	  */
 	def discontinuedAfters(implicit connection: Connection) = 
 		pullColumn(model.discontinuedAfterColumn).flatMap { value => value.instant }
-	
 	def ids(implicit connection: Connection) = pullColumn(index).flatMap { id => id.int }
 	
 	/**
@@ -97,11 +90,8 @@ trait ManyCompanyProductsAccess
 	// IMPLEMENTED	--------------------
 	
 	override def factory = CompanyProductFactory
-	
 	override def self = this
-	
 	override protected def describedFactory = DescribedCompanyProduct
-	
 	override protected def manyDescriptionsAccess = DbCompanyProductDescriptions
 	
 	override def apply(condition: Condition): ManyCompanyProductsAccess = ManyCompanyProductsAccess(condition)
@@ -112,13 +102,23 @@ trait ManyCompanyProductsAccess
 	// OTHER	--------------------
 	
 	/**
+	 * @param companyId Target company id
+	 * @return An access point to that company's products
+	 */
+	def ofCompany(companyId: Int) = filter(model.withCompanyId(companyId).toCondition)
+	/**
+	 * @param taxRatio Targeted product tax ratio
+	 * @return Access to products with that tax ratio
+	 */
+	def withTaxModifier(taxRatio: Double) = filter(model.taxModifierColumn <=> taxRatio)
+	
+	/**
 	  * Updates the companyId of the targeted CompanyProduct instance(s)
 	  * @param newCompanyId A new companyId to assign
 	  * @return Whether any CompanyProduct instance was affected
 	  */
 	def companyIds_=(newCompanyId: Int)(implicit connection: Connection) = 
 		putColumn(model.companyIdColumn, newCompanyId)
-	
 	/**
 	  * Updates the created of the targeted CompanyProduct instance(s)
 	  * @param newCreated A new created to assign
@@ -126,7 +126,6 @@ trait ManyCompanyProductsAccess
 	  */
 	def creationTimes_=(newCreated: Instant)(implicit connection: Connection) = 
 		putColumn(model.createdColumn, newCreated)
-	
 	/**
 	  * Updates the creatorId of the targeted CompanyProduct instance(s)
 	  * @param newCreatorId A new creatorId to assign
@@ -134,7 +133,6 @@ trait ManyCompanyProductsAccess
 	  */
 	def creatorIds_=(newCreatorId: Int)(implicit connection: Connection) = 
 		putColumn(model.creatorIdColumn, newCreatorId)
-	
 	/**
 	  * Updates the defaultUnitPrice of the targeted CompanyProduct instance(s)
 	  * @param newDefaultUnitPrice A new defaultUnitPrice to assign
@@ -142,7 +140,6 @@ trait ManyCompanyProductsAccess
 	  */
 	def defaultUnitPrices_=(newDefaultUnitPrice: Double)(implicit connection: Connection) = 
 		putColumn(model.defaultUnitPriceColumn, newDefaultUnitPrice)
-	
 	/**
 	  * Updates the discontinuedAfter of the targeted CompanyProduct instance(s)
 	  * @param newDiscontinuedAfter A new discontinuedAfter to assign
@@ -150,13 +147,6 @@ trait ManyCompanyProductsAccess
 	  */
 	def discontinuedAfters_=(newDiscontinuedAfter: Instant)(implicit connection: Connection) = 
 		putColumn(model.discontinuedAfterColumn, newDiscontinuedAfter)
-	
-	/**
-	  * @param companyId Target company id
-	  * @return An access point to that company's products
-	  */
-	def ofCompanyWithId(companyId: Int) = filter(model.withCompanyId(companyId).toCondition)
-	
 	/**
 	  * Updates the taxModifier of the targeted CompanyProduct instance(s)
 	  * @param newTaxModifier A new taxModifier to assign
@@ -164,7 +154,6 @@ trait ManyCompanyProductsAccess
 	  */
 	def taxModifiers_=(newTaxModifier: Double)(implicit connection: Connection) = 
 		putColumn(model.taxModifierColumn, newTaxModifier)
-	
 	/**
 	  * Updates the unitId of the targeted CompanyProduct instance(s)
 	  * @param newUnitId A new unitId to assign

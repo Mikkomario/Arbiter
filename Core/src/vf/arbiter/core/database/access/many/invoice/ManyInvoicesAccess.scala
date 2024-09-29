@@ -84,7 +84,7 @@ trait ManyInvoicesAccess
 	  */
 	def complete(invoices: Iterable[Invoice])(implicit connection: Connection, languageIds: LanguageIds) = {
 		if (invoices.isEmpty)
-			Vector()
+			Empty
 		else {
 			// Collects invoice ids, then searches for linked data
 			val invoiceIds = invoices.map { _.id }.toSet

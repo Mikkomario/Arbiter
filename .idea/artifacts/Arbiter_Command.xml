@@ -21,7 +21,7 @@
         <element id="module-output" name="Gold" />
       </element>
       <element id="library" level="project" name="ch.vorburger.mariaDB4j:mariaDB4j" />
-      <element id="library" level="project" name="mariadb-java-client-1" />
+      <element id="library" level="project" name="mariadb-java-client" />
       <element id="directory" name="data">
         <element id="directory" name="descriptions">
           <element id="file-copy" path="$PROJECT_DIR$/Core/data/arbiter-descriptions.json" />
@@ -39,8 +39,8 @@
       <element id="library" level="project" name="pdfbox-2" />
       <element id="library" level="project" name="apache.httpcomponents.client5.httpclient5" />
       <element id="file-copy" path="$PROJECT_DIR$/README.md" />
-      <element id="library" level="application" name="scala-sdk-2.13.12" />
       <element id="library" level="project" name="slf4j-1" />
+      <element id="library" level="application" name="scala-sdk-2.13.14" />
     </root>
   </artifact>
 </component>

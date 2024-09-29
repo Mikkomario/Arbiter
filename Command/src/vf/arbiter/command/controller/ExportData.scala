@@ -8,6 +8,7 @@ import utopia.citadel.database.factory.organization.MembershipWithRolesFactory
 import utopia.flow.generic.model.immutable.{Constant, Model, Value}
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.collection.CollectionExtensions._
+import utopia.flow.collection.immutable.Empty
 import utopia.flow.parse.file.FileExtensions._
 import utopia.metropolis.model.combined.description.LinkedDescription
 import utopia.metropolis.model.stored.description.DescriptionRole
@@ -74,7 +75,7 @@ object ExportData
 		val languageLinksPerUserId = DbUserLanguageLinks.pull.groupBy { _.userId }
 		DbManyUserSettings.pull.map { u =>
 			Model(Vector("id" -> u.userId, "name" -> u.name,
-				"languages" -> languageLinksPerUserId.getOrElse(u.id, Vector()).map { link =>
+				"languages" -> languageLinksPerUserId.getOrElse(u.id, Empty).map { link =>
 					Model(Vector("code" -> languageCodePerId(link.languageId), "familiarity_id" -> link.familiarityId))
 				}))
 		}
@@ -102,17 +103,17 @@ object ExportData
 		
 		companies.toVector.sortBy { _.yCode }.map { company =>
 			Model(Vector("y_code" -> company.yCode,
-				"details" -> detailsPerCompanyId.getOrElse(company.id, Vector())
+				"details" -> detailsPerCompanyId.getOrElse(company.id, Empty)
 					.sortBy { _.created }.reverseIterator
 					.map { _.toExportModel }.toVector,
-				"products" -> productsPerCompanyId.getOrElse(company.id, Vector())
+				"products" -> productsPerCompanyId.getOrElse(company.id, Empty)
 					.sortBy { _.created }.reverseIterator.map { product =>
 					product.toExportModel +
 						Constant("descriptions",
-							descriptionModelsFrom(productDescriptionsPerProductId.getOrElse(product.id, Vector()),
+							descriptionModelsFrom(productDescriptionsPerProductId.getOrElse(product.id, Empty),
 								languageCodePerId, descriptionRolePerId))
 				}.toVector,
-				"bank_accounts" -> bankAccountsPerCompanyId.getOrElse(company.id, Vector())
+				"bank_accounts" -> bankAccountsPerCompanyId.getOrElse(company.id, Empty)
 					.sortBy { _.created }.reverseIterator.map { _.toExportModel }.toVector))
 		}
 	}
@@ -129,9 +130,9 @@ object ExportData
 			val companyCodes = companyYCodesPerOrganizationId.getOrElse(organizationId, Vector[String]())
 			Model(Vector[(String, Value)](
 				"id" -> organizationId,
-				"descriptions" -> descriptionModelsFrom(descriptionsPerOrganizationId.getOrElse(organizationId, Vector()),
+				"descriptions" -> descriptionModelsFrom(descriptionsPerOrganizationId.getOrElse(organizationId, Empty),
 					languageCodePerId, descriptionRolePerId),
-				"members" -> membershipsPerOrganizationId.getOrElse(organizationId, Vector()).map { membership =>
+				"members" -> membershipsPerOrganizationId.getOrElse(organizationId, Empty).map { membership =>
 					Model(Vector("id" -> membership.wrapped.userId, "role_ids" -> membership.roleIds.toVector.sorted))
 				},
 				"company_codes" -> companyCodes
@@ -153,7 +154,7 @@ object ExportData
 				"recipient_details_id" -> invoice.recipientCompanyDetailsId,
 				"sender_bank_account" -> bankAccountPerId(invoice.senderBankAccountId).toExportModel,
 				"language" -> languageCodePerId(invoice.languageId),
-				"items" -> itemsPerInvoiceId.getOrElse(invoice.id, Vector()).map { _.toExportModel },
+				"items" -> itemsPerInvoiceId.getOrElse(invoice.id, Empty).map { _.toExportModel },
 				"created" -> invoice.created,
 				"product_delivery" -> invoice.productDeliveryDates.map { _.toModel },
 				"payment_duration_days" -> invoice.paymentDuration.length,

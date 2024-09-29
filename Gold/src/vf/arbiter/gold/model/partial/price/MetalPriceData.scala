@@ -1,5 +1,6 @@
 package vf.arbiter.gold.model.partial.price
 
+import utopia.flow.collection.immutable.Empty
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.generic.factory.FromModelFactoryWithSchema
 import utopia.flow.generic.model.immutable.{Model, ModelDeclaration, PropertyDeclaration}
@@ -19,11 +20,11 @@ object MetalPriceData extends FromModelFactoryWithSchema[MetalPriceData]
 {
 	// ATTRIBUTES	--------------------
 	
-	override lazy val schema = 
-		ModelDeclaration(Vector(PropertyDeclaration("metal", IntType, Vector(), Gold.id), 
-			PropertyDeclaration("currency", IntType, Vector(), Euro.id), PropertyDeclaration("date", 
-			LocalDateType, isOptional = true), PropertyDeclaration("pricePerTroyOunce", DoubleType, 
-			Vector("price_per_troy_ounce"))))
+	override lazy val schema = ModelDeclaration(Vector(
+		PropertyDeclaration("metal", IntType, Empty, Gold.id),
+		PropertyDeclaration("currency", IntType, Empty, Euro.id),
+		PropertyDeclaration("date", LocalDateType, isOptional = true),
+		PropertyDeclaration("pricePerTroyOunce", DoubleType, Vector("price_per_troy_ounce"))))
 	
 	
 	// IMPLEMENTED	--------------------

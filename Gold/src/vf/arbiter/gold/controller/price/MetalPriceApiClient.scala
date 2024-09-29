@@ -19,7 +19,7 @@ import utopia.flow.util.TryExtensions._
 import utopia.flow.util.logging.Logger
 import vf.arbiter.core.util.Common
 import vf.arbiter.core.util.Common.executionContext
-import vf.arbiter.gold.controller.price.MetalPriceApi.{InsertApiKeyInterceptor, parseFailureStatus}
+import vf.arbiter.gold.controller.price.MetalPriceApiClient.{InsertApiKeyInterceptor, parseFailureStatus}
 import vf.arbiter.gold.model.cached.auth.ApiKey
 import vf.arbiter.gold.model.enumeration.{Currency, Metal}
 import vf.arbiter.gold.model.partial.price.MetalPriceData
@@ -29,11 +29,11 @@ import scala.concurrent.ExecutionContext
 import scala.language.implicitConversions
 import scala.util.{Failure, Success}
 
-object MetalPriceApi
+object MetalPriceApiClient
 {
 	// ATTRIBUTES   -----------------------
 	
-	private val cache = Cache { apiKey: String => new MetalPriceApi(apiKey) }
+	private val cache = Cache { apiKey: String => new MetalPriceApiClient(apiKey) }
 	
 	private val parseFailureStatus = new Status("Response-parsing failed", 599, isTemporary = false, doNotRepeat = true)
 	
@@ -45,7 +45,7 @@ object MetalPriceApi
 	
 	// IMPLICIT ---------------------------
 	
-	implicit def usingImplicitKey(@unused a: MetalPriceApi.type)(implicit key: ApiKey): MetalPriceApi = using(key.key)
+	implicit def usingImplicitKey(@unused a: MetalPriceApiClient.type)(implicit key: ApiKey): MetalPriceApiClient = using(key.key)
 	
 	
 	// OTHER    ---------------------------
@@ -71,8 +71,7 @@ object MetalPriceApi
  * @author Mikko Hilpinen
  * @since 14.9.2023, v1.4
  */
-// TODO: Rename to MetalPriceApiClient
-class MetalPriceApi(apiKey: String) extends ApiClient
+class MetalPriceApiClient(apiKey: String) extends ApiClient
 {
 	// ATTRIBUTES   ---------------------
 	

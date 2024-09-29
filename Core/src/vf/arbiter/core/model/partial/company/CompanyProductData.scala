@@ -20,9 +20,9 @@ import vf.arbiter.core.model.template.Exportable
   * @author Mikko Hilpinen
   * @since 2021-10-31
   */
-case class CompanyProductData(companyId: Int, unitId: Int, defaultUnitPrice: Option[Double] = None, 
-	taxModifier: Double = 0.24, creatorId: Option[Int] = None, created: Instant = Now, 
-	discontinuedAfter: Option[Instant] = None) 
+case class CompanyProductData(companyId: Int, unitId: Int, defaultUnitPrice: Option[Double] = None,
+                              taxModifier: Double = 0.24, creatorId: Option[Int] = None, created: Instant = Now,
+                              discontinuedAfter: Option[Instant] = None)
 	extends ModelConvertible with Exportable
 {
 	// COMPUTED	--------------------
