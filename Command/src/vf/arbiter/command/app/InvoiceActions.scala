@@ -631,8 +631,7 @@ object InvoiceActions
 			}
 		}
 		
-		object ItemRow
-		{
+		object ItemRow {
 			private val name = "name"
 			private val amount = "amount"
 			private val unit = "unit"
@@ -652,14 +651,13 @@ object InvoiceActions
 					(prefix + unit) -> unitName,
 					(prefix + unitPrice) -> (round(item.pricePerUnit) + s" €/$unitName"),
 					(prefix + price) -> (round(item.price) + " €"),
-					(prefix + taxPercent) -> s"${(taxMod * 100).round}%",
+					(prefix + taxPercent) -> s"${(taxMod * 1000).round / 10.0}%",
 					(prefix + totalPrice) -> (round(item.price * (1 + taxMod)) + " €")
 				)
 			}
 		}
 		
-		def from(invoice: FullInvoice) =
-		{
+		def from(invoice: FullInvoice) = {
 			val price = invoice.price
 			val tax = invoice.tax
 			val priceWithTax = round(price + tax) + " €"

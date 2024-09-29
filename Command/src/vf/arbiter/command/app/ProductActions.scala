@@ -98,6 +98,7 @@ object ProductActions
 	def allProductsFor(userId: Int, companyId: Int, language: SelectedLanguage, units: Seq[DescribedItemUnit])
 	                  (implicit connection: Connection, languageIds: LanguageIds) =
 		DbCompany(companyId).products.described
+			.sortBy { _.name }
 			.map { p => p -> Lazy { ProductActions.fillDetails(userId, p, language, units) } }
 	
 	/**
@@ -121,7 +122,7 @@ object ProductActions
 						s"What's the default price (€) of this product for one ${
 							selectedUnit.name }? (optional)").double
 					val taxModifier = StdIn.read(
-							"What's the tax percentage applied for this product? (default = 25.5%)")
+							"What's the VAT percentage applied for this product? (default = 25.5%)")
 						.double.map { _ / 100.0 }.getOrElse(0.255)
 					
 					// Inserts the product and it's name to the database
