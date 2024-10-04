@@ -1,6 +1,7 @@
 # Arbiter App - List of Changes
 
-## v1.5 (in development)
+## v1.5 - 4.10.2024
+Release for Utopia v2.5
 
 ## v1.4 - 23.10.2023
 Minor improvements and new gold-related features
