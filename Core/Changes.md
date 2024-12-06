@@ -1,5 +1,8 @@
 # Arbiter App - List of Changes
 
+## v1.5.1 (in development)
+Supporting USD in gold commands
+
 ## v1.5 - 4.10.2024
 Release for Utopia v2.5
 

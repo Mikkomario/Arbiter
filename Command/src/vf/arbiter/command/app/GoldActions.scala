@@ -11,10 +11,9 @@ import vf.arbiter.core.util.Common._
 import vf.arbiter.gold.controller.price.{CorrectInflation, MetalPrices}
 import vf.arbiter.gold.controller.settings.ArbiterGoldSettings
 import vf.arbiter.gold.model.cached.auth.ApiKey
-import vf.arbiter.gold.model.cached.price.WeightPrice
-import vf.arbiter.gold.model.enumeration.Currency.Euro
+import vf.arbiter.gold.model.cached.price.{Price, WeightPrice}
 import vf.arbiter.gold.model.enumeration.Metal.{Gold, Silver}
-import vf.arbiter.gold.model.enumeration.WeightUnit
+import vf.arbiter.gold.model.enumeration.{Currency, WeightUnit}
 
 import java.time.LocalDate
 import scala.io.StdIn
@@ -53,11 +52,13 @@ object GoldActions
 	 * @param referencePeriod Duration for the average calculation. Default = 30 days.
 	 * @param connection Implicit DB Connection
 	 */
-	def printCurrentGoldPrice(referencePeriod: Days = defaultReferencePeriod)(implicit connection: Connection) = {
-		forCurrentGoldPrice(referencePeriod) { price =>
+	def printCurrentGoldPrice(currency: Currency, referencePeriod: Days = defaultReferencePeriod)
+	                         (implicit connection: Connection) =
+	{
+		forCurrentGoldPrice(referencePeriod, currency) { price =>
 			println("The recent average price of gold is:")
 			WeightUnit.values.foreach { unit =>
-				println(s"\t- ${price per unit} €/$unit")
+				println(s"\t- ${price per unit} $currency/$unit")
 			}
 		}
 	}
@@ -65,15 +66,15 @@ object GoldActions
 	/**
 	 * Displays the current gold value of a specific euro amount.
 	 * Uses the recent average value of gold.
-	 * @param euroAmount Amount of Euros measured
+	 * @param amount Amount of fiat currency measured
 	 * @param referencePeriod Duration for the average gold price calculation. Default = 30 days.
 	 * @param connection Implicit DB Connection
 	 */
-	def currentGoldValueOfEuros(euroAmount: Double, referencePeriod: Days = defaultReferencePeriod)
-	                           (implicit connection: Connection) =
-		forCurrentGoldPrice(referencePeriod) { price =>
-			val acquiredWeight = price.weightForMoney(euroAmount)
-			println(s"Amount of gold that may currently be purchased with $euroAmount € is:")
+	def currentGoldValueOf(amount: Price, referencePeriod: Days = defaultReferencePeriod)
+	                      (implicit connection: Connection) =
+		forCurrentGoldPrice(referencePeriod, amount.currency) { price =>
+			val acquiredWeight = price.weightForMoney(amount.amount)
+			println(s"Amount of gold that may currently be purchased with $amount is:")
 			WeightUnit.values.foreach { unit =>
 				println(s"\t- ${acquiredWeight in unit} $unit")
 			}
@@ -81,36 +82,36 @@ object GoldActions
 	
 	/**
 	 * Determines the current value of a previously agreed euro sum
-	 * @param originalEuros Previously agreed sum
+	 * @param originalPrice Previously agreed sum
 	 * @param originalDate Date when that sum was agreed
 	 * @param referencePeriod Duration for determining the average metal price (default = 30 days)
 	 * @param includeSilver Whether to account for silver price changes in addition to gold price changes.
 	 *                      Default = false.
 	 */
-	def determineCurrentPrice(originalEuros: Double, originalDate: LocalDate,
+	def determineCurrentPrice(originalPrice: Price, originalDate: LocalDate,
 	                          referencePeriod: Days = defaultReferencePeriod, includeSilver: Boolean = false): Unit =
 	{
 		forApiKeyOrCancel { implicit apiKey: ApiKey =>
-			println(s"Determining the current price of $originalDate's $originalEuros €...")
-			CorrectInflation(originalEuros, Euro, originalDate,
+			println(s"Determining the current price of $originalDate's $originalPrice...")
+			CorrectInflation(originalPrice, originalDate,
 				if (includeSilver) Set(Gold, Silver) else Set(Gold), referencePeriod)
-				.waitForResult() match {
+				.waitForResult() match
+			{
 				case TryCatch.Success(price, failures) =>
 					failures.headOption.foreach { error =>
 						error.printStackTrace()
 						println(s"Some of the price requests failed (${failures.size} failures in total)")
 					}
 					println("\nResult:")
-					println(s"$originalDate's $originalEuros € would now be worth ${price.currentPrice} €")
+					println(s"$originalDate's $originalPrice would now be worth ${price.current}")
 					price.metalValues.foreachEntry { (metal, weight) =>
 						println(s"Original value in $metal")
 						WeightUnit.values.foreach { unit =>
 							println(s"\t- ${weight in unit} $unit")
 						}
 					}
-					println(s"Value of Euro has suffered ${(price.inflation * 100).round}% inflation since ${
-						price.originalDate
-					}")
+					println(s"Value of ${ originalPrice.currency } has suffered ${
+						(price.inflation * 100).round}% inflation since ${price.originalDate}")
 				case TryCatch.Failure(error) =>
 					error.printStackTrace()
 					println("Failed to determine price changes. See the error above.")
@@ -118,14 +119,15 @@ object GoldActions
 		}
 	}
 	
-	private def forCurrentGoldPrice[U](referencePeriod: Days)(f: WeightPrice => U)(implicit connection: Connection) =
+	private def forCurrentGoldPrice[U](referencePeriod: Days, currency: Currency)(f: WeightPrice => U)
+	                                  (implicit connection: Connection) =
 	{
 		// Access to the API is required
 		forApiKeyOrCancel { implicit key: ApiKey =>
 			println(s"Checking gold prices for the last ${referencePeriod.length} days")
 			val lastDate = Today.yesterday
 			// Retrieves the recent average price (blocks)
-			MetalPrices(Gold, Euro).averageDuring(DateRange.inclusive(lastDate - referencePeriod, lastDate))
+			MetalPrices(Gold, currency).averageDuring(DateRange.inclusive(lastDate - referencePeriod, lastDate))
 				.waitForResult() match
 			{
 				// Case: Price acquired => Prints possible warnings and then delegates to the specified function

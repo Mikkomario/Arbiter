@@ -1,7 +1,9 @@
 package vf.arbiter.gold.model.enumeration
 
+import utopia.flow.collection.immutable.Pair
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.generic.model.immutable.Value
+import utopia.flow.generic.model.mutable.DataType.{IntType, StringType}
 import utopia.flow.generic.model.template.ValueConvertible
 
 /**
@@ -36,7 +38,7 @@ object Currency
 	/**
 	  * All available currency values
 	  */
-	val values: Vector[Currency] = Vector(Euro, Usd)
+	val values: Pair[Currency] = Pair(Euro, Usd)
 	
 	
 	// COMPUTED	--------------------
@@ -62,11 +64,20 @@ object Currency
 	def forId(id: Int) = findForId(id).getOrElse(default)
 	
 	/**
-	  * @param value A value representing an currency id
-	  * @return currency matching the specified value, when the value is interpreted as an currency id, 
-	  * or the default currency (euro)
+	 * @param value A value that represents a currency id, code or symbol
+	 * @return Currency which matches the specified value. None if the specified value didn't match any currency.
+	 */
+	def findForValue(value: Value) = value.castTo(IntType, StringType) match {
+		case Left(intVal) => intVal.int.flatMap(findForId)
+		case Right(strVal) =>
+			strVal.string.flatMap { str => values.find { c => (c.code ~== str) || (c.toString ~== str) } }
+	}
+	/**
+	  * @param value A value that represents a currency id, code or symbol
+	  * @return currency matching the specified value.
+	 *         If the value didn't match any registered currency, returns the default currency (Euro).
 	  */
-	def fromValue(value: Value) = forId(value.getInt)
+	def fromValue(value: Value) = findForValue(value).getOrElse(default)
 	
 	
 	// NESTED	--------------------
@@ -81,6 +92,8 @@ object Currency
 		
 		override val id = 1
 		override val code: String = "EUR"
+		
+		override def toString = "€"
 	}
 	
 	/**
@@ -93,6 +106,8 @@ object Currency
 		
 		override val id = 2
 		override val code: String = "USD"
+		
+		override def toString = "$"
 	}
 }
 
