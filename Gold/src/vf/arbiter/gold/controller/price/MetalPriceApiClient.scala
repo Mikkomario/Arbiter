@@ -80,8 +80,32 @@ class MetalPriceApiClient(apiKey: String) extends ApiClient
 		allowJsonInUriParameters = false, allowBodyParameters = false)
 	override protected lazy val rootPath: String = "https://api.metalpriceapi.com/v1"
 	
-	override val valueResponseParser: ResponseParser[Response[Value]] =
-		ResponseParser.value.unwrapToResponse(parseFailureStatus) { _.getString }
+	private val baseResponseParser = ResponseParser.value.mapToResponseOrFail { result =>
+		// All metal price responses are normally given as json objects
+		result.wrapped.flatMap { _.tryModel } match {
+			case Success(body) =>
+				// Failures are indicated with "success": false, followed by an "error" property
+				if (body("success").booleanOr(true))
+					Right(body)
+				else {
+					val error = body("error").getModel
+					// Error messages should be present in the error's "message" or "info" property
+					Left(Status(error("statusCode").intOr(500)) -> error("message", "info").getString)
+				}
+				
+			// Case: Couldn't parse the response into a value or a model
+			case Failure(error) =>
+				log(error, "Failed to parse the response body")
+				Left(parseFailureStatus -> error.getMessage)
+		}
+	} {
+		case Success(body) => body("error")("message", "info").stringOr(body.getString)
+		case Failure(error) =>
+			log(error, "A failure response")
+			error.getMessage
+	}
+	
+	override val valueResponseParser: ResponseParser[Response[Value]] = baseResponseParser.mapSuccess { m => m: Value }
 	override val emptyResponseParser: ResponseParser[Response[Unit]] =
 		PreparingResponseParser.onlyRecordFailures(ResponseParser.value.map {
 			case Success(body) => body.getString
@@ -109,17 +133,17 @@ class MetalPriceApiClient(apiKey: String) extends ApiClient
 	 * Requests metal prices during a specific date range
 	 * @param metal Targeted metal
 	 * @param to Currency in which the price should be listed
-	 * @param during Dates during which the price should be listed (max 365 days)
+	 * @param during Dates during which the price should be listed (max 5 days for a free plan)
 	 * @return Future that resolves into parsed metal price entries, or to a failure
 	 */
 	// TODO: Handle case where the date range only covers a single date
-	// TODO: Current version fails if during > 365 days
+	// TODO: Current version fails if during > 365 days (changed to 5 days)
 	def pricesDuring(metal: Metal, to: Currency, during: DateRange) = {
 		// Requests the prices on the targeted date range
 		get("timeframe", params = Model.from(
 			"start_date" -> during.start, "end_date" -> during.last,
 			"base" -> metal.code, "currencies" -> to.code))
-			.getModel
+			.send(baseResponseParser)
 			// Processes the results once they arrive
 			.map {
 				// Case: Success => Parses price data from the response body, if possible

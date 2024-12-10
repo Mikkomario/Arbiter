@@ -36,11 +36,10 @@ object MetalPriceData extends FromModelFactoryWithSchema[MetalPriceData]
 
 /**
   * Documents a metal's (average) price on a specific date
-  * @param metal Metal who's price is recorded
+  * @param metal Metal whose price is recorded
   * @param currency The currency in which the price is given
   * @param date Date on which the price was used
-  * 
-	@param pricePerTroyOunce Price of the specified metal in the specified currency. Per one troy ounce of metal.
+  * @param pricePerTroyOunce Price of the specified metal in the specified currency. Per one troy ounce of metal.
   * @author Mikko Hilpinen
   * @since 14.09.2023, v1.4
   */
@@ -57,8 +56,7 @@ case class MetalPriceData(metal: Metal, currency: Currency, date: LocalDate, pri
 	
 	// IMPLEMENTED	--------------------
 	
-	override def toModel = 
-		Model(Vector("metal" -> metal.id, "currency" -> currency.id, "date" -> date, 
-			"pricePerTroyOunce" -> pricePerTroyOunce))
+	override def toModel = Model(Vector(
+		"metal" -> metal.id, "currency" -> currency.id, "date" -> date, "pricePerTroyOunce" -> pricePerTroyOunce))
 }
 

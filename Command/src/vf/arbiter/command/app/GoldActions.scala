@@ -35,10 +35,17 @@ object GoldActions
 			// Reads the key from DB if possible
 			ArbiterGoldSettings.apiKey.orElse {
 				// If not stored in the DB, requests the user for a new key
-				val key = StdIn.readNonEmptyLine(
+				StdIn.readNonEmptyLine(
 					"Please specify the API-key for the metal prices API.\nIf you don't have an API-key yet, visit https://metalpriceapi.com/ to setup a free account.")
-				key.foreach { ArbiterGoldSettings.apiKey = _ }
-				key.map(ApiKey.apply)
+					.map { key =>
+						println("When using a free Metal Prices API plan, this software has to comply with the plan limits.")
+						val apiKey = ApiKey(key, StdIn.ask("Do you have a paid Metal Prices API plan?"))
+						
+						// Remembers the API key
+						ArbiterGoldSettings.apiKey = apiKey
+						
+						apiKey
+					}
 			}
 		}
 		result -> result.toOption.exists { _.isDefined }
@@ -127,7 +134,8 @@ object GoldActions
 			println(s"Checking gold prices for the last ${referencePeriod.length} days")
 			val lastDate = Today.yesterday
 			// Retrieves the recent average price (blocks)
-			MetalPrices(Gold, currency).averageDuring(DateRange.inclusive(lastDate - referencePeriod, lastDate))
+			MetalPrices(Gold, currency)
+				.averageDuring(DateRange.inclusive(lastDate - referencePeriod, lastDate))
 				.waitForResult() match
 			{
 				// Case: Price acquired => Prints possible warnings and then delegates to the specified function

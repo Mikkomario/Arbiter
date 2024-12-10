@@ -7,6 +7,7 @@ import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.console.{ArgumentSchema, Command, CommandArguments}
 import utopia.vault.database.Connection
 import vf.arbiter.core.util.Common._
+import vf.arbiter.gold.database.access.many.price.DbMetalPrices
 import vf.arbiter.gold.model.cached.price.Price
 import vf.arbiter.gold.model.enumeration.Currency
 
@@ -80,6 +81,13 @@ object GoldCommands
 				case None => println("Cancelled")
 			}
 	}
+	lazy val removeInvalidValues = Command.withoutArguments("rm-invalid-gold",
+		help = "Clears invalid metal price entries from the database") {
+		connectionPool.logging { implicit c =>
+			DbMetalPrices.withoutPrice.delete()
+			println("Invalid prices cleared")
+		}
+	}
 	
 	
 	// COMPUTED -------------------------------
@@ -87,7 +95,7 @@ object GoldCommands
 	/**
 	 * @return All gold-related commands
 	 */
-	def all = Vector(currentGoldPrice, valueOf, correctPrice)
+	def all = Vector(currentGoldPrice, valueOf, correctPrice, removeInvalidValues)
 	
 	
 	// OTHER    -------------------------------

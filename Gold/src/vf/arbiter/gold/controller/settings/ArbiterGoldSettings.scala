@@ -18,8 +18,20 @@ object ArbiterGoldSettings
 	 * @return API-key that's currently specified in the settings.
 	 *         None if no API-key is specified at this time.
 	 */
-	def apiKey(implicit connection: Connection) = apply("metal-price-api-key").string.map(ApiKey.apply)
-	def apiKey_=(newKey: String)(implicit connection: Connection) = update("metal-price-api-key", newKey)
+	def apiKey(implicit connection: Connection) =
+		apply("metal-price-api-key").string.map { ApiKey(_, paidPlan) }
+	def apiKey_=(newKey: String)(implicit connection: Connection): Unit = update("metal-price-api-key", newKey)
+	def apiKey_=(newKey: ApiKey)(implicit connection: Connection): Unit = {
+		apiKey = newKey.key
+		paidPlan = newKey.paid
+	}
+	
+	/**
+	 * @param connection Implicit DB connection
+	 * @return Whether the user has a paid metal price API plan
+	 */
+	def paidPlan(implicit connection: Connection) = apply("metal-price-api-paid-plan").getBoolean
+	def paidPlan_=(isPaid: Boolean)(implicit connection: Connection) = update("metal-price-api-paid-plan", isPaid)
 	
 	private def apply(key: String)(implicit connection: Connection) = DbCommonSetting(key).value
 	private def update(key: String, value: Value)(implicit connection: Connection) = DbCommonSetting(key) = value

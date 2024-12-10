@@ -1,8 +1,13 @@
 package vf.arbiter.gold.controller.price
 
+import utopia.flow.async.AsyncExtensions._
 import utopia.flow.async.TryFuture
-import utopia.flow.time.DateRange
+import utopia.flow.collection.CollectionExtensions._
+import utopia.flow.collection.immutable.Empty
+import utopia.flow.time.{DateRange, Days, Today}
+import utopia.flow.time.TimeExtensions._
 import utopia.flow.util.TryCatch
+import utopia.flow.util.TryExtensions._
 import utopia.vault.database.{Connection, ConnectionPool}
 import vf.arbiter.gold.database.access.many.price.DbMetalPrices
 import vf.arbiter.gold.database.model.price.MetalPriceModel
@@ -11,6 +16,7 @@ import vf.arbiter.gold.model.cached.price.WeightPrice
 import vf.arbiter.gold.model.enumeration.{Currency, Metal}
 
 import java.time.LocalDate
+import scala.collection.immutable.VectorBuilder
 import scala.concurrent.{ExecutionContext, Future}
 
 object MetalPrices
@@ -58,37 +64,118 @@ class MetalPrices(metal: Metal, currency: Currency)
 		dates.iterator.find { !cachedPrices.contains(_) } match {
 			case Some(firstMissingDate) =>
 				val lastMissingDate = dates.reverse.iterator.find { !cachedPrices.contains(_) }.get
-				pullAverageDuring(DateRange.inclusive(firstMissingDate, lastMissingDate), cachedPrices)
+				Future {
+					pullAverageDuring(DateRange.inclusive(firstMissingDate, lastMissingDate), cachedPrices)
+				}
 			// Case: Cached data covers the whole range of targeted dates => Calculates average based on those
 			case None => TryFuture.successCatching(averageOf(cachedPrices.values))
 		}
 	}
 	
 	private def pullAverageDuring(targetDates: DateRange, cachedPrices: Map[LocalDate, WeightPrice])
-	                             (implicit cPool: ConnectionPool, exc: ExecutionContext, apiKey: ApiKey) = {
-		// Requests price data for the missing dates
-		MetalPriceApiClient.pricesDuring(metal, currency, targetDates)
-			.map {
-				// Case: Price request succeeded => Stores the read prices and produces the average
-				case TryCatch.Success(priceData, errors) =>
-					val newPriceData = priceData.filterNot { p => cachedPrices.contains(p.date) }
-					if (newPriceData.nonEmpty)
-						cPool.tryWith { implicit c =>
-							// TODO: Doesn't check for duplicates.
-							//  In a very busy environment there is a risk for those
-							MetalPriceModel.insert(newPriceData)
-						}
-					TryCatch.Success(
-						averageOf(newPriceData.map { _.price } ++ cachedPrices.valuesIterator),
-						errors)
-				
-				// Case: Request failed => Recovers using cached data, if possible
-				case TryCatch.Failure(error) =>
-					if (cachedPrices.isEmpty)
-						TryCatch.Failure(error)
-					else
-						TryCatch.Success(averageOf(cachedPrices.values), Vector(error))
+	                             (implicit cPool: ConnectionPool, exc: ExecutionContext, apiKey: ApiKey) =
+	{
+		// Splits the targeted time period so that it respects the API's max request sizes
+		// Performs sequential requests for each of the targeted segments, but stops if any query fails
+		val (splitTargetDates, extraDates) = splitRequest(targetDates, cachedPrices.keySet,
+			Days(if (apiKey.paid) 365 else 5))
+		
+		val result = splitTargetDates.reverseIterator
+			.map { dates =>
+				println(s"Requesting prices for $dates")
+				MetalPriceApiClient.pricesDuring(metal, currency, DateRange.inclusive(dates.head, dates.last))
+					.waitForResult()
 			}
+			.takeTo { _.isFailure }
+			.toTryCatch
+			.map { datePrices =>
+				// On a full or partial success, calculates the average price and caches all prices in the local DB
+				val newPriceData = datePrices.view.flatten.filterNot { p => cachedPrices.contains(p.date) }.toVector
+				if (newPriceData.nonEmpty)
+					cPool.tryWith { implicit c =>
+						// TODO: Doesn't check for duplicates.
+						//  In a very busy environment there is a risk for those
+						MetalPriceModel.insert(newPriceData)
+					}
+					
+				averageOf(
+					datePrices.view.flatten
+						.filterNot { p => extraDates.contains(p.date) || cachedPrices.contains(p.date) }
+						.map { _.price }.toVector ++
+						cachedPrices.valuesIterator)
+			}
+		
+		// If the process failed, attempts to recover using cached data
+		if (result.isSuccess || cachedPrices.isEmpty)
+			result
+		else
+			TryCatch.Success(averageOf(cachedPrices.values), result.failures)
+	}
+	
+	/**
+	 * Splits a date range into sizes supported by the metal price API.
+	 * Optimizes request-usage by extending the first and/or last date range (so that more data may be cached).
+	 * @param dates Targeted dates
+	 * @param cachedDates Dates for which there already exists cached data
+	 * @param maxRequestLength Maximum number of days in a single request
+	 * @return Date ranges to query,
+	 *         as well as a set containing all dates that were included but not part of the targeted date range.
+	 */
+	private def splitRequest(dates: DateRange, cachedDates: Set[LocalDate], maxRequestLength: Days) = {
+		val maxAdvance = maxRequestLength - 1
+		val iter = dates.iterator.filterNot(cachedDates.contains).pollable
+		
+		if (iter.hasNext) {
+			val rangesBuilder = new VectorBuilder[DateRange]()
+			var openRangeStart = iter.next()
+			var openRangeEnd = iter.next()
+			
+			while (iter.hasNext) {
+				val date = iter.next()
+				if (date > openRangeStart + maxAdvance) {
+					rangesBuilder += DateRange.inclusive(openRangeStart, openRangeEnd)
+					openRangeStart = date
+				}
+				openRangeEnd = date
+			}
+			
+			// Adds additional days to the latest request if there is additional space
+			// Can't target current or future dates, however
+			val extraDaysAtEnd = {
+				val yesterday = Today.yesterday
+				if (openRangeEnd < yesterday && openRangeEnd - openRangeStart < maxAdvance) {
+					val lastDate = (openRangeStart + maxAdvance) min yesterday
+					val previousLastDate = openRangeEnd
+					openRangeEnd = lastDate
+					Some(DateRange.inclusive(previousLastDate.tomorrow, lastDate))
+				}
+				else
+					None
+			}
+			rangesBuilder += DateRange.inclusive(openRangeStart, openRangeEnd)
+			val defaultRanges = rangesBuilder.result()
+			
+			// May also add additional days the earliest request, in order to optimize request-usage
+			val (firstRange, extraDaysAtStart) = {
+				val firstRange = defaultRanges.head
+				val extraDaysUsed = extraDaysAtEnd match {
+					case Some(days) => days.length
+					case None => Days.zero
+				}
+				val remainingDays = maxRequestLength - firstRange.length - extraDaysUsed
+				if (remainingDays.isPositive) {
+					val newFirstDate = firstRange.start - remainingDays
+					firstRange.withStart(newFirstDate) -> Some(DateRange.exclusive(newFirstDate, firstRange.start))
+				}
+				else
+					firstRange -> None
+			}
+			
+			(firstRange +: defaultRanges.tail) ->
+				(Set.concat(extraDaysAtEnd.view.flatten, extraDaysAtStart.view.flatten) -- cachedDates)
+		}
+		else
+			Empty -> Set[LocalDate]()
 	}
 	
 	private def averageOf(prices: Iterable[WeightPrice]) = prices.sum / prices.size
