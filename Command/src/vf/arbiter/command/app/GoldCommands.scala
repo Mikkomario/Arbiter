@@ -1,7 +1,9 @@
 package vf.arbiter.command.app
 
 import utopia.flow.generic.casting.ValueConversions._
+import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.time.TimeExtensions._
+import utopia.flow.time.{DateRange, Today}
 import utopia.flow.util.TryExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.console.{ArgumentSchema, Command, CommandArguments}
@@ -33,6 +35,34 @@ object GoldCommands
 	lazy val currentGoldPrice = Command("goldvalue", "gold", "Shows the recent average value of gold in some currency")(
 		currencyArg, periodArg) { args =>
 		withConnection { implicit c => GoldActions.printCurrentGoldPrice(currencyFrom(args), periodFrom(args)) }
+	}
+	/**
+	 * Command for printing and exporting a table containing gold prices
+	 */
+	lazy val goldPriceTable = Command("goldtable",
+		help = "Generates a table that displays the daily average price of gold")(
+		currencyArg, ArgumentSchema("from", defaultValue = Today - 31.days, help = "The first included date"),
+		ArgumentSchema("to", defaultValue = Today.yesterday, help = "The last included date")) {
+		args =>
+			implicit val currency: Currency = currencyFrom(args)
+			withConnection { implicit c =>
+				val from = args("from").getLocalDate
+				val to = args("to").getLocalDate
+				val appliedTo = {
+					if (to >= Today) {
+						println("Cannot get gold prices for today or future dates => Limits the last included date to yesterday.")
+						Today.yesterday
+					}
+					else
+						to
+				}
+				if (from > appliedTo)
+					println("No dates were targeted")
+				else {
+					GoldActions.exportGoldPricesDuring(DateRange.inclusive(from, to),
+						s"output/gold-prices/gold-prices-$from-to-$appliedTo.csv")
+				}
+			}
 	}
 	/**
 	 * Command for converting euros to gold
@@ -95,7 +125,7 @@ object GoldCommands
 	/**
 	 * @return All gold-related commands
 	 */
-	def all = Vector(currentGoldPrice, valueOf, correctPrice, removeInvalidValues)
+	def all = Vector(currentGoldPrice, goldPriceTable, valueOf, correctPrice, removeInvalidValues)
 	
 	
 	// OTHER    -------------------------------

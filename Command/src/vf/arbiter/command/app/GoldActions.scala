@@ -1,10 +1,12 @@
 package vf.arbiter.command.app
 
 import utopia.flow.async.AsyncExtensions._
+import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.{DateRange, Days, Today}
-import utopia.flow.util.TryCatch
+import utopia.flow.util.{StringUtils, TryCatch}
 import utopia.flow.util.console.ConsoleExtensions._
+import utopia.flow.util.TryExtensions._
 import utopia.flow.view.immutable.caching.ConditionalLazy
 import utopia.vault.database.Connection
 import vf.arbiter.core.util.Common._
@@ -12,11 +14,13 @@ import vf.arbiter.gold.controller.price.{CorrectInflation, MetalPrices}
 import vf.arbiter.gold.controller.settings.ArbiterGoldSettings
 import vf.arbiter.gold.model.cached.auth.ApiKey
 import vf.arbiter.gold.model.cached.price.{Price, WeightPrice}
+import vf.arbiter.gold.model.enumeration.Currency.Euro
 import vf.arbiter.gold.model.enumeration.Metal.{Gold, Silver}
 import vf.arbiter.gold.model.enumeration.{Currency, WeightUnit}
 
+import java.nio.file.Path
 import java.time.LocalDate
-import scala.io.StdIn
+import scala.io.{Codec, StdIn}
 import scala.util.{Failure, Success}
 
 /**
@@ -27,6 +31,8 @@ import scala.util.{Failure, Success}
 object GoldActions
 {
 	// ATTRIBUTES   --------------------------------
+	
+	private implicit val codec: Codec = Codec.UTF8
 	
 	private val defaultReferencePeriod = Days(30)
 	
@@ -66,6 +72,55 @@ object GoldActions
 			println("The recent average price of gold is:")
 			WeightUnit.values.foreach { unit =>
 				println(s"\t- ${price per unit} $currency/$unit")
+			}
+		}
+	}
+	
+	/**
+	 * Prints and exports gold prices as a csv file
+	 * @param dates Targeted dates
+	 * @param targetPath Path to the file to write (call-by-name)
+	 * @param currency Used currency (implicit)
+	 * @param connection Implicit DB connection
+	 */
+	def exportGoldPricesDuring(dates: DateRange, targetPath: => Path)
+	                          (implicit connection: Connection, currency: Currency) =
+	{
+		forApiKeyOrCancel { implicit key =>
+			println(s"Acquires and displays gold prices in $currency during $dates")
+			MetalPrices(Gold, currency).during(dates).waitForResult() match {
+				case TryCatch.Success(prices: Map[LocalDate, WeightPrice], errors) =>
+					if (errors.nonEmpty) {
+						log(errors.head, "Partial failures during price-search")
+						println(s"Encountered ${ errors.size } errors during the price-search")
+					}
+					
+					// Prints an ASCII table and generates a csv file
+					val orderedPrices = prices.toVector.sortBy { _._1 }
+					println(StringUtils.asciiTableFrom[(LocalDate, WeightPrice)](orderedPrices,
+						Vector("Date", s"$currency/Kg", s"$currency/g", s"$currency/t oz"),
+						_._1.toString,
+						p => f"${ p._2.perKilo }%1.2f", p => f"${ p._2.perGram }%1.2f", p => f"${ p._2.perTroyOunce }%1.2f"))
+					
+					targetPath.createParentDirectories()
+						.flatMap { p =>
+							p.writeUsing { writer =>
+								writer.println(s"Date; $currency/Kg; $currency/g; $currency/t oz")
+								orderedPrices.foreach { case (date, price) =>
+									val perKilo = f"${ price.perKilo }%1.2f"
+									val perGram = f"${ price.perGram }%1.2f"
+									val perTroyOunce = f"${ price.perTroyOunce }%1.2f"
+									writer.println(s"$date;$perKilo;$perGram;$perTroyOunce")
+								}
+								p
+							}
+						}
+						.flatMap { _.openFileLocation() }
+						.failure.foreach { error => log(error, "Failed to write or open the price file") }
+				
+				case TryCatch.Failure(error) =>
+					log(error, "Failed to acquire prices")
+					println(s"Failed to acquire gold prices (${error.getMessage})")
 			}
 		}
 	}

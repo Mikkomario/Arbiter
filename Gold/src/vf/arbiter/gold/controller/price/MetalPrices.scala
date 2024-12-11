@@ -44,6 +44,33 @@ class MetalPrices(metal: Metal, currency: Currency)
 	// OTHER    ---------------------------
 	
 	/**
+	 * @param dates Targeted date range
+	 * @param cPool Implicit DB connection pool (used when asynchronously caching data)
+	 * @param exc Implicit execution context
+	 * @param apiKey Implicit API key
+	 * @param connection Implicit DB connection (used in the initial cache search)
+	 * @return Future that resolves into a map where keys are dates and values are average metal prices for that date.
+	 *         May contain a full or a partial failure.
+	 */
+	def during(dates: DateRange)
+	          (implicit cPool: ConnectionPool, exc: ExecutionContext, apiKey: ApiKey, connection: Connection) =
+	{
+		// Checks the cached prices first
+		val cachedPrices = access.during(dates).pull.view.map { p => p.date -> p.price }.toMap
+		
+		// Finds the first and the last date not covered by the cached price data
+		dates.find { !cachedPrices.contains(_) } match {
+			// Case: No local data exists for some dates => Queries the missing data
+			case Some(firstMissingDate) =>
+				val lastMissingDate = dates.reverse.iterator.find { !cachedPrices.contains(_) }.get
+				Future { pullDuring(DateRange.inclusive(firstMissingDate, lastMissingDate), cachedPrices) }
+				
+			// Case: Cached data covers the whole range of targeted dates => Calculates average based on those
+			case None => TryFuture.successCatching(cachedPrices)
+		}
+	}
+	
+	/**
 	 * @param dates Targeted dates
 	 * @param cPool Implicit connection pool
 	 * @param exc Implicit execution context
@@ -57,23 +84,10 @@ class MetalPrices(metal: Metal, currency: Currency)
 	def averageDuring(dates: DateRange)
 	                 (implicit cPool: ConnectionPool, exc: ExecutionContext, apiKey: ApiKey,
 	                  connection: Connection): Future[TryCatch[WeightPrice]] =
-	{
-		// Checks the cached prices first
-		val cachedPrices = access.during(dates).pull.map { p => p.date -> p.price }.toMap
-		// Finds the first and the last date not covered by the cached price data
-		dates.iterator.find { !cachedPrices.contains(_) } match {
-			case Some(firstMissingDate) =>
-				val lastMissingDate = dates.reverse.iterator.find { !cachedPrices.contains(_) }.get
-				Future {
-					pullAverageDuring(DateRange.inclusive(firstMissingDate, lastMissingDate), cachedPrices)
-				}
-			// Case: Cached data covers the whole range of targeted dates => Calculates average based on those
-			case None => TryFuture.successCatching(averageOf(cachedPrices.values))
-		}
-	}
+		during(dates).map { _.map { prices => averageOf(prices.values) } }
 	
-	private def pullAverageDuring(targetDates: DateRange, cachedPrices: Map[LocalDate, WeightPrice])
-	                             (implicit cPool: ConnectionPool, exc: ExecutionContext, apiKey: ApiKey) =
+	private def pullDuring(targetDates: DateRange, cachedPrices: Map[LocalDate, WeightPrice])
+	                      (implicit cPool: ConnectionPool, exc: ExecutionContext, apiKey: ApiKey) =
 	{
 		// Splits the targeted time period so that it respects the API's max request sizes
 		// Performs sequential requests for each of the targeted segments, but stops if any query fails
@@ -97,19 +111,16 @@ class MetalPrices(metal: Metal, currency: Currency)
 						//  In a very busy environment there is a risk for those
 						MetalPriceModel.insert(newPriceData)
 					}
-					
-				averageOf(
-					datePrices.view.flatten
-						.filterNot { p => extraDates.contains(p.date) || cachedPrices.contains(p.date) }
-						.map { _.price }.toVector ++
-						cachedPrices.valuesIterator)
+				
+				newPriceData.view.filterNot { p => extraDates.contains(p.date) }.map { p => p.date -> p.price }.toMap ++
+					cachedPrices
 			}
 		
 		// If the process failed, attempts to recover using cached data
 		if (result.isSuccess || cachedPrices.isEmpty)
 			result
 		else
-			TryCatch.Success(averageOf(cachedPrices.values), result.failures)
+			TryCatch.Success(cachedPrices, result.failures)
 	}
 	
 	/**
