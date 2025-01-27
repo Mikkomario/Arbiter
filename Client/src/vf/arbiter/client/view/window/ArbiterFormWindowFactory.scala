@@ -1,6 +1,5 @@
 package vf.arbiter.client.view.window
 
-import utopia.firmament.context.TextContext
 import utopia.firmament.drawing.immutable.BackgroundDrawer
 import utopia.firmament.image.SingleColorIcon
 import utopia.firmament.localization.LocalizedString
@@ -33,7 +32,7 @@ trait ArbiterFormWindowFactory[A, N] extends InputWindowFactory[A, N]
 {
 	// COMPUTED ---------------------------
 	
-	protected def formBackground = windowContext.color.dark.primary
+	// protected def formBackground = windowContext.color.dark.primary
 	
 	
 	// IMPLEMENTED  -----------------------
@@ -44,6 +43,7 @@ trait ArbiterFormWindowFactory[A, N] extends InputWindowFactory[A, N]
 	override protected def executionContext: ExecutionContext = Common.executionContext
 	override protected def log: Logger = Common.log
 	
+	/*
 	override protected def windowContext: ReachContentWindowContext = context.window
 	override protected def contentContext: (TextContext, TextContext) = {
 		val context = windowContext.textContext.against(formBackground)
@@ -82,4 +82,6 @@ trait ArbiterFormWindowFactory[A, N] extends InputWindowFactory[A, N]
 					}
 		}
 	}
+	
+	 */
 }

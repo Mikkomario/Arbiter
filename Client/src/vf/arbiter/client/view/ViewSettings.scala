@@ -1,6 +1,8 @@
 package vf.arbiter.client.view
 
-import utopia.firmament.context.{BaseContext, ScrollingContext, WindowContext}
+import utopia.firmament.context.ScrollingContext
+import utopia.firmament.context.base.StaticBaseContext
+import utopia.firmament.context.window.WindowContext
 import utopia.firmament.image.ImageCache
 import utopia.firmament.localization.{Localizer, NoLocalization}
 import utopia.firmament.model.Margins
@@ -126,7 +128,7 @@ object ViewSettings
 		/**
 		 * The standard base context to use
 		 */
-		val base = BaseContext.apply(actorHandler, font.standard, color.scheme, margins)
+		val base = StaticBaseContext.apply(actorHandler, font.standard, color.scheme, margins)
 		/**
 		 * The window-creation context to use
 		 */

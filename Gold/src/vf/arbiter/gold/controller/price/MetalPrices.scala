@@ -139,7 +139,7 @@ class MetalPrices(metal: Metal, currency: Currency)
 		if (iter.hasNext) {
 			val rangesBuilder = new VectorBuilder[DateRange]()
 			var openRangeStart = iter.next()
-			var openRangeEnd = iter.next()
+			var openRangeEnd = openRangeStart
 			
 			while (iter.hasNext) {
 				val date = iter.next()
