@@ -20,7 +20,7 @@ object DbInvoice extends SingleRowModelAccess[Invoice] with NonDeprecatedView[In
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = InvoiceModel
+	def model = InvoiceModel
 	
 	
 	// IMPLEMENTED	--------------------

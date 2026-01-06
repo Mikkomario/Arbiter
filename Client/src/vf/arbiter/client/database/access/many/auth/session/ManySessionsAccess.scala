@@ -62,14 +62,14 @@ trait ManySessionsAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = SessionModel
+	def model = SessionModel
 	
 	
 	// IMPLEMENTED	--------------------
 	
 	override def factory = SessionFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): ManySessionsAccess = ManySessionsAccess(condition)
 	

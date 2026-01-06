@@ -3,7 +3,7 @@ package vf.arbiter.core.database.access.many.invoice
 import utopia.flow.collection.immutable.range.{HasEnds, Span}
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.time.TimeExtensions._
-import utopia.flow.time.{Days, Now}
+import utopia.flow.time.{Days, Now, Year, YearMonth}
 import utopia.vault.database.Connection
 import utopia.vault.nosql.access.many.model.ManyModelAccess
 import utopia.vault.nosql.template.Indexed
@@ -12,7 +12,7 @@ import utopia.vault.sql.Condition
 import vf.arbiter.core.database.model.company.CompanyDetailsModel
 import vf.arbiter.core.database.model.invoice.InvoiceModel
 
-import java.time.{Instant, LocalDate, Year, YearMonth}
+import java.time.{Instant, LocalDate}
 
 /**
   * A common trait for access points which target multiple invoices or similar instances at a time
@@ -93,7 +93,7 @@ trait ManyInvoicesAccessLike[+A, +Repr <: ManyModelAccess[A]]
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = InvoiceModel
+	def model = InvoiceModel
 	
 	/**
 	  * Factory used for constructing database interaction models for company details

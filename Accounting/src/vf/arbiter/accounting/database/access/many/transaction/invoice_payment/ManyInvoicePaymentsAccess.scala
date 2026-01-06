@@ -37,7 +37,7 @@ trait ManyInvoicePaymentsAccess
 	
 	override def factory = InvoicePaymentFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): ManyInvoicePaymentsAccess = ManyInvoicePaymentsAccess(condition)
 }

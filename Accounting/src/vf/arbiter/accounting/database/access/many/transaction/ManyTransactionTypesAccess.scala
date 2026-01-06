@@ -70,7 +70,7 @@ trait ManyTransactionTypesAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = TransactionTypeModel
+	def model = TransactionTypeModel
 	
 	
 	// IMPLEMENTED	--------------------
@@ -81,7 +81,7 @@ trait ManyTransactionTypesAccess
 	
 	override protected def manyDescriptionsAccess = DbTransactionTypeDescriptions
 	
-	override protected def self = this
+	override def self = this
 	
 	override def idOf(item: TransactionType) = item.id
 	

@@ -19,7 +19,7 @@ object DbUnitCategory extends SingleRowModelAccess[UnitCategory] with Unconditio
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = UnitCategoryModel
+	def model = UnitCategoryModel
 	
 	
 	// IMPLEMENTED	--------------------

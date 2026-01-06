@@ -21,7 +21,7 @@ object DbAccountBalance
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = AccountBalanceModel
+	def model = AccountBalanceModel
 	
 	
 	// IMPLEMENTED	--------------------

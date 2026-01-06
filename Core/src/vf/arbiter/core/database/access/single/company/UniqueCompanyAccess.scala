@@ -44,7 +44,7 @@ trait UniqueCompanyAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = CompanyModel
+	def model = CompanyModel
 	
 	
 	// IMPLEMENTED	--------------------

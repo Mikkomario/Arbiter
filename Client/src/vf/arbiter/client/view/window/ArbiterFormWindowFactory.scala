@@ -11,7 +11,6 @@ import utopia.paradigm.color.ColorRole
 import utopia.paradigm.enumeration.Alignment
 import utopia.reach.component.factory.ContextualMixed
 import utopia.reach.component.template.ReachComponentLike
-import utopia.reach.component.wrapper.OpenComponent
 import utopia.reach.container.multi.{Stack, ViewStack}
 import utopia.reach.container.wrapper.{ContextualFramingFactory, Framing}
 import utopia.reach.context.ReachContentWindowContext
@@ -37,7 +36,7 @@ trait ArbiterFormWindowFactory[A, N] extends InputWindowFactory[A, N]
 	
 	// IMPLEMENTED  -----------------------
 	
-	override protected def defaultCloseButtonText: LocalizedString = "Cancel"
+	override protected def defaultCloseButtonText: LocalizedString = ??? // "Cancel"
 	override protected def closeIcon: SingleColorIcon = icon.close
 	
 	override protected def executionContext: ExecutionContext = Common.executionContext

@@ -19,7 +19,7 @@ object DbBank extends SingleRowModelAccess[Bank] with UnconditionalView with Ind
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = BankModel
+	def model = BankModel
 	
 	
 	// IMPLEMENTED	--------------------

@@ -1,6 +1,6 @@
 package vf.arbiter.core.model.stored.company
 
-import utopia.vault.model.template.StoredModelConvertible
+import utopia.vault.store.StoredModelConvertible
 import vf.arbiter.core.database.access.single.company.DbSingleBank
 import vf.arbiter.core.model.partial.company.BankData
 

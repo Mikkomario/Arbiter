@@ -57,7 +57,7 @@ trait ManyItemUnitsAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = ItemUnitModel
+	def model = ItemUnitModel
 	
 	
 	// IMPLEMENTED	--------------------

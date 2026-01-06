@@ -19,7 +19,7 @@ object DbItemUnit extends SingleRowModelAccess[ItemUnit] with UnconditionalView 
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = ItemUnitModel
+	def model = ItemUnitModel
 	
 	
 	// IMPLEMENTED	--------------------

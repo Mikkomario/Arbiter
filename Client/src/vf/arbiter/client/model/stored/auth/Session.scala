@@ -1,6 +1,6 @@
 package vf.arbiter.client.model.stored.auth
 
-import utopia.vault.model.template.StoredModelConvertible
+import utopia.vault.store.StoredModelConvertible
 import vf.arbiter.client.database.access.single.auth.session.DbSingleSession
 import vf.arbiter.client.model.partial.auth.SessionData
 

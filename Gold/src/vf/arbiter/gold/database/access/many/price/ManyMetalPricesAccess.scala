@@ -76,7 +76,7 @@ trait ManyMetalPricesAccess
 	// IMPLEMENTED	--------------------
 	
 	override def factory = MetalPriceFactory
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): ManyMetalPricesAccess = ManyMetalPricesAccess(condition)
 	

@@ -98,7 +98,7 @@ trait UniqueInvoiceAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = InvoiceModel
+	def model = InvoiceModel
 	
 	
 	// IMPLEMENTED	--------------------

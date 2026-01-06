@@ -29,5 +29,6 @@
     <orderEntry type="library" name="apache.httpcomponents.client5.httpclient5" level="project" />
     <orderEntry type="library" name="slf4j-1" level="project" />
     <orderEntry type="library" name="scala-sdk-2.13.14" level="application" />
+    <orderEntry type="module" module-name="Vault-Disconnected" />
   </component>
 </module>

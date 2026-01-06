@@ -66,7 +66,7 @@ trait ManyBanksAccess extends ManyRowModelAccess[Bank] with Indexed with Filtera
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = BankModel
+	def model = BankModel
 	
 	
 	// IMPLEMENTED	--------------------

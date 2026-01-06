@@ -22,7 +22,7 @@ object DbEvaluatedTransaction
 	/**
 	  * A database model (factory) used for interacting with linked transactions
 	  */
-	protected def model = TransactionModel
+	def model = TransactionModel
 	
 	/**
 	  * A database model (factory) used for interacting with the linked evaluation

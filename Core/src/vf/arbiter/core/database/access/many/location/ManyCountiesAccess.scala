@@ -62,7 +62,7 @@ trait ManyCountiesAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = CountyModel
+	def model = CountyModel
 	
 	
 	// IMPLEMENTED	--------------------

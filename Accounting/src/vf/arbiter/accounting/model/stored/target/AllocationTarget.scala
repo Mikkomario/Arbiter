@@ -1,6 +1,6 @@
 package vf.arbiter.accounting.model.stored.target
 
-import utopia.vault.model.template.StoredModelConvertible
+import utopia.vault.store.StoredModelConvertible
 import vf.arbiter.accounting.database.access.single.target.DbSingleAllocationTarget
 import vf.arbiter.accounting.model.partial.target.AllocationTargetData
 

@@ -74,14 +74,14 @@ trait ManyAccountBalancesAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = AccountBalanceModel
+	def model = AccountBalanceModel
 	
 	
 	// IMPLEMENTED	--------------------
 	
 	override def factory = AccountBalanceFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): ManyAccountBalancesAccess = ManyAccountBalancesAccess(condition)
 	

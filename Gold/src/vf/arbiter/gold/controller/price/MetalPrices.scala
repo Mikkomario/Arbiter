@@ -6,8 +6,8 @@ import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.collection.immutable.Empty
 import utopia.flow.time.{DateRange, Days, Today}
 import utopia.flow.time.TimeExtensions._
-import utopia.flow.util.TryCatch
-import utopia.flow.util.TryExtensions._
+import utopia.flow.util.result.TryCatch
+import utopia.flow.util.result.TryExtensions._
 import utopia.vault.database.{Connection, ConnectionPool}
 import vf.arbiter.gold.database.access.many.price.DbMetalPrices
 import vf.arbiter.gold.database.model.price.MetalPriceModel

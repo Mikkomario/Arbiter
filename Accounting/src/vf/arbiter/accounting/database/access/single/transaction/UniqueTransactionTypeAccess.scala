@@ -77,14 +77,14 @@ trait UniqueTransactionTypeAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = TransactionTypeModel
+	def model = TransactionTypeModel
 	
 	
 	// IMPLEMENTED	--------------------
 	
 	override def factory = TransactionTypeFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override
 		 def apply(condition: Condition): UniqueTransactionTypeAccess = UniqueTransactionTypeAccess(condition)

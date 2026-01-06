@@ -22,7 +22,7 @@ object DbDetailedAllocationTarget
 	/**
 	  * A database model (factory) used for interacting with linked targets
 	  */
-	protected def model = AllocationTargetModel
+	def model = AllocationTargetModel
 	
 	/**
 	  * A database model (factory) used for interacting with the linked specific targets

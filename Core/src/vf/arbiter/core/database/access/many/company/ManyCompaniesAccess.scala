@@ -45,7 +45,7 @@ trait ManyCompaniesAccess extends ManyCompaniesAccessLike[Company, ManyCompanies
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = companyModel
+	def model = companyModel
 	
 	
 	// IMPLEMENTED	--------------------

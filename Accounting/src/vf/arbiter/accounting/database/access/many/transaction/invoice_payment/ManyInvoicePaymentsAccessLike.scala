@@ -51,7 +51,7 @@ trait ManyInvoicePaymentsAccessLike[+A, +Repr]
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = InvoicePaymentModel
+	def model = InvoicePaymentModel
 	
 	
 	// OTHER	--------------------

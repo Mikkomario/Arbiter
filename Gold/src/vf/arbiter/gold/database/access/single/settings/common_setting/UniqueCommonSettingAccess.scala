@@ -74,7 +74,7 @@ trait UniqueCommonSettingAccess
 	
 	override def factory = CommonSettingFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): UniqueCommonSettingAccess = UniqueCommonSettingAccess(condition)
 	

@@ -60,14 +60,14 @@ trait ManyPartyEntriesAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = PartyEntryModel
+	def model = PartyEntryModel
 	
 	
 	// IMPLEMENTED	--------------------
 	
 	override def factory = PartyEntryFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): ManyPartyEntriesAccess = ManyPartyEntriesAccess(condition)
 	

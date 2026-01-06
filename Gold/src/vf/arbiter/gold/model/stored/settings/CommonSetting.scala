@@ -1,6 +1,6 @@
 package vf.arbiter.gold.model.stored.settings
 
-import utopia.vault.model.template.StoredModelConvertible
+import utopia.vault.store.StoredModelConvertible
 import vf.arbiter.gold.database.access.single.settings.common_setting.DbSingleCommonSetting
 import vf.arbiter.gold.model.partial.settings.CommonSettingData
 

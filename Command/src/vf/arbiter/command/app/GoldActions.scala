@@ -4,9 +4,10 @@ import utopia.flow.async.AsyncExtensions._
 import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.{DateRange, Days, Today}
-import utopia.flow.util.{StringUtils, TryCatch}
+import utopia.flow.util.StringUtils
 import utopia.flow.util.console.ConsoleExtensions._
-import utopia.flow.util.TryExtensions._
+import utopia.flow.util.result.TryCatch
+import utopia.flow.util.result.TryExtensions._
 import utopia.flow.view.immutable.caching.ConditionalLazy
 import utopia.vault.database.Connection
 import vf.arbiter.core.util.Common._
@@ -14,7 +15,6 @@ import vf.arbiter.gold.controller.price.{CorrectInflation, MetalPrices}
 import vf.arbiter.gold.controller.settings.ArbiterGoldSettings
 import vf.arbiter.gold.model.cached.auth.ApiKey
 import vf.arbiter.gold.model.cached.price.{Price, WeightPrice}
-import vf.arbiter.gold.model.enumeration.Currency.Euro
 import vf.arbiter.gold.model.enumeration.Metal.{Gold, Silver}
 import vf.arbiter.gold.model.enumeration.{Currency, WeightUnit}
 
@@ -98,9 +98,12 @@ object GoldActions
 					// Prints an ASCII table and generates a csv file
 					val orderedPrices = prices.toVector.sortBy { _._1 }
 					println(StringUtils.asciiTableFrom[(LocalDate, WeightPrice)](orderedPrices,
-						Vector("Date", s"$currency/Kg", s"$currency/g", s"$currency/t oz"),
-						_._1.toString,
-						p => f"${ p._2.perKilo }%1.2f", p => f"${ p._2.perGram }%1.2f", p => f"${ p._2.perTroyOunce }%1.2f"))
+						Vector(
+							"Date" -> { _._1.toString },
+							s"$currency/Kg" -> { p => f"${ p._2.perKilo }%1.2f" },
+							s"$currency/g" -> { p => f"${ p._2.perGram }%1.2f" },
+							s"$currency/t oz" -> { p => f"${ p._2.perTroyOunce }%1.2f" }
+						)))
 					
 					targetPath.createParentDirectories()
 						.flatMap { p =>

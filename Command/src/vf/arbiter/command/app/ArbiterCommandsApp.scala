@@ -1,21 +1,20 @@
 package vf.arbiter.command.app
 
-import utopia.access.http.Status
 import utopia.bunnymunch.jawn.JsonBunny
 import utopia.citadel.database.Tables
 import utopia.citadel.util.CitadelContext
 import utopia.flow.async.context.CloseHook
-import utopia.flow.collection.immutable.{Empty, Single}
 import utopia.flow.collection.CollectionExtensions._
 import utopia.flow.collection.immutable.range.Span
+import utopia.flow.collection.immutable.{Empty, Single}
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.parse.json.JsonParser
 import utopia.flow.time.TimeExtensions._
-import utopia.flow.time.Today
-import utopia.flow.util.TryExtensions._
+import utopia.flow.time.{Duration, Month, Today}
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.console.{ArgumentSchema, Command, CommandArguments, Console}
+import utopia.flow.util.result.TryExtensions._
 import utopia.flow.view.mutable.Pointer
 import utopia.flow.view.mutable.eventful.EventfulPointer
 import utopia.metropolis.model.cached.LanguageIds
@@ -23,17 +22,15 @@ import utopia.metropolis.model.stored.user.UserSettings
 import utopia.trove.controller.LocalDatabase
 import utopia.vault.database.Connection
 import utopia.vault.database.columnlength.ColumnLengthRules
+import utopia.vault.error.{ErrorHandler, HandleError}
 import utopia.vault.sql.{Count, Limit, Select}
-import utopia.vault.util.ErrorHandling
-import utopia.vault.util.ErrorHandlingPrinciple.Throw
 import vf.arbiter.command.controller._
 import vf.arbiter.core.model.combined.company.DetailedCompany
 import vf.arbiter.core.model.stored.company.CompanyDetails
 import vf.arbiter.core.util.Common._
 
 import java.nio.file.{Path, Paths}
-import java.time.{Instant, Month, Year}
-import scala.concurrent.duration.Duration
+import java.time.Instant
 import scala.io.StdIn
 import scala.util.{Failure, Success}
 
@@ -47,9 +44,8 @@ object ArbiterCommandsApp extends App
 	// SETUP    -----------------------------
 	
 	// Sets up the program environment
-	Status.setup()
 	CitadelContext.setup(executionContext, connectionPool, "arbiter_db")
-	ErrorHandling.defaultPrinciple = Throw
+	HandleError.default = ErrorHandler.Rethrow
 	implicit val jsonParser: JsonParser = JsonBunny
 	
 	private val closeConsoleFlag = Pointer(false)
@@ -384,7 +380,7 @@ object ArbiterCommandsApp extends App
 			case "quarter" => 90.days
 			case "year" => 365.days
 			case "decade" => 3652.days
-			case "all" => Duration.Inf
+			case "all" => Duration.infinite
 			case _ => if (filter.isEmpty) 30.days else 90.days
 		}
 		// Lists invoices
@@ -455,14 +451,14 @@ object ArbiterCommandsApp extends App
 		ArgumentSchema("first", defaultValue = 1, help = "The first month to include in the summary [1,12]"),
 		ArgumentSchema("last", defaultValue = Today.month.value, help = "The last month to include in the summary [1,12]"),
 		ArgumentSchema("directory", "to", help = "Directory where reports will be generated (optional)")) { args =>
-		val year = Year.of(args("year").getInt)
+		val year = args("year").getYear
 		val months = Span.numeric(args("first").getInt, args("last").getInt)
 			.overlapWith(Span.numeric(1, 12))
 			.getOrElse {
 				println("The specified range of months was not within the allowed limit [1,12]. Uses the default range.")
 				Span(1, Today.month.value)
 			}
-			.mapTo(Month.of)
+			.mapTo(Month.apply)
 		val path = args("to").string match {
 			case Some(str) => str: Path
 			case None =>

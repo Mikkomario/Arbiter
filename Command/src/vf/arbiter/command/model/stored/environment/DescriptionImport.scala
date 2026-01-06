@@ -1,6 +1,6 @@
 package vf.arbiter.command.model.stored.environment
 
-import utopia.vault.model.template.StoredModelConvertible
+import utopia.vault.store.StoredModelConvertible
 import vf.arbiter.command.database.access.single.environment.DbSingleDescriptionImport
 import vf.arbiter.command.model.partial.environment.DescriptionImportData
 

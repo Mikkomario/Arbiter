@@ -1,6 +1,6 @@
 package vf.arbiter.accounting.model.stored.transaction
 
-import utopia.vault.model.template.StoredModelConvertible
+import utopia.vault.store.StoredModelConvertible
 import vf.arbiter.accounting.database.access.single.transaction.invoice_payment.DbSingleInvoicePayment
 import vf.arbiter.accounting.model.partial.transaction.InvoicePaymentData
 

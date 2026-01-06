@@ -20,7 +20,7 @@ object DbSession extends SingleRowModelAccess[Session] with NonDeprecatedView[Se
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = SessionModel
+	def model = SessionModel
 	
 	/**
 	 * @return An access point to the currently active session, if applicable.

@@ -83,14 +83,14 @@ trait UniqueTypeSpecificAllocationTargetAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = TypeSpecificAllocationTargetModel
+	def model = TypeSpecificAllocationTargetModel
 	
 	
 	// IMPLEMENTED	--------------------
 	
 	override def factory = TypeSpecificAllocationTargetFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): UniqueTypeSpecificAllocationTargetAccess = 
 		UniqueTypeSpecificAllocationTargetAccess(condition)

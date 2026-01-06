@@ -37,7 +37,7 @@ trait ManyAllocationTargetsAccess
 	
 	override def factory = AllocationTargetFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	
 	// OTHER	--------------------

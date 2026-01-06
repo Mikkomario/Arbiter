@@ -90,14 +90,14 @@ trait ManyTransactionEvaluationsAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = TransactionEvaluationModel
+	def model = TransactionEvaluationModel
 	
 	
 	// IMPLEMENTED	--------------------
 	
 	override def factory = TransactionEvaluationFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): ManyTransactionEvaluationsAccess = 
 		ManyTransactionEvaluationsAccess(condition)

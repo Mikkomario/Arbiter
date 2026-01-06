@@ -22,7 +22,7 @@ object DbTransactionEvaluation
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = TransactionEvaluationModel
+	def model = TransactionEvaluationModel
 	
 	
 	// IMPLEMENTED	--------------------

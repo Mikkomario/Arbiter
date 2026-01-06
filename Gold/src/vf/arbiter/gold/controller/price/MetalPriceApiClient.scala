@@ -1,21 +1,22 @@
 package vf.arbiter.gold.controller.price
 
-import utopia.access.http.{Headers, Status}
+import utopia.access.model.Headers
+import utopia.access.model.enumeration.Status
 import utopia.annex.controller.{ApiClient, PreparingResponseParser}
 import utopia.annex.model.response.Response
 import utopia.annex.util.ResponseParseExtensions._
 import utopia.bunnymunch.jawn.JsonBunny
-import utopia.disciple.apache.Gateway
-import utopia.disciple.controller.RequestInterceptor
-import utopia.disciple.http.request.{Body, Request, StringBody}
-import utopia.disciple.http.response.ResponseParser
+import utopia.disciple.controller.Gateway
+import utopia.disciple.controller.interceptor.RequestInterceptor
+import utopia.disciple.controller.parse.ResponseParser
+import utopia.disciple.model.request.{Body, Request, StringBody}
 import utopia.flow.collection.immutable.Empty
 import utopia.flow.collection.immutable.caching.cache.Cache
 import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.generic.model.immutable.{Constant, Model, Value}
 import utopia.flow.parse.json.JsonParser
 import utopia.flow.time.DateRange
-import utopia.flow.util.TryExtensions._
+import utopia.flow.util.result.TryExtensions._
 import utopia.flow.util.logging.Logger
 import vf.arbiter.core.util.Common
 import vf.arbiter.core.util.Common.executionContext
@@ -80,29 +81,28 @@ class MetalPriceApiClient(apiKey: String) extends ApiClient
 		allowJsonInUriParameters = false, allowBodyParameters = false)
 	override protected lazy val rootPath: String = "https://api.metalpriceapi.com/v1"
 	
-	private val baseResponseParser = ResponseParser.value.mapToResponseOrFail { result =>
-		// All metal price responses are normally given as json objects
-		result.wrapped.flatMap { _.tryModel } match {
+	private val baseResponseParser = ResponseParser.value.mapContextually[Response[Model]] { (status, headers, result) =>
+		// All metal price responses are normally given as JSON objects
+		result.flatMap { _.tryModel } match {
 			case Success(body) =>
 				// Failures are indicated with "success": false, followed by an "error" property
 				if (body("success").booleanOr(true))
-					Right(body)
+					Response.Success(body, status, headers)
 				else {
 					val error = body("error").getModel
 					// Error messages should be present in the error's "message" or "info" property
-					Left(Status(error("statusCode").intOr(500)) -> error("message", "info").getString)
+					val wrappedStatus = error("statusCode").int match {
+						case Some(code) => Status(code)
+						case None => status
+					}
+					Response.Failure(wrappedStatus, error("message", "info").getString)
 				}
 				
 			// Case: Couldn't parse the response into a value or a model
 			case Failure(error) =>
 				log(error, "Failed to parse the response body")
-				Left(parseFailureStatus -> error.getMessage)
+				Response.Failure(parseFailureStatus, error.getMessage)
 		}
-	} {
-		case Success(body) => body("error")("message", "info").stringOr(body.getString)
-		case Failure(error) =>
-			log(error, "A failure response")
-			error.getMessage
 	}
 	
 	override val valueResponseParser: ResponseParser[Response[Value]] = baseResponseParser.mapSuccess { m => m: Value }
@@ -120,8 +120,6 @@ class MetalPriceApiClient(apiKey: String) extends ApiClient
 	override protected def exc: ExecutionContext = executionContext
 	override protected implicit def jsonParser: JsonParser = JsonBunny
 	override protected implicit def log: Logger = Common.log
-	
-	override protected def responseParseFailureStatus: Status = parseFailureStatus
 	
 	override protected def modifyOutgoingHeaders(original: Headers): Headers = original
 	override protected def makeRequestBody(bodyContent: Value): Body = StringBody.json(bodyContent.getString)

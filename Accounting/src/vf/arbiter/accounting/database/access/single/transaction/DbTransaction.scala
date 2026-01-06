@@ -21,7 +21,7 @@ object DbTransaction
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = TransactionModel
+	def model = TransactionModel
 	
 	
 	// IMPLEMENTED	--------------------

@@ -81,7 +81,7 @@ trait UniqueMetalPriceAccess
 	
 	override def factory = MetalPriceFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): UniqueMetalPriceAccess = UniqueMetalPriceAccess(condition)
 	

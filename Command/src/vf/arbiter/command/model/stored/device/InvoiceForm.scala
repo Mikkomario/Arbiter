@@ -1,6 +1,6 @@
 package vf.arbiter.command.model.stored.device
 
-import utopia.vault.model.template.StoredModelConvertible
+import utopia.vault.store.StoredModelConvertible
 import vf.arbiter.command.database.access.single.device.DbSingleInvoiceForm
 import vf.arbiter.command.model.partial.device.InvoiceFormData
 

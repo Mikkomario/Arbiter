@@ -20,7 +20,7 @@ object DbTransactionType extends SingleRowModelAccess[TransactionType] with Unco
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = TransactionTypeModel
+	def model = TransactionTypeModel
 	
 	
 	// IMPLEMENTED	--------------------

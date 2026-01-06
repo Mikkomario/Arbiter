@@ -20,7 +20,7 @@ object DbPartyEntry extends SingleRowModelAccess[PartyEntry] with UnconditionalV
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = PartyEntryModel
+	def model = PartyEntryModel
 	
 	
 	// IMPLEMENTED	--------------------

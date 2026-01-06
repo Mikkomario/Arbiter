@@ -1,6 +1,5 @@
 package vf.arbiter.client.view.component
 
-import utopia.reach.component.factory.FromContextComponentFactoryFactory.Ccff
 import utopia.reach.component.hierarchy.ComponentHierarchy
 
 /**

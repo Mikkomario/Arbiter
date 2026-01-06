@@ -47,7 +47,7 @@ trait UniqueBankAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = BankModel
+	def model = BankModel
 	
 	
 	// IMPLEMENTED	--------------------

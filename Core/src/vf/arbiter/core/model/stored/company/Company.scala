@@ -1,6 +1,6 @@
 package vf.arbiter.core.model.stored.company
 
-import utopia.vault.model.template.StoredModelConvertible
+import utopia.vault.store.StoredModelConvertible
 import vf.arbiter.core.database.access.single.company.DbSingleCompany
 import vf.arbiter.core.model.combined.company.{DetailedCompany, FullCompanyDetails, FullyDetailedCompany}
 import vf.arbiter.core.model.partial.company.CompanyData

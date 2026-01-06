@@ -4,7 +4,7 @@ import utopia.flow.generic.casting.ValueConversions._
 import utopia.flow.parse.file.FileExtensions._
 import utopia.flow.time.TimeExtensions._
 import utopia.flow.time.{DateRange, Today}
-import utopia.flow.util.TryExtensions._
+import utopia.flow.util.result.TryExtensions._
 import utopia.flow.util.console.ConsoleExtensions._
 import utopia.flow.util.console.{ArgumentSchema, Command, CommandArguments}
 import utopia.vault.database.Connection

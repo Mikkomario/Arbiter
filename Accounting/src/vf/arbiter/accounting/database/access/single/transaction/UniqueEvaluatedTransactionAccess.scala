@@ -106,7 +106,7 @@ trait UniqueEvaluatedTransactionAccess
 	
 	override def factory = EvaluatedTransactionFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): UniqueEvaluatedTransactionAccess = 
 		UniqueEvaluatedTransactionAccess(condition)

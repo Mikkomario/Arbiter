@@ -22,7 +22,7 @@ object DbPostalCode extends SingleRowModelAccess[PostalCode] with UnconditionalV
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = PostalCodeModel
+	def model = PostalCodeModel
 	
 	
 	// IMPLEMENTED	--------------------

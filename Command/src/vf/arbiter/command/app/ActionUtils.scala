@@ -1,13 +1,13 @@
 package vf.arbiter.command.app
 
-import utopia.flow.operator.equality.EqualsExtensions._
-import utopia.flow.time.{DateRange, Today}
-import utopia.flow.time.TimeExtensions._
 import utopia.flow.collection.CollectionExtensions._
-import utopia.flow.util.console.ConsoleExtensions._
+import utopia.flow.operator.equality.EqualsExtensions._
+import utopia.flow.time.TimeExtensions._
+import utopia.flow.time.{DateRange, Today, YearMonth}
 import utopia.flow.util.StringExtensions._
+import utopia.flow.util.console.ConsoleExtensions._
 
-import java.time.{LocalDate, YearMonth}
+import java.time.LocalDate
 import scala.io.StdIn
 
 /**

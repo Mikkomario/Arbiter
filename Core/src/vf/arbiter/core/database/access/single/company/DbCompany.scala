@@ -21,7 +21,7 @@ object DbCompany extends SingleRowModelAccess[Company] with UnconditionalView wi
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = CompanyModel
+	def model = CompanyModel
 	
 	
 	// IMPLEMENTED	--------------------

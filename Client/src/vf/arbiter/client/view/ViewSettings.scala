@@ -62,7 +62,7 @@ object ViewSettings
 		CursorType.Default -> (directory.cursors/"cursor-arrow.png", Point(7, 4)),
 		CursorType.Interactive -> (directory.cursors/"cursor-hand.png", Point(9, 1)),
 		CursorType.Text -> (directory.cursors/"cursor-text.png", Point(12, 12))
-	)).logToOption
+	)).log
 	
 	/**
 	 * Actor handler that delivers action events

@@ -40,7 +40,7 @@ trait UniqueInvoicePaymentAccess
 	
 	override def factory = InvoicePaymentFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override
 		 def apply(condition: Condition): UniqueInvoicePaymentAccess = UniqueInvoicePaymentAccess(condition)

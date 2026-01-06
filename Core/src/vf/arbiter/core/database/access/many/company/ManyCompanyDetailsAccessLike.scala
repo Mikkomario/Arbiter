@@ -73,7 +73,7 @@ trait ManyCompanyDetailsAccessLike[+A, +Repr <: ManyModelAccess[A]]
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = CompanyDetailsModel
+	def model = CompanyDetailsModel
 	
 	
 	// OTHER	--------------------

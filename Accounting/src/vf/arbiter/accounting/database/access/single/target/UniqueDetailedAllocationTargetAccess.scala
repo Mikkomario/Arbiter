@@ -50,7 +50,7 @@ trait UniqueDetailedAllocationTargetAccess
 	
 	override def factory = DetailedAllocationTargetFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): UniqueDetailedAllocationTargetAccess = 
 		UniqueDetailedAllocationTargetAccess(condition)

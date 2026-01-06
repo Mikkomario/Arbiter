@@ -47,7 +47,7 @@ trait ManyCompanyBankAccountsAccess
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = accountModel
+	def model = accountModel
 	
 	
 	// IMPLEMENTED	--------------------

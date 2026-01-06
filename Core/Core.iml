@@ -18,5 +18,6 @@
     <orderEntry type="library" name="commons-logging" level="project" />
     <orderEntry type="library" name="pdfbox-2" level="project" />
     <orderEntry type="library" name="scala-sdk-2.13.14" level="application" />
+    <orderEntry type="module" module-name="Vault-Disconnected" />
   </component>
 </module>

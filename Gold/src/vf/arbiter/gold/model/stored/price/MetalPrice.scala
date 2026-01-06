@@ -1,6 +1,6 @@
 package vf.arbiter.gold.model.stored.price
 
-import utopia.vault.model.template.StoredModelConvertible
+import utopia.vault.store.StoredModelConvertible
 import vf.arbiter.gold.database.access.single.price.DbSingleMetalPrice
 import vf.arbiter.gold.model.partial.price.MetalPriceData
 

@@ -1,6 +1,6 @@
 package vf.arbiter.core.model.stored.invoice
 
-import utopia.vault.model.template.StoredModelConvertible
+import utopia.vault.store.StoredModelConvertible
 import vf.arbiter.core.database.access.single.invoice.DbSingleInvoiceItem
 import vf.arbiter.core.model.combined.company.FullCompanyProduct
 import vf.arbiter.core.model.combined.invoice.FullInvoiceItem

@@ -41,7 +41,7 @@ trait UniqueAllocationTargetAccess
 	
 	override def factory = AllocationTargetFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): UniqueAllocationTargetAccess = 
 		UniqueAllocationTargetAccess(condition)

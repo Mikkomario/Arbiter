@@ -99,7 +99,7 @@ trait ManyEvaluatedTransactionsAccess
 	
 	override def factory = EvaluatedTransactionFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): ManyEvaluatedTransactionsAccess = 
 		ManyEvaluatedTransactionsAccess(condition)

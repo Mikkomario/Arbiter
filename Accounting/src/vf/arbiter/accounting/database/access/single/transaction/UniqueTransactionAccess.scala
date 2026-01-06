@@ -40,7 +40,7 @@ trait UniqueTransactionAccess
 	
 	override def factory = TransactionFactory
 	
-	override protected def self = this
+	override def self = this
 	
 	override def apply(condition: Condition): UniqueTransactionAccess = UniqueTransactionAccess(condition)
 }

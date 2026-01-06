@@ -1,6 +1,6 @@
 package vf.arbiter.core.model.stored.location
 
-import utopia.vault.model.template.StoredModelConvertible
+import utopia.vault.store.StoredModelConvertible
 import vf.arbiter.core.database.access.single.location.DbSinglePostalCode
 import vf.arbiter.core.model.partial.location.PostalCodeData
 

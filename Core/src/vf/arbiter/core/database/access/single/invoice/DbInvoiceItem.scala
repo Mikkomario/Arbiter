@@ -19,7 +19,7 @@ object DbInvoiceItem extends SingleRowModelAccess[InvoiceItem] with Unconditiona
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = InvoiceItemModel
+	def model = InvoiceItemModel
 	
 	
 	// IMPLEMENTED	--------------------

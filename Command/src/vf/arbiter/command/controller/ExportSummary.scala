@@ -6,8 +6,10 @@ import utopia.flow.collection.immutable.{Empty, Pair}
 import utopia.flow.operator.numeric.DoubleLike
 import utopia.flow.operator.sign.{Sign, SignOrZero}
 import utopia.flow.parse.file.FileExtensions._
+import utopia.flow.time.Month.January
 import utopia.flow.time.TimeExtensions._
-import utopia.flow.time.Today
+import utopia.flow.time.{Month, Today, Year}
+import utopia.flow.util.result.TryExtensions._
 import utopia.metropolis.model.cached.LanguageIds
 import utopia.vault.database.Connection
 import vf.arbiter.core.database.access.many.company.{DbCompanies, DbCompanyProducts, DbManyCompanyDetails}
@@ -16,7 +18,6 @@ import vf.arbiter.core.model.combined.company.DescribedCompanyProduct
 import vf.arbiter.core.model.combined.invoice.InvoiceWithItems
 
 import java.nio.file.Path
-import java.time.{Month, Year}
 import scala.collection.MapView
 import scala.io.Codec
 import scala.util.Success
@@ -42,7 +43,7 @@ object ExportSummary
 	 * @return Success or failure
 	 */
 	def asCsv(companyId: Int, directory: Path = "summaries", year: Year = Today.year,
-	          months: Span[Month] = Span(Month.JANUARY, Today.month))
+	          months: Span[Month] = Span(January, Today.month))
 	         (implicit connection: Connection, languageIds: LanguageIds) =
 	{
 		directory.createDirectories().flatMap { directory =>
@@ -92,8 +93,8 @@ object ExportSummary
 	                                  productPerId: Map[Int, DescribedCompanyProduct]) =
 	{
 		// Writes a document for each month's invoices
-		invoices.iterator.groupBy { _.created.toLocalDateTime.toLocalDate.yearMonth }.toVector
-			.tryForeach { case (month, invoices) =>
+		invoices.iterator.groupConsecutiveBy { _.created.toLocalDateTime.toLocalDate.yearMonth }
+			.map { case (month, invoices) =>
 				(directory/s"${month.year}-${month.getMonthValue}-invoices.csv").createParentDirectories()
 					.flatMap { targetPath =>
 						val headerLine = "Invoice Id;Reference Code;Customer Y-Code;Customer Name;Amount €;Tax €;Total €;Description"
@@ -107,6 +108,7 @@ object ExportSummary
 						targetPath.writeLines(headerLine +: contentLines)
 					}
 			}
+			.toTry
 	}
 	
 	private def exportTotals(directory: Path, invoices: Seq[InvoiceWithItems],
@@ -118,7 +120,7 @@ object ExportSummary
 				// Collects total price, tax and price + tax for each month
 				val monthTotals = invoices.groupMapReduce { _.created.toLocalDate.month } {
 					i => Total.from(i, productPerId) } { _ + _ }
-				val monthsWithTotals = Month.values().iterator
+				val monthsWithTotals = Month.values.iterator
 					.map { m => m -> monthTotals.getOrElse(m, Total.zero) }
 					.dropWhile { _._2.isZero }.toVector.dropRightWhile { _._2.isZero }
 				
@@ -153,7 +155,7 @@ object ExportSummary
 		val groupTotals = sales.toVector.sortBy { _._2.valuesIterator.sum }
 		// Writes months as rows and targets as columns
 		path.createParentDirectories().flatMap { _.writeLines(groupTotals.map { _._1.toString }.mkString(";") +:
-			Month.values().iterator.map { month =>
+			Month.values.iterator.map { month =>
 				groupTotals.map { case (_, totals) => doubleStr(totals.getOrElse(month, 0.0)) }.mkString(";") }) }
 	}
 	

@@ -64,7 +64,7 @@ trait ManyAllocationTargetsAccessLike[+A, +Repr]
 	/**
 	  * Factory used for constructing database the interaction models
 	  */
-	protected def model = AllocationTargetModel
+	def model = AllocationTargetModel
 	
 	
 	// OTHER	--------------------

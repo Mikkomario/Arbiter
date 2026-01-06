@@ -14,7 +14,7 @@ import utopia.flow.generic.casting.ValueUnwraps._
 import utopia.flow.generic.model.immutable.{Model, ModelDeclaration}
 import utopia.flow.generic.model.mutable.DataType.{DoubleType, InstantType, IntType, StringType}
 import utopia.flow.time.{DateRange, Days, Now}
-import utopia.flow.util.TryExtensions._
+import utopia.flow.util.result.TryExtensions._
 import utopia.metropolis.model.partial.description.DescriptionData
 import utopia.metropolis.model.partial.language.LanguageData
 import utopia.metropolis.model.partial.organization.{MemberRoleLinkData, MembershipData, OrganizationData}
@@ -602,7 +602,7 @@ object ImportData
 	}
 	
 	private def importDescriptions(descriptionsAccess: LinkedDescriptionsAccess,
-	                               descriptionModelsPerId: Map[Int, Vector[Model]],
+	                               descriptionModelsPerId: Map[Int, Seq[Model]],
 	                               checkForDuplicates: Boolean = true)
 	                              (implicit connection: Connection, context: DescriptionContext) =
 	{
